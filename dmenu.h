@@ -7,6 +7,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xlocale.h>
 
+#define SPACE		30 /* px */
+
 typedef struct Brush Brush;
 typedef struct DC DC;
 typedef struct Fnt Fnt;
@@ -29,30 +31,17 @@ struct DC { /* draw context */
 	GC gc;
 };
 
-struct Brush {
-	GC gc;
-	Drawable drawable;
-	int x, y, w, h;
-	Fnt font;
-	unsigned long bg;
-	unsigned long fg;
-	unsigned long border;
-};
-
-
+extern int screen;
+extern Display *dpy;
+extern DC dc;
 
 /* draw.c */
-extern void draw(Display *dpy, Brush *b, Bool border, const char *text);
-extern void loadcolors(Display *dpy, int screen, Brush *b,
-		const char *bg, const char *fg, const char *bo);
-extern void loadfont(Display *dpy, Fnt *font, const char *fontstr);
-extern unsigned int textnw(Fnt *font, char *text, unsigned int len);
-extern unsigned int textw(Fnt *font, char *text);
-extern unsigned int texth(Fnt *font);
+extern void drawtext(const char *text, Bool invert, Bool border);
+extern unsigned long getcolor(const char *colstr);
+extern void setfont(const char *fontstr);
+extern unsigned int textw(const char *text);
 
 /* util.c */
 extern void *emalloc(unsigned int size);
-extern void *emallocz(unsigned int size);
 extern void eprint(const char *errstr, ...);
 extern char *estrdup(const char *str);
-extern void swap(void **p1, void **p2);

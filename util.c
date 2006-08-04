@@ -29,16 +29,6 @@ emalloc(unsigned int size)
 	return res;
 }
 
-void *
-emallocz(unsigned int size)
-{
-	void *res = calloc(1, size);
-
-	if(!res)
-		bad_malloc(size);
-	return res;
-}
-
 void
 eprint(const char *errstr, ...)
 {
@@ -57,12 +47,4 @@ estrdup(const char *str)
 	if(!res)
 		bad_malloc(strlen(str));
 	return res;
-}
-
-void
-swap(void **p1, void **p2)
-{
-	void *tmp = *p1;
-	*p1 = *p2;
-	*p2 = tmp;
 }

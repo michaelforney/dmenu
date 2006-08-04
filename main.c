@@ -16,74 +16,112 @@
 #include <X11/keysym.h>
 
 typedef struct Item Item;
-
 struct Item {
 	Item *next;		/* traverses all items */
 	Item *left, *right;	/* traverses items matching current search pattern */
 	char *text;
 };
 
-static Display *dpy;
-static Window root;
-static Window win;
-static Bool done = False;
+/* static */
 
-static Item *allitem = NULL;	/* first of all items */
-static Item *item = NULL;	/* first of pattern matching items */
-static Item *sel = NULL;
-static Item *nextoff = NULL;
-static Item *prevoff = NULL;
-static Item *curroff = NULL;
-
-static int screen, mx, my, mw, mh;
-static char *title = NULL;
-static char text[4096];
+static char *title, text[4096];
+static int mx, my, mw, mh;
 static int ret = 0;
 static int nitem = 0;
 static unsigned int cmdw = 0;
 static unsigned int tw = 0;
 static unsigned int cw = 0;
-static const int seek = 30;		/* 30px */
-
-static Brush brush = {0};
-
-static void draw_menu();
-static void kpress(XKeyEvent * e);
-
-static char version[] = "dmenu - " VERSION ", (C)opyright MMVI Anselm R. Garbe\n";
+static Bool done = False;
+static Item *allitems = NULL;	/* first of all items */
+static Item *item = NULL;	/* first of pattern matching items */
+static Item *sel = NULL;
+static Item *next = NULL;
+static Item *prev = NULL;
+static Item *curr = NULL;
+static Window root;
+static Window win;
 
 static void
-update_offsets()
+calcoffsets()
 {
-	unsigned int tw, w = cmdw + 2 * seek;
+	unsigned int tw, w;
 
-	if(!curroff)
+	if(!curr)
 		return;
 
-	for(nextoff = curroff; nextoff; nextoff=nextoff->right) {
-		tw = textw(&brush.font, nextoff->text);
+	w = cmdw + 2 * SPACE;
+	for(next = curr; next; next=next->right) {
+		tw = textw(next->text);
 		if(tw > mw / 3)
 			tw = mw / 3;
-		w += tw + brush.font.height;
+		w += tw;
 		if(w > mw)
 			break;
 	}
 
-	w = cmdw + 2 * seek;
-	for(prevoff = curroff; prevoff && prevoff->left; prevoff=prevoff->left) {
-		tw = textw(&brush.font, prevoff->left->text);
+	w = cmdw + 2 * SPACE;
+	for(prev = curr; prev && prev->left; prev=prev->left) {
+		tw = textw(prev->left->text);
 		if(tw > mw / 3)
 			tw = mw / 3;
-		w += tw + brush.font.height;
+		w += tw;
 		if(w > mw)
 			break;
 	}
 }
 
 static void
-update_items(char *pattern)
+drawmenu()
 {
-	unsigned int plen = strlen(pattern);
+	Item *i;
+
+	dc.x = 0;
+	dc.y = 0;
+	dc.w = mw;
+	dc.h = mh;
+	drawtext(NULL, False, False);
+
+	/* print command */
+	if(!title || text[0]) {
+		cmdw = cw;
+		if(cmdw && item)
+			dc.w = cmdw;
+		drawtext(text, False, False);
+	}
+	else {
+		cmdw = tw;
+		dc.w = cmdw;
+		drawtext(title, False, False);
+	}
+	dc.x += dc.w;
+
+	if(curr) {
+		dc.w = SPACE;
+		drawtext((curr && curr->left) ? "<" : NULL, False, False);
+		dc.x += dc.w;
+
+		/* determine maximum items */
+		for(i = curr; i != next; i=i->right) {
+			dc.border = False;
+			dc.w = textw(i->text);
+			if(dc.w > mw / 3)
+				dc.w = mw / 3;
+			drawtext(i->text, sel == i, sel == i);
+			dc.x += dc.w;
+		}
+
+		dc.x = mw - SPACE;
+		dc.w = SPACE;
+		drawtext(next ? ">" : NULL, False, False);
+	}
+	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
+	XFlush(dpy);
+}
+
+static void
+input(char *pattern)
+{
+	unsigned int plen;
 	Item *i, *j;
 
 	if(!pattern)
@@ -94,10 +132,11 @@ update_items(char *pattern)
 	else
 		cmdw = tw;
 
+	plen = strlen(pattern);
 	item = j = NULL;
 	nitem = 0;
 
-	for(i = allitem; i; i=i->next)
+	for(i = allitems; i; i=i->next)
 		if(!plen || !strncmp(pattern, i->text, plen)) {
 			if(!j)
 				item = i;
@@ -108,7 +147,7 @@ update_items(char *pattern)
 			j = i;
 			nitem++;
 		}
-	for(i = allitem; i; i=i->next)
+	for(i = allitems; i; i=i->next)
 		if(plen && strncmp(pattern, i->text, plen)
 				&& strstr(i->text, pattern)) {
 			if(!j)
@@ -121,75 +160,19 @@ update_items(char *pattern)
 			nitem++;
 		}
 
-	curroff = prevoff = nextoff = sel = item;
-
-	update_offsets();
-}
-
-/* creates brush structs for brush mode drawing */
-static void
-draw_menu()
-{
-	Item *i;
-
-	brush.x = 0;
-	brush.y = 0;
-	brush.w = mw;
-	brush.h = mh;
-	draw(dpy, &brush, False, 0);
-
-	/* print command */
-	if(!title || text[0]) {
-		cmdw = cw;
-		if(cmdw && item)
-			brush.w = cmdw;
-		draw(dpy, &brush, False, text);
-	}
-	else {
-		cmdw = tw;
-		brush.w = cmdw;
-		draw(dpy, &brush, False, title);
-	}
-	brush.x += brush.w;
-
-	if(curroff) {
-		brush.w = seek;
-		draw(dpy, &brush, False, (curroff && curroff->left) ? "<" : 0);
-		brush.x += brush.w;
-
-		/* determine maximum items */
-		for(i = curroff; i != nextoff; i=i->right) {
-			brush.border = False;
-			brush.w = textw(&brush.font, i->text);
-			if(brush.w > mw / 3)
-				brush.w = mw / 3;
-			brush.w += brush.font.height;
-			if(sel == i) {
-				swap((void **)&brush.fg, (void **)&brush.bg);
-				draw(dpy, &brush, True, i->text);
-				swap((void **)&brush.fg, (void **)&brush.bg);
-			}
-			else
-				draw(dpy, &brush, False, i->text);
-			brush.x += brush.w;
-		}
-
-		brush.x = mw - seek;
-		brush.w = seek;
-		draw(dpy, &brush, False, nextoff ? ">" : 0);
-	}
-	XCopyArea(dpy, brush.drawable, win, brush.gc, 0, 0, mw, mh, 0, 0);
-	XFlush(dpy);
+	curr = prev = next = sel = item;
+	calcoffsets();
 }
 
 static void
 kpress(XKeyEvent * e)
 {
-	KeySym ksym;
 	char buf[32];
 	int num, prev_nitem;
-	unsigned int i, len = strlen(text);
+	unsigned int i, len;
+	KeySym ksym;
 
+	len = strlen(text);
 	buf[0] = 0;
 	num = XLookupString(e, buf, sizeof(buf), &ksym, 0);
 
@@ -210,8 +193,8 @@ kpress(XKeyEvent * e)
 		case XK_U:
 		case XK_u:
 			text[0] = 0;
-			update_items(text);
-			draw_menu();
+			input(text);
+			drawmenu();
 			return;
 			break;
 		case XK_bracketleft:
@@ -224,24 +207,24 @@ kpress(XKeyEvent * e)
 		if(!(sel && sel->left))
 			return;
 		sel=sel->left;
-		if(sel->right == curroff) {
-			curroff = prevoff;
-			update_offsets();
+		if(sel->right == curr) {
+			curr = prev;
+			calcoffsets();
 		}
 		break;
 	case XK_Tab:
 		if(!sel)
 			return;
 		strncpy(text, sel->text, sizeof(text));
-		update_items(text);
+		input(text);
 		break;
 	case XK_Right:
 		if(!(sel && sel->right))
 			return;
 		sel=sel->right;
-		if(sel == nextoff) {
-			curroff = nextoff;
-			update_offsets();
+		if(sel == next) {
+			curr = next;
+			calcoffsets();
 		}
 		break;
 	case XK_Return:
@@ -265,9 +248,9 @@ kpress(XKeyEvent * e)
 			prev_nitem = nitem;
 			do {
 				text[--i] = 0;
-				update_items(text);
+				input(text);
 			} while(i && nitem && prev_nitem == nitem);
-			update_items(text);
+			input(text);
 		}
 		break;
 	default:
@@ -277,14 +260,14 @@ kpress(XKeyEvent * e)
 				strncat(text, buf, sizeof(text));
 			else
 				strncpy(text, buf, sizeof(text));
-			update_items(text);
+			input(text);
 		}
 	}
-	draw_menu();
+	drawmenu();
 }
 
 static char *
-read_allitems()
+readinput()
 {
 	static char *maxname = NULL;
 	char *p, buf[1024];
@@ -306,7 +289,7 @@ read_allitems()
 		new->next = new->left = new->right = NULL;
 		new->text = p;
 		if(!i)
-			allitem = new;
+			allitems = new;
 		else 
 			i->next = new;
 		i = new;
@@ -315,21 +298,27 @@ read_allitems()
 	return maxname;
 }
 
+/* extern */
+
+int screen;
+Display *dpy;
+DC dc = {0};
+
 int
 main(int argc, char *argv[])
 {
-	int i;
-	XSetWindowAttributes wa;
 	char *maxname;
+	int i;
 	XEvent ev;
+	XSetWindowAttributes wa;
 
 	/* command line args */
 	for(i = 1; i < argc; i++) {
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'v':
-				fprintf(stdout, "%s", version);
-				exit(0);
+				fputs("dmenu-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
+				exit(EXIT_SUCCESS);
 				break;
 			case 't':
 				if(++i < argc) {
@@ -350,7 +339,7 @@ main(int argc, char *argv[])
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
 
-	maxname = read_allitems();
+	maxname = readinput();
 
 	/* grab as early as possible, but after reading all items!!! */
 	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
@@ -358,8 +347,10 @@ main(int argc, char *argv[])
 		usleep(1000);
 
 	/* style */
-	loadcolors(dpy, screen, &brush, BGCOLOR, FGCOLOR, BORDERCOLOR);
-	loadfont(dpy, &brush.font, FONT);
+	dc.bg = getcolor(BGCOLOR);
+	dc.fg = getcolor(FGCOLOR);
+	dc.border = getcolor(BORDERCOLOR);
+	setfont(FONT);
 
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
@@ -367,28 +358,25 @@ main(int argc, char *argv[])
 
 	mx = my = 0;
 	mw = DisplayWidth(dpy, screen);
-	mh = texth(&brush.font);
+	mh = dc.font.height + 4;
 
 	win = XCreateWindow(dpy, root, mx, my, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 	XDefineCursor(dpy, win, XCreateFontCursor(dpy, XC_xterm));
-	XFlush(dpy);
 
 	/* pixmap */
-	brush.gc = XCreateGC(dpy, root, 0, 0);
-	brush.drawable = XCreatePixmap(dpy, win, mw, mh,
-			DefaultDepth(dpy, screen));
-	XFlush(dpy);
+	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
+	dc.gc = XCreateGC(dpy, root, 0, 0);
 
 	if(maxname)
-		cw = textw(&brush.font, maxname) + brush.font.height;
+		cw = textw(maxname);
 	if(cw > mw / 3)
 		cw = mw / 3;
 
 	if(title) {
-		tw = textw(&brush.font, title) + brush.font.height;
+		tw = textw(title);
 		if(tw > mw / 3)
 			tw = mw / 3;
 	}
@@ -396,10 +384,10 @@ main(int argc, char *argv[])
 	cmdw = title ? tw : cw;
 
 	text[0] = 0;
-	update_items(text);
+	input(text);
 	XMapRaised(dpy, win);
-	draw_menu();
-	XFlush(dpy);
+	drawmenu();
+	XSync(dpy, False);
 
 	/* main event loop */
 	while(!done && !XNextEvent(dpy, &ev)) {
@@ -409,7 +397,7 @@ main(int argc, char *argv[])
 			break;
 		case Expose:
 			if(ev.xexpose.count == 0)
-				draw_menu();
+				drawmenu();
 			break;
 		default:
 			break;
@@ -417,8 +405,8 @@ main(int argc, char *argv[])
 	}
 
 	XUngrabKeyboard(dpy, CurrentTime);
-	XFreePixmap(dpy, brush.drawable);
-	XFreeGC(dpy, brush.gc);
+	XFreePixmap(dpy, dc.drawable);
+	XFreeGC(dpy, dc.gc);
 	XDestroyWindow(dpy, win);
 	XCloseDisplay(dpy);
 
