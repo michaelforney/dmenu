@@ -335,7 +335,7 @@ main(int argc, char *argv[])
 
 	dpy = XOpenDisplay(0);
 	if(!dpy)
-		eprint("dmenu: cannot open dpy\n");
+		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
 
