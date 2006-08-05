@@ -1,5 +1,5 @@
 # dmenu version
-VERSION = 0.1
+VERSION = 0.2
 
 # Customize below to fit your system
 
@@ -15,7 +15,7 @@ INCS = -I/usr/lib -I${X11INC}
 LIBS = -L/usr/lib -lc -L${X11LIB} -lX11
 
 # flags
-CFLAGS = -O3 ${INCS} -DVERSION=\"${VERSION}\"
+CFLAGS = -Os ${INCS} -DVERSION=\"${VERSION}\"
 LDFLAGS = ${LIBS}
 #CFLAGS = -g -Wall -O2 ${INCS} -DVERSION=\"${VERSION}\"
 #LDFLAGS = -g ${LIBS}
