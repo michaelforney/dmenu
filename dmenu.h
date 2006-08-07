@@ -9,7 +9,6 @@
 
 #define SPACE		30 /* px */
 
-typedef struct Brush Brush;
 typedef struct DC DC;
 typedef struct Fnt Fnt;
 
