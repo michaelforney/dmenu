@@ -92,7 +92,6 @@ drawmenu()
 
 		/* determine maximum items */
 		for(i = curr; i != next; i=i->right) {
-			dc.border = False;
 			dc.w = textw(i->text);
 			if(dc.w > mw / 3)
 				dc.w = mw / 3;
