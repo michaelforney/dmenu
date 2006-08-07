@@ -15,46 +15,45 @@ It supports arbitrary, user defined menu contents.
 .TP
 .B \-v
 prints version information to stdout, then exits.
-.SS Usage
+.SH USAGE
 .B dmenu
 reads a list of newline-separated items from stdin and creates a menu.
-When the user selects an item or enters any text and presses Enter, his choice
+When the user selects an item or enters any text and presses Return, his choice
 is printed to stdout and
 .B dmenu
 terminates.
-.SS Keyboard Control 
 .B dmenu
 is completely controlled by the keyboard.  The following keys are recognized:
-.TP 2
+.TP
 Any printable character
-appends the character to the text in the input field. This works as a filter:
+Appends the character to the text in the input field. This works as a filter:
 only items containing this text will be displayed.
-.TP 2
+.TP
 Left/Right (Control-p/Control-n)
-select the previous/next item.
-.TP 2
+Select the previous/next item.
+.TP
 Tab (Control-i)
-copy the selected item to the input field.
-.TP 2
-Enter (Control-j)
-confirm selection and quit (print the selected item to stdout).
-.TP 2
-Shift-Enter (Shift-Control-j)
-confirm selection and quit (print the text in the input field to stdout).
-.TP 2
+Copy the selected item to the input field.
+.TP
+Return (Control-j)
+Confirm selection and quit (print the selected item to stdout).
+.TP
+Shift-Return (Shift-Control-j)
+Confirm selection and quit (print the text in the input field to stdout).
+.TP
 Escape (Control-[)
-quit without selecting an item.
-.TP 2
+Quit without selecting an item.
+.TP
 Backspace (Control-h)
-remove enough characters from the input field to change its filtering effect.
-.TP 2
+Remove enough characters from the input field to change its filtering effect.
+.TP
 Control-u
-remove all characters from the input field.
-.SS Exit codes
+Remove all characters from the input field.
+.P
 .B dmenu
 returns
 .B 0
-if Enter is pressed on termination,
+if Return is pressed on termination,
 .B 1
 if Escape is pressed.
 .SH CUSTOMIZATION
