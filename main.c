@@ -109,7 +109,7 @@ drawmenu()
 }
 
 static void
-input(char *pattern)
+match(char *pattern)
 {
 	unsigned int plen;
 	Item *i, *j;
@@ -178,7 +178,7 @@ kpress(XKeyEvent * e)
 		case XK_U:
 		case XK_u:
 			text[0] = 0;
-			input(text);
+			match(text);
 			drawmenu();
 			return;
 			break;
@@ -201,7 +201,7 @@ kpress(XKeyEvent * e)
 		if(!sel)
 			return;
 		strncpy(text, sel->text, sizeof(text));
-		input(text);
+		match(text);
 		break;
 	case XK_Right:
 		if(!(sel && sel->right))
@@ -233,9 +233,9 @@ kpress(XKeyEvent * e)
 			prev_nitem = nitem;
 			do {
 				text[--i] = 0;
-				input(text);
+				match(text);
 			} while(i && nitem && prev_nitem == nitem);
-			input(text);
+			match(text);
 		}
 		break;
 	default:
@@ -245,14 +245,14 @@ kpress(XKeyEvent * e)
 				strncat(text, buf, sizeof(text));
 			else
 				strncpy(text, buf, sizeof(text));
-			input(text);
+			match(text);
 		}
 	}
 	drawmenu();
 }
 
 static char *
-readinput()
+readstdin()
 {
 	static char *maxname = NULL;
 	char *p, buf[1024];
@@ -309,7 +309,7 @@ main(int argc, char *argv[])
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
 
-	maxname = readinput();
+	maxname = readstdin();
 
 	/* grab as early as possible, but after reading all items!!! */
 	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
@@ -346,7 +346,7 @@ main(int argc, char *argv[])
 		cmdw = mw / 3;
 
 	text[0] = 0;
-	input(text);
+	match(text);
 	XMapRaised(dpy, win);
 	drawmenu();
 	XSync(dpy, False);
