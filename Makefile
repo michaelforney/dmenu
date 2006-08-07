@@ -28,6 +28,7 @@ config.h:
 dmenu: ${OBJ}
 	@echo LD $@
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+	@strip $@
 
 clean:
 	@echo cleaning
