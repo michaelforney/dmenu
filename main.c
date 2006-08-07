@@ -24,13 +24,11 @@ struct Item {
 
 /* static */
 
-static char *title, text[4096];
+static char text[4096];
 static int mx, my, mw, mh;
 static int ret = 0;
 static int nitem = 0;
 static unsigned int cmdw = 0;
-static unsigned int tw = 0;
-static unsigned int cw = 0;
 static Bool done = False;
 static Item *allitems = NULL;	/* first of all items */
 static Item *item = NULL;	/* first of pattern matching items */
@@ -82,18 +80,10 @@ drawmenu()
 	drawtext(NULL, False, False);
 
 	/* print command */
-	if(!title || text[0]) {
-		cmdw = cw;
-		if(cmdw && item)
-			dc.w = cmdw;
-		drawtext(text, False, False);
-	}
-	else {
-		cmdw = tw;
+	if(cmdw && item)
 		dc.w = cmdw;
-		drawtext(title, False, False);
-	}
-	dc.x += dc.w;
+	drawtext(text[0] ? text : NULL, False, False);
+	dc.x += cmdw;
 
 	if(curr) {
 		dc.w = SPACE;
@@ -126,11 +116,6 @@ input(char *pattern)
 
 	if(!pattern)
 		return;
-
-	if(!title || *pattern)
-		cmdw = cw;
-	else
-		cmdw = tw;
 
 	plen = strlen(pattern);
 	item = j = NULL;
@@ -308,30 +293,15 @@ int
 main(int argc, char *argv[])
 {
 	char *maxname;
-	int i;
 	XEvent ev;
 	XSetWindowAttributes wa;
 
-	/* command line args */
-	for(i = 1; i < argc; i++) {
-		if (argv[i][0] == '-')
-			switch (argv[i][1]) {
-			case 'v':
-				fputs("dmenu-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
-				exit(EXIT_SUCCESS);
-				break;
-			case 't':
-				if(++i < argc) {
-					title = argv[i];
-					break;
-				}
-			default:
-				eprint("usage: dmenu [-v] [-t <title>]\n");
-				break;
-			}
-		else
-			eprint("usage: dmenu [-v] [-t <title>]\n");
+	if(argc == 2 && !strncmp("-v", argv[1], 3)) {
+		fputs("dmenu-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
+		exit(EXIT_SUCCESS);
 	}
+	else if(argc != 1)
+		eprint("usage: dmenu [-v]\n");
 
 	dpy = XOpenDisplay(0);
 	if(!dpy)
@@ -371,17 +341,9 @@ main(int argc, char *argv[])
 	dc.gc = XCreateGC(dpy, root, 0, 0);
 
 	if(maxname)
-		cw = textw(maxname);
-	if(cw > mw / 3)
-		cw = mw / 3;
-
-	if(title) {
-		tw = textw(title);
-		if(tw > mw / 3)
-			tw = mw / 3;
-	}
-
-	cmdw = title ? tw : cw;
+		cmdw = textw(maxname);
+	if(cmdw > mw / 3)
+		cmdw = mw / 3;
 
 	text[0] = 0;
 	input(text);
