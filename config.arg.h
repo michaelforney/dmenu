@@ -4,6 +4,6 @@
  */
 
 #define FONT			"-*-terminus-medium-*-*-*-12-*-*-*-*-*-iso10646-*"
-#define BGCOLOR			"#004080"
-#define FGCOLOR			"#ffffaa"
-#define BORDERCOLOR		"#004080"
+#define BGCOLOR			"#666699"
+#define FGCOLOR			"#eeeeee"
+#define BORDERCOLOR		"#9999CC"
