@@ -5,5 +5,5 @@
 
 #define FONT			"-*-terminus-medium-*-*-*-12-*-*-*-*-*-iso10646-*"
 #define BGCOLOR			"#444444"
-#define FGCOLOR			"#ffffff"
+#define FGCOLOR			"#ffffaa"
 #define BORDERCOLOR		"#222222"
