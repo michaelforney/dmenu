@@ -1,6 +1,6 @@
 dmenu - dynamic menu
 --------------------
-dwm is a generic, highly customizable, and efficient menu for the
+dmenu is a generic, highly customizable, and efficient menu for the
 X Window System.
 
 
@@ -11,7 +11,7 @@ In order to build dmenu you need the Xlib header files.
 
 Installation
 ------------
-Edit config.mk to match your local setup (dwm is installed into
+Edit config.mk to match your local setup (dmenu is installed into
 the /usr/local namespace by default).
 
 Afterwards enter the following command to build and install dmenu (if
