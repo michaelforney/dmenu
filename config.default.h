@@ -6,3 +6,4 @@
 #define FONT			"fixed"
 #define BGCOLOR			"#666699"
 #define FGCOLOR			"#eeeeee"
+#define BORDERCOLOR		"#9999CC"
