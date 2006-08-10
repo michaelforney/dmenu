@@ -34,7 +34,7 @@ extern Display *dpy;
 extern DC dc;
 
 /* draw.c */
-extern void drawtext(const char *text, Bool invert);
+extern void drawtext(const char *text, Bool sel);
 extern unsigned long getcolor(const char *colstr);
 extern void setfont(const char *fontstr);
 extern unsigned int textw(const char *text);
