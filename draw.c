@@ -9,26 +9,6 @@
 
 /* static */
 
-static void
-drawborder(void)
-{
-	XPoint points[5];
-
-	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
-	XSetForeground(dpy, dc.gc, dc.border);
-	points[0].x = dc.x;
-	points[0].y = dc.y;
-	points[1].x = dc.w - 1;
-	points[1].y = 0;
-	points[2].x = 0;
-	points[2].y = dc.h - 1;
-	points[3].x = -(dc.w - 1);
-	points[3].y = 0;
-	points[4].x = 0;
-	points[4].y = -(dc.h - 1);
-	XDrawLines(dpy, dc.drawable, dc.gc, points, 5, CoordModePrevious);
-}
-
 static unsigned int
 textnw(const char *text, unsigned int len)
 {
@@ -44,7 +24,7 @@ textnw(const char *text, unsigned int len)
 /* extern */
 
 void
-drawtext(const char *text, Bool invert, Bool border)
+drawtext(const char *text, Bool invert)
 {
 	int x, y, w, h;
 	static char buf[256];
@@ -54,10 +34,7 @@ drawtext(const char *text, Bool invert, Bool border)
 
 	XSetForeground(dpy, dc.gc, invert ? dc.fg : dc.bg);
 	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
-
 	w = 0;
-	if(border)
-		drawborder();
 
 	if(!text)
 		return;

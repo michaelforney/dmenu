@@ -24,7 +24,6 @@ struct DC { /* draw context */
 	int x, y, w, h;
 	unsigned long bg;
 	unsigned long fg;
-	unsigned long border;
 	Drawable drawable;
 	Fnt font;
 	GC gc;
@@ -35,7 +34,7 @@ extern Display *dpy;
 extern DC dc;
 
 /* draw.c */
-extern void drawtext(const char *text, Bool invert, Bool border);
+extern void drawtext(const char *text, Bool invert);
 extern unsigned long getcolor(const char *colstr);
 extern void setfont(const char *fontstr);
 extern unsigned int textw(const char *text);

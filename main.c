@@ -77,17 +77,17 @@ drawmenu()
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(NULL, False, False);
+	drawtext(NULL, False);
 
 	/* print command */
 	if(cmdw && item)
 		dc.w = cmdw;
-	drawtext(text[0] ? text : NULL, False, False);
+	drawtext(text[0] ? text : NULL, False);
 	dc.x += cmdw;
 
 	if(curr) {
 		dc.w = SPACE;
-		drawtext((curr && curr->left) ? "<" : NULL, False, False);
+		drawtext((curr && curr->left) ? "<" : NULL, False);
 		dc.x += dc.w;
 
 		/* determine maximum items */
@@ -95,13 +95,13 @@ drawmenu()
 			dc.w = textw(i->text);
 			if(dc.w > mw / 3)
 				dc.w = mw / 3;
-			drawtext(i->text, sel == i, sel == i);
+			drawtext(i->text, sel == i);
 			dc.x += dc.w;
 		}
 
 		dc.x = mw - SPACE;
 		dc.w = SPACE;
-		drawtext(next ? ">" : NULL, False, False);
+		drawtext(next ? ">" : NULL, False);
 	}
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
@@ -316,7 +316,6 @@ main(int argc, char *argv[])
 	/* style */
 	dc.bg = getcolor(BGCOLOR);
 	dc.fg = getcolor(FGCOLOR);
-	dc.border = getcolor(BORDERCOLOR);
 	setfont(FONT);
 
 	wa.override_redirect = 1;
