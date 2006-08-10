@@ -172,9 +172,11 @@ kpress(XKeyEvent * e)
 			return;
 			break;
 		case XK_h:
+		case XK_H:
 			ksym = XK_BackSpace;
 			break;
 		case XK_u:
+		case XK_U:
 			text[0] = 0;
 			match(text);
 			drawmenu();
