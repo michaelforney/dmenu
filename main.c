@@ -174,15 +174,11 @@ kpress(XKeyEvent * e)
 		case XK_h:
 			ksym = XK_BackSpace;
 			break;
-		case XK_U:
 		case XK_u:
 			text[0] = 0;
 			match(text);
 			drawmenu();
 			return;
-			break;
-		case XK_bracketleft:
-			ksym = XK_Escape;
 			break;
 		}
 	}
