@@ -7,7 +7,6 @@ SRC = draw.c main.c util.c
 OBJ = ${SRC:.c=.o}
 
 all: options dmenu
-	@echo finished
 
 options:
 	@echo dmenu build options:
