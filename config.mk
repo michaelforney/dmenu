@@ -22,3 +22,4 @@ LDFLAGS = ${LIBS}
 
 # compiler
 CC = cc
+LD = ${CC}
