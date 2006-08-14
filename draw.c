@@ -28,7 +28,7 @@ drawtext(const char *text, Bool invert, Bool border)
 {
 	int x, y, w, h;
 	static char buf[256];
-	unsigned int len;
+	unsigned int len, olen;
 	XGCValues gcv;
 	XPoint points[5];
 	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
@@ -56,7 +56,7 @@ drawtext(const char *text, Bool invert, Bool border)
 	if(!text)
 		return;
 
-	len = strlen(text);
+	olen = len = strlen(text);
 	if(len >= sizeof(buf))
 		len = sizeof(buf) - 1;
 	memcpy(buf, text, len);
@@ -69,6 +69,14 @@ drawtext(const char *text, Bool invert, Bool border)
 	/* shorten text if necessary */
 	while(len && (w = textnw(buf, len)) > dc.w - h)
 		buf[--len] = 0;
+	if(len < olen) {
+		if(len > 3)
+			memcpy(buf + len - 4, "...\0", 4);
+		else if(len > 2)
+			memcpy(buf + len - 3, "..\0", 3);
+		else if(len > 1)
+			memcpy(buf + len - 2, ".\0", 2);
+	}
 
 	if(w > dc.w)
 		return; /* too long */
