@@ -29,7 +29,7 @@ static int mx, my, mw, mh;
 static int ret = 0;
 static int nitem = 0;
 static unsigned int cmdw = 0;
-static Bool done = False;
+static Bool running = True;
 static Item *allitems = NULL;	/* first of all items */
 static Item *item = NULL;	/* first of pattern matching items */
 static Item *sel = NULL;
@@ -219,11 +219,11 @@ kpress(XKeyEvent * e)
 		else if(text)
 			fprintf(stdout, "%s", text);
 		fflush(stdout);
-		done = True;
+		running = False;
 		break;
 	case XK_Escape:
 		ret = 1;
-		done = True;
+		running = False;
 		break;
 	case XK_BackSpace:
 		if((i = len)) {
@@ -290,6 +290,7 @@ int
 main(int argc, char *argv[])
 {
 	char *maxname;
+	Item *i;
 	XEvent ev;
 	XSetWindowAttributes wa;
 
@@ -349,7 +350,7 @@ main(int argc, char *argv[])
 	XSync(dpy, False);
 
 	/* main event loop */
-	while(!done && !XNextEvent(dpy, &ev)) {
+	while(running && !XNextEvent(dpy, &ev)) {
 		switch (ev.type) {
 		case KeyPress:
 			kpress(&ev.xkey);
@@ -364,6 +365,16 @@ main(int argc, char *argv[])
 	}
 
 	XUngrabKeyboard(dpy, CurrentTime);
+	while(allitems) {
+		i = allitems->next;
+		free(allitems->text);
+		free(allitems);
+		allitems = i;
+	}
+	if(dc.font.set)
+		XFreeFontSet(dpy, dc.font.set);
+	else
+		XFreeFont(dpy, dc.font.xfont);
 	XFreePixmap(dpy, dc.drawable);
 	XFreeGC(dpy, dc.gc);
 	XDestroyWindow(dpy, win);
