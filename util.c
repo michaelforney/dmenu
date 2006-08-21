@@ -13,7 +13,7 @@
 /* static */
 
 static void
-bad_malloc(unsigned int size)
+badmalloc(unsigned int size)
 {
 	eprint("fatal: could not malloc() %u bytes\n", size);
 }
@@ -25,7 +25,7 @@ emalloc(unsigned int size)
 {
 	void *res = malloc(size);
 	if(!res)
-		bad_malloc(size);
+		badmalloc(size);
 	return res;
 }
 
@@ -45,6 +45,6 @@ estrdup(const char *str)
 {
 	void *res = strdup(str);
 	if(!res)
-		bad_malloc(strlen(str));
+		badmalloc(strlen(str));
 	return res;
 }
