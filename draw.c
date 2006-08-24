@@ -29,7 +29,6 @@ drawtext(const char *text, unsigned int colidx, Bool border)
 	int x, y, w, h;
 	static char buf[256];
 	unsigned int len, olen;
-	XGCValues gcv;
 	XPoint points[5];
 	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
 
@@ -83,8 +82,7 @@ drawtext(const char *text, unsigned int colidx, Bool border)
 	if(dc.font.set)
 		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, buf, len);
 	else {
-		gcv.font = dc.font.xfont->fid;
-		XChangeGC(dpy, dc.gc, GCFont, &gcv);
+		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
 		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
 	}
 }
