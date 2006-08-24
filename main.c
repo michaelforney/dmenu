@@ -337,6 +337,7 @@ main(int argc, char *argv[])
 	/* pixmap */
 	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
 	dc.gc = XCreateGC(dpy, root, 0, 0);
+	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
 
 	if(maxname)
 		cmdw = textw(maxname);

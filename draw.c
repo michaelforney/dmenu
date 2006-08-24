@@ -38,8 +38,6 @@ drawtext(const char *text, Bool invert, Bool border)
 
 	w = 0;
 	if(border) {
-		XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
-		XSetForeground(dpy, dc.gc, dc.border);
 		points[0].x = dc.x;
 		points[0].y = dc.y;
 		points[1].x = dc.w - 1;
@@ -50,6 +48,7 @@ drawtext(const char *text, Bool invert, Bool border)
 		points[3].y = 0;
 		points[4].x = 0;
 		points[4].y = -(dc.h - 1);
+		XSetForeground(dpy, dc.gc, dc.border);
 		XDrawLines(dpy, dc.drawable, dc.gc, points, 5, CoordModePrevious);
 	}
 
