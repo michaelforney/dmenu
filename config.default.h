@@ -4,6 +4,7 @@
  */
 
 #define FONT			"fixed"
-#define BGCOLOR			"#666699"
-#define FGCOLOR			"#eeeeee"
-#define BORDERCOLOR		"#9999CC"
+#define NORMBGCOLOR		"#666699"
+#define NORMFGCOLOR		"#eeeeee"
+#define SELBGCOLOR		"#eeeeee"
+#define SELBFCOLOR		"#666699"

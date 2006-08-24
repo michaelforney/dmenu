@@ -4,6 +4,7 @@
  */
 
 #define FONT			"-*-terminus-medium-*-*-*-12-*-*-*-*-*-iso10646-*"
-#define BGCOLOR			"#666699"
-#define FGCOLOR			"#eeeeee"
-#define BORDERCOLOR		"#9999CC"
+#define NORMBGCOLOR		"#666699"
+#define NORMFGCOLOR		"#eeeeee"
+#define SELBGCOLOR		"#eeeeee"
+#define SELFGCOLOR		"#666699"
