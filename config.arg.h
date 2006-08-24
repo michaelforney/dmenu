@@ -7,4 +7,4 @@
 #define NORMBGCOLOR		"#666699"
 #define NORMFGCOLOR		"#eeeeee"
 #define SELBGCOLOR		"#eeeeee"
-#define SELFGCOLOR		"#666699"
+#define SELFGCOLOR		"#000088"
