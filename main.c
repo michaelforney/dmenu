@@ -77,17 +77,17 @@ drawmenu()
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(NULL, 0, False);
+	drawtext(NULL, False, False);
 
 	/* print command */
 	if(cmdw && item)
 		dc.w = cmdw;
-	drawtext(text[0] ? text : NULL, 0, False);
+	drawtext(text[0] ? text : NULL, False, False);
 	dc.x += cmdw;
 
 	if(curr) {
 		dc.w = SPACE;
-		drawtext((curr && curr->left) ? "<" : NULL, 0, False);
+		drawtext((curr && curr->left) ? "<" : NULL, False, False);
 		dc.x += dc.w;
 
 		/* determine maximum items */
@@ -95,13 +95,13 @@ drawmenu()
 			dc.w = textw(i->text);
 			if(dc.w > mw / 3)
 				dc.w = mw / 3;
-			drawtext(i->text, sel == i ? 1 : 0, sel == i);
+			drawtext(i->text, sel == i, sel == i);
 			dc.x += dc.w;
 		}
 
 		dc.x = mw - SPACE;
 		dc.w = SPACE;
-		drawtext(next ? ">" : NULL, 0, False);
+		drawtext(next ? ">" : NULL, False, False);
 	}
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
@@ -315,10 +315,9 @@ main(int argc, char *argv[])
 		usleep(1000);
 
 	/* style */
-	dc.bg[0] = getcolor(NORMBGCOLOR);
-	dc.fg[0] = getcolor(NORMFGCOLOR);
-	dc.bg[1] = getcolor(SELBGCOLOR);
-	dc.fg[1] = getcolor(SELFGCOLOR);
+	dc.bg = getcolor(BGCOLOR);
+	dc.fg = getcolor(FGCOLOR);
+	dc.border = getcolor(BORDERCOLOR);
 	setfont(FONT);
 
 	wa.override_redirect = 1;
