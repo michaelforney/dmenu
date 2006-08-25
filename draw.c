@@ -24,37 +24,21 @@ textnw(const char *text, unsigned int len)
 /* extern */
 
 void
-drawtext(const char *text, Bool invert, Bool border)
+drawtext(const char *text, unsigned long col[ColLast])
 {
 	int x, y, w, h;
 	static char buf[256];
 	unsigned int len, olen;
 	XGCValues gcv;
-	XPoint points[5];
 	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
 
-	XSetForeground(dpy, dc.gc, invert ? dc.fg : dc.bg);
+	XSetForeground(dpy, dc.gc, col[ColBG]);
 	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
-
-	w = 0;
-	if(border) {
-		points[0].x = dc.x;
-		points[0].y = dc.y;
-		points[1].x = dc.w - 1;
-		points[1].y = 0;
-		points[2].x = 0;
-		points[2].y = dc.h - 1;
-		points[3].x = -(dc.w - 1);
-		points[3].y = 0;
-		points[4].x = 0;
-		points[4].y = -(dc.h - 1);
-		XSetForeground(dpy, dc.gc, dc.border);
-		XDrawLines(dpy, dc.drawable, dc.gc, points, 5, CoordModePrevious);
-	}
 
 	if(!text)
 		return;
 
+	w = 0;
 	olen = len = strlen(text);
 	if(len >= sizeof(buf))
 		len = sizeof(buf) - 1;
@@ -80,17 +64,16 @@ drawtext(const char *text, Bool invert, Bool border)
 	if(w > dc.w)
 		return; /* too long */
 
-	gcv.foreground = invert ? dc.bg : dc.fg;
-	gcv.background = invert ? dc.fg : dc.bg;
+	gcv.foreground = col[ColFG];
 	if(dc.font.set) {
-		XChangeGC(dpy, dc.gc, GCForeground | GCBackground, &gcv);
-		XmbDrawImageString(dpy, dc.drawable, dc.font.set, dc.gc,
+		XChangeGC(dpy, dc.gc, GCForeground, &gcv);
+		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc,
 				x, y, buf, len);
 	}
 	else {
 		gcv.font = dc.font.xfont->fid;
-		XChangeGC(dpy, dc.gc, GCForeground | GCBackground | GCFont, &gcv);
-		XDrawImageString(dpy, dc.drawable, dc.gc, x, y, buf, len);
+		XChangeGC(dpy, dc.gc, GCForeground | GCFont, &gcv);
+		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
 	}
 }
 
