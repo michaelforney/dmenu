@@ -4,7 +4,7 @@
  */
 
 #define FONT			"-*-terminus-medium-*-*-*-12-*-*-*-*-*-iso10646-*"
-#define SELBGCOLOR		"#666699"
-#define SELFGCOLOR		"#eeeeee"
-#define NORMBGCOLOR		"#333366"
+#define SELBGCOLOR		"#0055bb"
+#define SELFGCOLOR		"#ffffff"
+#define NORMBGCOLOR		"#444444"
 #define NORMFGCOLOR		"#cccccc"
