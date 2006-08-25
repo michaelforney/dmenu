@@ -3,8 +3,8 @@
  * See LICENSE file for license details.
  */
 
-#define FONT			"-*-terminus-medium-*-*-*-12-*-*-*-*-*-iso10646-*"
-#define SELBGCOLOR		"#0055bb"
-#define SELFGCOLOR		"#ffffff"
-#define NORMBGCOLOR		"#444444"
-#define NORMFGCOLOR		"#cccccc"
+#define FONT			"-*-terminus-medium-*-*-*-14-*-*-*-*-*-iso10646-*"
+#define SELBGCOLOR		"#333366"
+#define SELFGCOLOR		"#eeeeee"
+#define NORMBGCOLOR		"#333333"
+#define NORMFGCOLOR		"#dddddd"
