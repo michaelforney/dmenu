@@ -14,12 +14,12 @@ It supports arbitrary, user defined menu contents.
 .SS Options
 .TP
 .B \-v
-prints version information to stdout, then exits.
+prints version information to standard output, then exits.
 .SH USAGE
 .B dmenu
-reads a list of newline-separated items from stdin and creates a menu.
+reads a list of newline-separated items from standard input and creates a menu.
 When the user selects an item or enters any text and presses Return, his choice
-is printed to stdout and
+is printed to standard output and
 .B dmenu
 terminates.
 .B dmenu
@@ -36,10 +36,10 @@ Tab
 Copy the selected item to the input field.
 .TP
 Return
-Confirm selection and quit (print the selected item to stdout).
+Confirm selection and quit (print the selected item to standard output).
 .TP
 Shift-Return
-Confirm selection and quit (print the text in the input field to stdout).
+Confirm selection and quit (print the text in the input field to standard output).
 .TP
 Escape
 Quit without selecting an item.
