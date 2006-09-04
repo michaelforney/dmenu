@@ -354,14 +354,14 @@ main(int argc, char *argv[])
 	/* main event loop */
 	while(running && !XNextEvent(dpy, &ev)) {
 		switch (ev.type) {
+		default:	/* ignore all crap */
+			break;
 		case KeyPress:
 			kpress(&ev.xkey);
 			break;
 		case Expose:
 			if(ev.xexpose.count == 0)
 				drawmenu();
-			break;
-		default:
 			break;
 		}
 	}
