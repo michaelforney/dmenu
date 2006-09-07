@@ -32,29 +32,26 @@ Select the previous/next item.
 Copy the selected item to the input field.
 .TP
 .B Return
-Confirm selection and quit (print the selected item to standard output).
+Confirm selection and quit (print the selected item to standard output). Returns
+.B 0
+on termination.
 .TP
 .B Shift-Return
 Confirm selection and quit (print the text in the input field to standard output).
+Returns
+.B 0
+on termination.
 .TP
 .B Escape
-Quit without selecting an item.
+Quit without selecting an item. Returns
+.B 1
+on termination.
 .TP
 .B Backspace (Control-h)
 Remove enough characters from the input field to change its filtering effect.
 .TP
 .B Control-u
 Remove all characters from the input field.
-.P
-dwm returns
-.B 0
-if
-.B Return
-is pressed and
-.B 1
-if
-.B Escape
-is pressed on termination.
 .SH CUSTOMIZATION
 dmenu is customized by creating a custom config.h and (re)compiling the source
 code. This keeps it fast, secure and simple.
