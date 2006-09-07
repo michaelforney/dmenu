@@ -6,8 +6,7 @@ dmenu \- dynamic menu
 .RB [ \-v ]
 .SH DESCRIPTION
 .SS Overview
-.B dmenu
-is a generic menu for X, originally designed for
+dmenu is a generic menu for X, originally designed for
 .BR dwm (1).
 It manages huge amounts (up to 10.000 and more) of user defined menu items
 efficiently.
@@ -16,49 +15,48 @@ efficiently.
 .B \-v
 prints version information to standard output, then exits.
 .SH USAGE
-.B dmenu
-reads a list of newline-separated items from standard input and creates a menu.
-When the user selects an item or enters any text and presses Return, his choice
-is printed to standard output and
-.B dmenu
-terminates.
-.B dmenu
-is completely controlled by the keyboard.  The following keys are recognized:
+dmenu reads a list of newline-separated items from standard input and creates a
+menu.  When the user selects an item or enters any text and presses Return, his
+choice is printed to standard output and dmenu terminates.
+.P
+dmenu is completely controlled by the keyboard. The following keys are recognized:
 .TP
-Any printable character
-Appends the character to the text in the input field. This works as a filter:
+.B Any printable character
+Appends the character to the text in the input field.  This works as a filter:
 only items containing this text will be displayed.
 .TP
-Left/Right
+.B Left/Right
 Select the previous/next item.
 .TP
-Tab
+.B Tab
 Copy the selected item to the input field.
 .TP
-Return
+.B Return
 Confirm selection and quit (print the selected item to standard output).
 .TP
-Shift-Return
+.B Shift-Return
 Confirm selection and quit (print the text in the input field to standard output).
 .TP
-Escape
+.B Escape
 Quit without selecting an item.
 .TP
-Backspace (Control-h)
+.B Backspace (Control-h)
 Remove enough characters from the input field to change its filtering effect.
 .TP
-Control-u
+.B Control-u
 Remove all characters from the input field.
 .P
-.B dmenu
-returns
+dwm returns
 .B 0
-if Return is pressed on termination,
+if
+.B Return
+is pressed and
 .B 1
-if Escape is pressed.
+if
+.B Escape
+is pressed on termination.
 .SH CUSTOMIZATION
-.B dmenu
-is customized by creating a custom config.h and (re)compiling the source
+dmenu is customized by creating a custom config.h and (re)compiling the source
 code. This keeps it fast, secure and simple.
 .SH SEE ALSO
 .BR dwm (1)
