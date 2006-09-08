@@ -8,3 +8,4 @@
 #define SELFGCOLOR		"#eeeeee"
 #define NORMBGCOLOR		"#333333"
 #define NORMFGCOLOR		"#dddddd"
+#define STDIN_TIMEOUT		3 /* seconds */

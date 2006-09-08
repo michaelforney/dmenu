@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/select.h>
+#include <sys/time.h>
 #include <X11/cursorfont.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -290,6 +292,8 @@ int
 main(int argc, char *argv[])
 {
 	char *maxname;
+	fd_set rd;
+	struct timeval timeout;
 	Item *i;
 	XEvent ev;
 	XSetWindowAttributes wa;
@@ -307,12 +311,22 @@ main(int argc, char *argv[])
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
 
-	maxname = readstdin();
-
-	/* grab as early as possible, but after reading all items!!! */
+	/* Note, the select() construction allows to grab all keypresses as
+	 * early as possible, to not loose them. But if there is no standard
+	 * input supplied, we will make sure to exit after MAX_WAIT_STDIN
+	 * seconds. This is convenience behavior for rapid typers.
+	 */ 
 	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
 			 GrabModeAsync, CurrentTime) != GrabSuccess)
 		usleep(1000);
+
+	timeout.tv_usec = 0;
+	timeout.tv_sec = STDIN_TIMEOUT;
+	FD_ZERO(&rd);
+	FD_SET(STDIN_FILENO, &rd);
+	if(select(ConnectionNumber(dpy) + 1, &rd, NULL, NULL, &timeout) < 1)
+		goto UninitializedEnd;
+	maxname = readstdin();
 
 	/* style */
 	dc.sel[ColBG] = getcolor(SELBGCOLOR);
@@ -366,7 +380,6 @@ main(int argc, char *argv[])
 		}
 	}
 
-	XUngrabKeyboard(dpy, CurrentTime);
 	while(allitems) {
 		i = allitems->next;
 		free(allitems->text);
@@ -380,6 +393,8 @@ main(int argc, char *argv[])
 	XFreePixmap(dpy, dc.drawable);
 	XFreeGC(dpy, dc.gc);
 	XDestroyWindow(dpy, win);
+UninitializedEnd:
+	XUngrabKeyboard(dpy, CurrentTime);
 	XCloseDisplay(dpy);
 
 	return ret;
