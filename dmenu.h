@@ -23,26 +23,27 @@ struct Fnt {
 	int height;
 };
 
-struct DC { /* draw context */
+struct DC {
 	int x, y, w, h;
 	unsigned long norm[ColLast];
 	unsigned long sel[ColLast];
 	Drawable drawable;
 	Fnt font;
 	GC gc;
-};
+}; /* draw context */
 
 extern int screen;
 extern Display *dpy;
-extern DC dc;
+extern DC dc;			/* global drawing context */
 
 /* draw.c */
-extern void drawtext(const char *text, unsigned long col[ColLast]);
-extern unsigned long getcolor(const char *colstr);
-extern void setfont(const char *fontstr);
-extern unsigned int textw(const char *text);
+extern void drawtext(const char *text,
+			unsigned long col[ColLast]);	/* draws text with the defined color tuple */
+extern unsigned long getcolor(const char *colstr);	/* returns color of colstr */
+extern void setfont(const char *fontstr);		/* sets global font */
+extern unsigned int textw(const char *text);		/* returns width of text in px */
 
 /* util.c */
-extern void *emalloc(unsigned int size);
-extern void eprint(const char *errstr, ...);
-extern char *estrdup(const char *str);
+extern void *emalloc(unsigned int size);		/* allocates memory, exits on error */
+extern void eprint(const char *errstr, ...);		/* prints errstr and exits with 1 */
+extern char *estrdup(const char *str);			/* duplicates str, exits on allocation error */
