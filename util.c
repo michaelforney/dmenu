@@ -13,16 +13,14 @@
 /* static */
 
 static void
-badmalloc(unsigned int size)
-{
+badmalloc(unsigned int size) {
 	eprint("fatal: could not malloc() %u bytes\n", size);
 }
 
 /* extern */
 
 void *
-emalloc(unsigned int size)
-{
+emalloc(unsigned int size) {
 	void *res = malloc(size);
 	if(!res)
 		badmalloc(size);
@@ -30,8 +28,7 @@ emalloc(unsigned int size)
 }
 
 void
-eprint(const char *errstr, ...)
-{
+eprint(const char *errstr, ...) {
 	va_list ap;
 
 	va_start(ap, errstr);
@@ -41,8 +38,7 @@ eprint(const char *errstr, ...)
 }
 
 char *
-estrdup(const char *str)
-{
+estrdup(const char *str) {
 	void *res = strdup(str);
 	if(!res)
 		badmalloc(strlen(str));

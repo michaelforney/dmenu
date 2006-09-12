@@ -10,8 +10,7 @@
 /* static */
 
 static unsigned int
-textnw(const char *text, unsigned int len)
-{
+textnw(const char *text, unsigned int len) {
 	XRectangle r;
 
 	if(dc.font.set) {
@@ -24,8 +23,7 @@ textnw(const char *text, unsigned int len)
 /* extern */
 
 void
-drawtext(const char *text, unsigned long col[ColLast])
-{
+drawtext(const char *text, unsigned long col[ColLast]) {
 	int x, y, w, h;
 	static char buf[256];
 	unsigned int len, olen;
@@ -78,8 +76,7 @@ drawtext(const char *text, unsigned long col[ColLast])
 }
 
 unsigned long
-getcolor(const char *colstr)
-{
+getcolor(const char *colstr) {
 	Colormap cmap = DefaultColormap(dpy, screen);
 	XColor color;
 
@@ -88,8 +85,7 @@ getcolor(const char *colstr)
 }
 
 void
-setfont(const char *fontstr)
-{
+setfont(const char *fontstr) {
 	char **missing, *def;
 	int i, n;
 
@@ -137,7 +133,6 @@ setfont(const char *fontstr)
 }
 
 unsigned int
-textw(const char *text)
-{
+textw(const char *text) {
 	return textnw(text, strlen(text)) + dc.font.height;
 }

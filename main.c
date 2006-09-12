@@ -42,8 +42,7 @@ static Window root;
 static Window win;
 
 static void
-calcoffsets()
-{
+calcoffsets() {
 	unsigned int tw, w;
 
 	if(!curr)
@@ -71,8 +70,7 @@ calcoffsets()
 }
 
 static void
-drawmenu()
-{
+drawmenu() {
 	Item *i;
 
 	dc.x = 0;
@@ -110,8 +108,7 @@ drawmenu()
 }
 
 static void
-match(char *pattern)
-{
+match(char *pattern) {
 	unsigned int plen;
 	Item *i, *j;
 
@@ -151,8 +148,7 @@ match(char *pattern)
 }
 
 static void
-kpress(XKeyEvent * e)
-{
+kpress(XKeyEvent * e) {
 	char buf[32];
 	int num, prev_nitem;
 	unsigned int i, len;
@@ -251,8 +247,7 @@ kpress(XKeyEvent * e)
 }
 
 static char *
-readstdin()
-{
+readstdin() {
 	static char *maxname = NULL;
 	char *p, buf[1024];
 	unsigned int len = 0, max = 0;
@@ -289,8 +284,7 @@ Display *dpy;
 DC dc = {0};
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
 	char *maxname;
 	fd_set rd;
 	struct timeval timeout;
