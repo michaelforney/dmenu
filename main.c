@@ -42,7 +42,7 @@ static Window root;
 static Window win;
 
 static void
-calcoffsets() {
+calcoffsets(void) {
 	unsigned int tw, w;
 
 	if(!curr)
@@ -70,7 +70,7 @@ calcoffsets() {
 }
 
 static void
-drawmenu() {
+drawmenu(void) {
 	Item *i;
 
 	dc.x = 0;
@@ -247,7 +247,7 @@ kpress(XKeyEvent * e) {
 }
 
 static char *
-readstdin() {
+readstdin(void) {
 	static char *maxname = NULL;
 	char *p, buf[1024];
 	unsigned int len = 0, max = 0;
