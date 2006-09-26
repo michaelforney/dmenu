@@ -120,19 +120,8 @@ match(char *pattern) {
 	nitem = 0;
 
 	for(i = allitems; i; i=i->next)
-		if(!plen || !strncmp(pattern, i->text, plen)) {
-			if(!j)
-				item = i;
-			else
-				j->right = i;
-			i->left = j;
-			i->right = NULL;
-			j = i;
-			nitem++;
-		}
-	for(i = allitems; i; i=i->next)
-		if(plen && strncmp(pattern, i->text, plen)
-				&& strstr(i->text, pattern)) {
+		if(plen ? !strncmp(pattern, i->text, plen) :
+				strncmp(pattern, i->text, plen) && strstr(i->text, pattern)) {
 			if(!j)
 				item = i;
 			else
@@ -208,10 +197,8 @@ kpress(XKeyEvent * e) {
 		}
 		break;
 	case XK_Return:
-		if(e->state & ShiftMask) {
-			if(text)
-				fprintf(stdout, "%s", text);
-		}
+		if((e->state & ShiftMask) && text)
+			fprintf(stdout, "%s", text);
 		else if(sel)
 			fprintf(stdout, "%s", sel->text);
 		else if(text)
