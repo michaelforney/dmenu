@@ -283,19 +283,41 @@ DC dc = {0};
 
 int
 main(int argc, char *argv[]) {
+	char *font = FONT;
 	char *maxname;
+	char *normbg = NORMBGCOLOR;
+	char *normfg = NORMFGCOLOR;
+	char *selbg = SELBGCOLOR;
+	char *selfg = SELFGCOLOR;
 	fd_set rd;
+	int i;
 	struct timeval timeout;
-	Item *i;
+	Item *itm;
 	XEvent ev;
 	XSetWindowAttributes wa;
 
-	if(argc == 2 && !strncmp("-v", argv[1], 3)) {
-		fputs("dmenu-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
-		exit(EXIT_SUCCESS);
-	}
-	else if(argc != 1)
-		eprint("usage: dmenu [-v]\n");
+	timeout.tv_usec = 0;
+	timeout.tv_sec = 3;
+	/* command line args */
+	for(i = 1; i < argc; i++)
+		if(!strncmp(argv[i], "-font", 6))
+			font = argv[++i];
+		else if(!strncmp(argv[i], "-normbg", 8))
+			normbg = argv[++i];
+		else if(!strncmp(argv[i], "-normfg", 8))
+			normfg = argv[++i];
+		else if(!strncmp(argv[i], "-selbg", 7))
+			selbg = argv[++i];
+		else if(!strncmp(argv[i], "-selfg", 7))
+			selfg = argv[++i];
+		else if(!strncmp(argv[i], "-t", 3))
+			timeout.tv_sec = atoi(argv[++i]);
+		else if(!strncmp(argv[i], "-v", 3)) {
+			fputs("dmenu-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
+			exit(EXIT_SUCCESS);
+		}
+		else
+			eprint("usage: dmenu [-font <name>] [-{norm,sel}{bg,fg} <color>] [-t <seconds>] [-v]\n", stdout);
 
 	dpy = XOpenDisplay(0);
 	if(!dpy)
@@ -312,8 +334,6 @@ main(int argc, char *argv[]) {
 			 GrabModeAsync, CurrentTime) != GrabSuccess)
 		usleep(1000);
 
-	timeout.tv_usec = 0;
-	timeout.tv_sec = STDIN_TIMEOUT;
 	FD_ZERO(&rd);
 	FD_SET(STDIN_FILENO, &rd);
 	if(select(ConnectionNumber(dpy) + 1, &rd, NULL, NULL, &timeout) < 1)
@@ -321,11 +341,11 @@ main(int argc, char *argv[]) {
 	maxname = readstdin();
 
 	/* style */
-	dc.sel[ColBG] = getcolor(SELBGCOLOR);
-	dc.sel[ColFG] = getcolor(SELFGCOLOR);
-	dc.norm[ColBG] = getcolor(NORMBGCOLOR);
-	dc.norm[ColFG] = getcolor(NORMFGCOLOR);
-	setfont(FONT);
+	dc.sel[ColBG] = getcolor(selbg);
+	dc.sel[ColFG] = getcolor(selfg);
+	dc.norm[ColBG] = getcolor(normbg);
+	dc.norm[ColFG] = getcolor(normfg);
+	setfont(font);
 
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
@@ -373,10 +393,10 @@ main(int argc, char *argv[]) {
 	}
 
 	while(allitems) {
-		i = allitems->next;
+		itm = allitems->next;
 		free(allitems->text);
 		free(allitems);
-		allitems = i;
+		allitems = itm;
 	}
 	if(dc.font.set)
 		XFreeFontSet(dpy, dc.font.set);

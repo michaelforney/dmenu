@@ -3,6 +3,12 @@
 dmenu \- dynamic menu
 .SH SYNOPSIS
 .B dmenu
+.RB [ \-font <name> ]
+.RB [ \-normbg <color> ]
+.RB [ \-normfg <color> ]
+.RB [ \-selbg <color> ]
+.RB [ \-selfg <color> ]
+.RB [ \-t <seconds> ]
 .RB [ \-v ]
 .SH DESCRIPTION
 .SS Overview
@@ -11,6 +17,24 @@ dmenu is a generic menu for X, originally designed for
 It manages huge amounts (up to 10.000 and more) of user defined menu items
 efficiently.
 .SS Options
+.TP
+.B \-font <name>
+defines the font.
+.TP
+.B \-normbg <color>
+defines the normal background color (#RGB, #RRGGBB, and color names are supported).
+.TP
+.B \-normfg <color>
+defines the normal foreground color (#RGB, #RRGGBB, and color names are supported).
+.TP
+.B \-selbg <color>
+defines the selected background color (#RGB, #RRGGBB, and color names are supported).
+.TP
+.B \-selfg <color>
+defines the selected foreground color (#RGB, #RRGGBB, and color names are supported).
+.TP
+.B \-t <seconds>
+defines the seconds to wait for standard input, before exiting (default is 3).
 .TP
 .B \-v
 prints version information to standard output, then exits.
@@ -52,8 +76,5 @@ Remove enough characters from the input field to change its filtering effect.
 .TP
 .B Control-u
 Remove all characters from the input field.
-.SH CUSTOMIZATION
-dmenu is customized by creating a custom config.h and (re)compiling the source
-code. This keeps it fast, secure and simple.
 .SH SEE ALSO
 .BR dwm (1)

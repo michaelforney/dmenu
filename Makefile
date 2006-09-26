@@ -19,11 +19,7 @@ options:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${OBJ}: dmenu.h config.h config.mk
-
-config.h:
-	@echo creating $@ from config.default.h
-	@cp config.default.h $@
+${OBJ}: dmenu.h config.mk
 
 dmenu: ${OBJ}
 	@echo LD $@
