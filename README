@@ -1,5 +1,5 @@
 dmenu - dynamic menu
---------------------
+====================
 dmenu is a generic and efficient menu for X. 
 
 
@@ -22,9 +22,3 @@ necessary as root):
 Running dmenu
 -------------
 See the man page for details.
-
-
-Configuration
--------------
-The configuration of dmenu is done by creating a custom config.h
-and (re)compiling the source code.
