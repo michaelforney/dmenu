@@ -120,8 +120,19 @@ match(char *pattern) {
 	nitem = 0;
 
 	for(i = allitems; i; i=i->next)
-		if(plen ? !strncmp(pattern, i->text, plen) :
-				strncmp(pattern, i->text, plen) && strstr(i->text, pattern)) {
+		if(!plen || !strncmp(pattern, i->text, plen)) {
+			if(!j)
+				item = i;
+			else
+				j->right = i;
+			i->left = j;
+			i->right = NULL;
+			j = i;
+			nitem++;
+		}
+	for(i = allitems; i; i=i->next)
+		if(plen && strncmp(pattern, i->text, plen)
+				&& strstr(i->text, pattern)) {
 			if(!j)
 				item = i;
 			else
