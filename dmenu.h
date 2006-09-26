@@ -43,8 +43,7 @@ extern DC dc;			/* global drawing context */
 /* draw.c */
 extern void drawtext(const char *text,
 			unsigned long col[ColLast]);	/* draws text with the defined color tuple */
-extern unsigned long getcolor(
-	const char *colstr, const char *alternate);	/* returns color of colstr */
+extern unsigned long getcolor(const char *colstr);	/* returns color of colstr */
 extern void setfont(const char *fontstr);		/* sets global font */
 extern unsigned int textw(const char *text);		/* returns width of text in px */
 

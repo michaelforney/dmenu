@@ -341,10 +341,10 @@ main(int argc, char *argv[]) {
 	maxname = readstdin();
 
 	/* style */
-	dc.norm[ColBG] = getcolor(normbg, NORMBGCOLOR);
-	dc.norm[ColFG] = getcolor(normfg, NORMFGCOLOR);
-	dc.sel[ColBG] = getcolor(selbg, SELBGCOLOR);
-	dc.sel[ColFG] = getcolor(selfg, SELFGCOLOR);
+	dc.norm[ColBG] = getcolor(normbg);
+	dc.norm[ColFG] = getcolor(normfg);
+	dc.sel[ColBG] = getcolor(selbg);
+	dc.sel[ColFG] = getcolor(selfg);
 	setfont(font);
 
 	wa.override_redirect = 1;
