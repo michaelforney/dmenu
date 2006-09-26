@@ -76,11 +76,12 @@ drawtext(const char *text, unsigned long col[ColLast]) {
 }
 
 unsigned long
-getcolor(const char *colstr) {
+getcolor(const char *colstr, const char *alternate) {
 	Colormap cmap = DefaultColormap(dpy, screen);
 	XColor color;
 
-	XAllocNamedColor(dpy, cmap, colstr, &color, &color);
+	if(XAllocNamedColor(dpy, cmap, colstr, &color, &color) != Success)
+		XAllocNamedColor(dpy, cmap, alternate, &color, &color);
 	return color.pixel;
 }
 
