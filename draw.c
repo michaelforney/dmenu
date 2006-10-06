@@ -1,5 +1,4 @@
-/*
- * (C)opyright MMIV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
+/* (C)opyright MMIV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
  * See LICENSE file for license details.
  */
 #include "dmenu.h"
@@ -32,21 +31,17 @@ drawtext(const char *text, unsigned long col[ColLast]) {
 
 	XSetForeground(dpy, dc.gc, col[ColBG]);
 	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
-
 	if(!text)
 		return;
-
 	w = 0;
 	olen = len = strlen(text);
 	if(len >= sizeof(buf))
 		len = sizeof(buf) - 1;
 	memcpy(buf, text, len);
 	buf[len] = 0;
-
 	h = dc.font.ascent + dc.font.descent;
 	y = dc.y + (dc.h / 2) - (h / 2) + dc.font.ascent;
 	x = dc.x + (h / 2);
-
 	/* shorten text if necessary */
 	while(len && (w = textnw(buf, len)) > dc.w - h)
 		buf[--len] = 0;
@@ -58,10 +53,8 @@ drawtext(const char *text, unsigned long col[ColLast]) {
 		if(len > 3)
 			buf[len - 3] = '.';
 	}
-
 	if(w > dc.w)
 		return; /* too long */
-
 	gcv.foreground = col[ColFG];
 	if(dc.font.set) {
 		XChangeGC(dpy, dc.gc, GCForeground, &gcv);
@@ -106,7 +99,6 @@ setfont(const char *fontstr) {
 		XFontSetExtents *font_extents;
 		XFontStruct **xfonts;
 		char **font_names;
-
 		dc.font.ascent = dc.font.descent = 0;
 		font_extents = XExtentsOfFontSet(dc.font.set);
 		n = XFontsOfFontSet(dc.font.set, &xfonts, &font_names);

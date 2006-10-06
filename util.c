@@ -1,5 +1,4 @@
-/*
- * (C)opyright MMVI Anselm R. Garbe <garbeam at gmail dot com>
+/* (C)opyright MMVI Anselm R. Garbe <garbeam at gmail dot com>
  * See LICENSE file for license details.
  */
 #include "dmenu.h"
@@ -22,6 +21,7 @@ badmalloc(unsigned int size) {
 void *
 emalloc(unsigned int size) {
 	void *res = malloc(size);
+
 	if(!res)
 		badmalloc(size);
 	return res;
@@ -40,6 +40,7 @@ eprint(const char *errstr, ...) {
 char *
 estrdup(const char *str) {
 	void *res = strdup(str);
+
 	if(!res)
 		badmalloc(strlen(str));
 	return res;

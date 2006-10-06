@@ -1,5 +1,4 @@
-/*
- * (C)opyright MMVI Anselm R. Garbe <garbeam at gmail dot com>
+/* (C)opyright MMVI Anselm R. Garbe <garbeam at gmail dot com>
  * (C)opyright MMVI Sander van Dijk <a dot h dot vandijk at gmail dot com>
  * See LICENSE file for license details.
  */
@@ -47,7 +46,6 @@ calcoffsets(void) {
 
 	if(!curr)
 		return;
-
 	w = cmdw + 2 * SPACE;
 	for(next = curr; next; next=next->right) {
 		tw = textw(next->text);
@@ -57,7 +55,6 @@ calcoffsets(void) {
 		if(w > mw)
 			break;
 	}
-
 	w = cmdw + 2 * SPACE;
 	for(prev = curr; prev && prev->left; prev=prev->left) {
 		tw = textw(prev->left->text);
@@ -78,18 +75,15 @@ drawmenu(void) {
 	dc.w = mw;
 	dc.h = mh;
 	drawtext(NULL, dc.norm);
-
 	/* print command */
 	if(cmdw && item)
 		dc.w = cmdw;
 	drawtext(text[0] ? text : NULL, dc.norm);
 	dc.x += cmdw;
-
 	if(curr) {
 		dc.w = SPACE;
 		drawtext((curr && curr->left) ? "<" : NULL, dc.norm);
 		dc.x += dc.w;
-
 		/* determine maximum items */
 		for(i = curr; i != next; i=i->right) {
 			dc.w = textw(i->text);
@@ -98,7 +92,6 @@ drawmenu(void) {
 			drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
 			dc.x += dc.w;
 		}
-
 		dc.x = mw - SPACE;
 		dc.w = SPACE;
 		drawtext(next ? ">" : NULL, dc.norm);
@@ -114,11 +107,9 @@ match(char *pattern) {
 
 	if(!pattern)
 		return;
-
 	plen = strlen(pattern);
 	item = j = NULL;
 	nitem = 0;
-
 	for(i = allitems; i; i=i->next)
 		if(!plen || !strncmp(pattern, i->text, plen)) {
 			if(!j)
@@ -142,7 +133,6 @@ match(char *pattern) {
 			j = i;
 			nitem++;
 		}
-
 	curr = prev = next = sel = item;
 	calcoffsets();
 }
@@ -157,12 +147,10 @@ kpress(XKeyEvent * e) {
 	len = strlen(text);
 	buf[0] = 0;
 	num = XLookupString(e, buf, sizeof(buf), &ksym, 0);
-
 	if(IsFunctionKey(ksym) || IsKeypadKey(ksym)
 			|| IsMiscFunctionKey(ksym) || IsPFKey(ksym)
 			|| IsPrivateKeypadKey(ksym))
 		return;
-
 	/* first check if a control mask is omitted */
 	if(e->state & ControlMask) {
 		switch (ksym) {
@@ -261,7 +249,6 @@ readstdin(void) {
 			maxname = p;
 			max = len;
 		}
-
 		new = emalloc(sizeof(Item));
 		new->next = new->left = new->right = NULL;
 		new->text = p;
@@ -318,7 +305,6 @@ main(int argc, char *argv[]) {
 		}
 		else
 			eprint("usage: dmenu [-font <name>] [-{norm,sel}{bg,fg} <color>] [-t <seconds>] [-v]\n", stdout);
-
 	dpy = XOpenDisplay(0);
 	if(!dpy)
 		eprint("dmenu: cannot open display\n");
@@ -333,44 +319,37 @@ main(int argc, char *argv[]) {
 	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
 			 GrabModeAsync, CurrentTime) != GrabSuccess)
 		usleep(1000);
-
 	FD_ZERO(&rd);
 	FD_SET(STDIN_FILENO, &rd);
 	if(select(ConnectionNumber(dpy) + 1, &rd, NULL, NULL, &timeout) < 1)
 		goto UninitializedEnd;
 	maxname = readstdin();
-
 	/* style */
 	dc.norm[ColBG] = getcolor(normbg);
 	dc.norm[ColFG] = getcolor(normfg);
 	dc.sel[ColBG] = getcolor(selbg);
 	dc.sel[ColFG] = getcolor(selfg);
 	setfont(font);
-
+	/* menu window */
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
-
 	mx = my = 0;
 	mw = DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
-
 	win = XCreateWindow(dpy, root, mx, my, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 	XDefineCursor(dpy, win, XCreateFontCursor(dpy, XC_xterm));
-
 	/* pixmap */
 	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
 	dc.gc = XCreateGC(dpy, root, 0, 0);
 	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
-
 	if(maxname)
 		cmdw = textw(maxname);
 	if(cmdw > mw / 3)
 		cmdw = mw / 3;
-
 	text[0] = 0;
 	match(text);
 	XMapRaised(dpy, win);
@@ -392,6 +371,7 @@ main(int argc, char *argv[]) {
 		}
 	}
 
+	/* cleanup */
 	while(allitems) {
 		itm = allitems->next;
 		free(allitems->text);
@@ -408,6 +388,5 @@ main(int argc, char *argv[]) {
 UninitializedEnd:
 	XUngrabKeyboard(dpy, CurrentTime);
 	XCloseDisplay(dpy);
-
 	return ret;
 }
