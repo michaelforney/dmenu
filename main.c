@@ -2,7 +2,6 @@
  * (C)opyright MMVI Sander van Dijk <a dot h dot vandijk at gmail dot com>
  * See LICENSE file for license details.
  */
-
 #include "dmenu.h"
 
 #include <ctype.h>
