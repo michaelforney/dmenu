@@ -356,7 +356,7 @@ main(int argc, char *argv[]) {
 	XSync(dpy, False);
 
 	/* main event loop */
-	while(running && !XNextEvent(dpy, &ev)) {
+	while(running && !XNextEvent(dpy, &ev))
 		switch (ev.type) {
 		default:	/* ignore all crap */
 			break;
@@ -368,7 +368,6 @@ main(int argc, char *argv[]) {
 				drawmenu();
 			break;
 		}
-	}
 
 	/* cleanup */
 	while(allitems) {
