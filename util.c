@@ -18,15 +18,6 @@ emalloc(unsigned int size) {
 	return res;
 }
 
-char *
-estrdup(const char *str) {
-	void *res = strdup(str);
-
-	if(!res)
-		eprint("fatal: could not malloc() %u bytes\n", strlen(str));
-	return res;
-}
-
 void
 eprint(const char *errstr, ...) {
 	va_list ap;
@@ -35,4 +26,13 @@ eprint(const char *errstr, ...) {
 	vfprintf(stderr, errstr, ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
+}
+
+char *
+estrdup(const char *str) {
+	void *res = strdup(str);
+
+	if(!res)
+		eprint("fatal: could not malloc() %u bytes\n", strlen(str));
+	return res;
 }
