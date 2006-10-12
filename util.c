@@ -9,21 +9,21 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-/* static */
-
-static void
-badmalloc(unsigned int size) {
-	eprint("fatal: could not malloc() %u bytes\n", size);
-}
-
-/* extern */
-
 void *
 emalloc(unsigned int size) {
 	void *res = malloc(size);
 
 	if(!res)
-		badmalloc(size);
+		eprint("fatal: could not malloc() %u bytes\n", size);
+	return res;
+}
+
+char *
+estrdup(const char *str) {
+	void *res = strdup(str);
+
+	if(!res)
+		eprint("fatal: could not malloc() %u bytes\n", strlen(str));
 	return res;
 }
 
@@ -35,13 +35,4 @@ eprint(const char *errstr, ...) {
 	vfprintf(stderr, errstr, ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
-}
-
-char *
-estrdup(const char *str) {
-	void *res = strdup(str);
-
-	if(!res)
-		badmalloc(strlen(str));
-	return res;
 }
