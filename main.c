@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/time.h>
-#include <X11/cursorfont.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 
@@ -346,7 +345,6 @@ main(int argc, char *argv[]) {
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
-	XDefineCursor(dpy, win, XCreateFontCursor(dpy, XC_xterm));
 	/* pixmap */
 	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
 	dc.gc = XCreateGC(dpy, root, 0, 0);
