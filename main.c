@@ -286,18 +286,24 @@ main(int argc, char *argv[]) {
 	timeout.tv_sec = 3;
 	/* command line args */
 	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-font", 6))
-			font = argv[++i];
-		else if(!strncmp(argv[i], "-normbg", 8))
-			normbg = argv[++i];
-		else if(!strncmp(argv[i], "-normfg", 8))
-			normfg = argv[++i];
-		else if(!strncmp(argv[i], "-selbg", 7))
-			selbg = argv[++i];
-		else if(!strncmp(argv[i], "-selfg", 7))
-			selfg = argv[++i];
-		else if(!strncmp(argv[i], "-t", 3))
-			timeout.tv_sec = atoi(argv[++i]);
+		if(!strncmp(argv[i], "-font", 6)) {
+			if(++i < argc) font = argv[i];
+		}
+		else if(!strncmp(argv[i], "-normbg", 8)) {
+			if(++i < argc) normbg = argv[i];
+		}
+		else if(!strncmp(argv[i], "-normfg", 8)) {
+			if(++i < argc) normfg = argv[i];
+		}
+		else if(!strncmp(argv[i], "-selbg", 7)) {
+			if(++i < argc) selbg = argv[i];
+		}
+		else if(!strncmp(argv[i], "-selfg", 7)) {
+			if(++i < argc) selfg = argv[i];
+		}
+		else if(!strncmp(argv[i], "-t", 3)) {
+			if(++i < argc) timeout.tv_sec = atoi(argv[i]);
+		}
 		else if(!strncmp(argv[i], "-v", 3)) {
 			fputs("dmenu-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
 			exit(EXIT_SUCCESS);
