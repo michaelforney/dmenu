@@ -144,7 +144,7 @@ kpress(XKeyEvent * e) {
 
 	len = strlen(text);
 	buf[0] = 0;
-	num = XLookupString(e, buf, sizeof(buf), &ksym, 0);
+	num = XLookupString(e, buf, sizeof buf, &ksym, 0);
 	if(IsFunctionKey(ksym) || IsKeypadKey(ksym)
 			|| IsMiscFunctionKey(ksym) || IsPFKey(ksym)
 			|| IsPrivateKeypadKey(ksym))
@@ -181,7 +181,7 @@ kpress(XKeyEvent * e) {
 	case XK_Tab:
 		if(!sel)
 			return;
-		strncpy(text, sel->text, sizeof(text));
+		strncpy(text, sel->text, sizeof text);
 		match(text);
 		break;
 	case XK_Right:
@@ -221,9 +221,9 @@ kpress(XKeyEvent * e) {
 		if(num && !iscntrl((int) buf[0])) {
 			buf[num] = 0;
 			if(len > 0)
-				strncat(text, buf, sizeof(text));
+				strncat(text, buf, sizeof text);
 			else
-				strncpy(text, buf, sizeof(text));
+				strncpy(text, buf, sizeof text);
 			match(text);
 		}
 	}
@@ -238,7 +238,7 @@ readstdin(void) {
 	Item *i, *new;
 
 	i = 0;
-	while(fgets(buf, sizeof(buf), stdin)) {
+	while(fgets(buf, sizeof buf, stdin)) {
 		len = strlen(buf);
 		if (buf[len - 1] == '\n')
 			buf[len - 1] = 0;
