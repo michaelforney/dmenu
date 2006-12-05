@@ -3,14 +3,13 @@
  */
 
 #include <X11/Xlib.h>
-#include <X11/Xlocale.h>
 
 #define FONT			"fixed"
 #define NORMBGCOLOR		"#333366"
 #define NORMFGCOLOR		"#cccccc"
 #define SELBGCOLOR		"#666699"
 #define SELFGCOLOR		"#eeeeee"
-#define SPACE		30 /* px */
+#define SPACE			30 /* px */
 
 /* color */
 enum { ColFG, ColBG, ColLast };
