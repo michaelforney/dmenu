@@ -88,13 +88,8 @@ setfont(const char *fontstr) {
 	if(dc.font.set)
 		XFreeFontSet(dpy, dc.font.set);
 	dc.font.set = XCreateFontSet(dpy, fontstr, &missing, &n, &def);
-	if(missing) {
+	if(missing)
 		XFreeStringList(missing);
-		if(dc.font.set) {
-			XFreeFontSet(dpy, dc.font.set);
-			dc.font.set = NULL;
-		}
-	}
 	if(dc.font.set) {
 		XFontSetExtents *font_extents;
 		XFontStruct **xfonts;
