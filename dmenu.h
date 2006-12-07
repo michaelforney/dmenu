@@ -4,7 +4,7 @@
 
 #include <X11/Xlib.h>
 
-#define FONT			"fixed"
+#define FONT			"-*-fixed-medium-r-normal-*-13-*-*-*-*-*-*-*"
 #define NORMBGCOLOR		"#333366"
 #define NORMFGCOLOR		"#cccccc"
 #define SELBGCOLOR		"#666699"

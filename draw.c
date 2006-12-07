@@ -79,7 +79,7 @@ getcolor(const char *colstr) {
 
 void
 setfont(const char *fontstr) {
-	char **missing, *def;
+	char *def, **missing;
 	int i, n;
 
 	missing = NULL;
