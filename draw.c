@@ -4,7 +4,6 @@
 #include "dmenu.h"
 #include <stdio.h>
 #include <string.h>
-#include <X11/Xlocale.h>
 
 /* static */
 
@@ -84,7 +83,6 @@ setfont(const char *fontstr) {
 	int i, n;
 
 	missing = NULL;
-	setlocale(LC_CTYPE, "");
 	if(dc.font.set)
 		XFreeFontSet(dpy, dc.font.set);
 	dc.font.set = XCreateFontSet(dpy, fontstr, &missing, &n, &def);

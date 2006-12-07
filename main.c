@@ -5,6 +5,7 @@
 #include "dmenu.h"
 
 #include <ctype.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -309,6 +310,7 @@ main(int argc, char *argv[]) {
 		}
 		else
 			eprint("usage: dmenu [-font <name>] [-{norm,sel}{bg,fg} <color>] [-t <seconds>] [-v]\n", stdout);
+	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)
 		eprint("dmenu: cannot open display\n");
