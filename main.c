@@ -170,6 +170,42 @@ kpress(XKeyEvent * e) {
 		}
 	}
 	switch(ksym) {
+	default:
+		if(num && !iscntrl((int) buf[0])) {
+			buf[num] = 0;
+			if(len > 0)
+				strncat(text, buf, sizeof text);
+			else
+				strncpy(text, buf, sizeof text);
+			match(text);
+		}
+		break;
+	case XK_BackSpace:
+		if((i = len)) {
+			prev_nitem = nitem;
+			do {
+				text[--i] = 0;
+				match(text);
+			} while(i && nitem && prev_nitem == nitem);
+			match(text);
+		}
+		break;
+	case XK_End:
+		while(next) {
+			sel = curr = next;
+			calcoffsets();
+		}
+		while(sel->right)
+			sel = sel->right;
+		break;
+	case XK_Escape:
+		ret = 1;
+		running = False;
+		break;
+	case XK_Home:
+		sel = curr = item;
+		calcoffsets();
+		break;
 	case XK_Left:
 		if(!(sel && sel->left))
 			return;
@@ -179,18 +215,15 @@ kpress(XKeyEvent * e) {
 			calcoffsets();
 		}
 		break;
-	case XK_Tab:
-		if(!sel)
-			return;
-		strncpy(text, sel->text, sizeof text);
-		match(text);
+	case XK_Next:
+		if(next) {
+			sel = curr = next;
+			calcoffsets();
+		}
 		break;
-	case XK_Right:
-		if(!(sel && sel->right))
-			return;
-		sel=sel->right;
-		if(sel == next) {
-			curr = next;
+	case XK_Prior:
+		if(prev) {
+			sel = curr = prev;
 			calcoffsets();
 		}
 		break;
@@ -204,29 +237,21 @@ kpress(XKeyEvent * e) {
 		fflush(stdout);
 		running = False;
 		break;
-	case XK_Escape:
-		ret = 1;
-		running = False;
-		break;
-	case XK_BackSpace:
-		if((i = len)) {
-			prev_nitem = nitem;
-			do {
-				text[--i] = 0;
-				match(text);
-			} while(i && nitem && prev_nitem == nitem);
-			match(text);
+	case XK_Right:
+		if(!(sel && sel->right))
+			return;
+		sel=sel->right;
+		if(sel == next) {
+			curr = next;
+			calcoffsets();
 		}
 		break;
-	default:
-		if(num && !iscntrl((int) buf[0])) {
-			buf[num] = 0;
-			if(len > 0)
-				strncat(text, buf, sizeof text);
-			else
-				strncpy(text, buf, sizeof text);
-			match(text);
-		}
+	case XK_Tab:
+		if(!sel)
+			return;
+		strncpy(text, sel->text, sizeof text);
+		match(text);
+		break;
 	}
 	drawmenu();
 }

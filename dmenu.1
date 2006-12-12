@@ -40,7 +40,7 @@ defines the seconds to wait for standard input, before exiting (default is 3).
 prints version information to standard output, then exits.
 .SH USAGE
 dmenu reads a list of newline-separated items from standard input and creates a
-menu.  When the user selects an item or enters any text and presses Return, his
+menu.  When the user selects an item or enters any text and presses Return, his/her
 choice is printed to standard output and dmenu terminates.
 .P
 dmenu is completely controlled by the keyboard. The following keys are recognized:
@@ -51,6 +51,12 @@ only items containing this text will be displayed.
 .TP
 .B Left/Right
 Select the previous/next item.
+.TP
+.B PageUp/PageDown
+Select the first item of the previous/next 'page' of items.
+.TP
+.B Home/End
+Select the first/last item.
 .TP
 .B Tab
 Copy the selected item to the input field.
