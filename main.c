@@ -25,10 +25,12 @@ struct Item {
 /* static */
 
 static char text[4096];
+static char *prompt = NULL;
 static int mx, my, mw, mh;
 static int ret = 0;
 static int nitem = 0;
 static unsigned int cmdw = 0;
+static unsigned int promptw = 0;
 static Bool running = True;
 static Item *allitems = NULL;	/* first of all items */
 static Item *item = NULL;	/* first of pattern matching items */
@@ -45,7 +47,7 @@ calcoffsets(void) {
 
 	if(!curr)
 		return;
-	w = cmdw + 2 * SPACE;
+	w = promptw + cmdw + 2 * SPACE;
 	for(next = curr; next; next=next->right) {
 		tw = textw(next->text);
 		if(tw > mw / 3)
@@ -54,7 +56,7 @@ calcoffsets(void) {
 		if(w > mw)
 			break;
 	}
-	w = cmdw + 2 * SPACE;
+	w = promptw + cmdw + 2 * SPACE;
 	for(prev = curr; prev && prev->left; prev=prev->left) {
 		tw = textw(prev->left->text);
 		if(tw > mw / 3)
@@ -74,6 +76,13 @@ drawmenu(void) {
 	dc.w = mw;
 	dc.h = mh;
 	drawtext(NULL, dc.norm);
+	/* print prompt? */
+	if(promptw) {
+		dc.w = promptw;
+		drawtext(prompt, dc.sel);
+	}
+	dc.x += promptw;
+	dc.w = mw - promptw;
 	/* print command */
 	if(cmdw && item)
 		dc.w = cmdw;
@@ -326,6 +335,9 @@ main(int argc, char *argv[]) {
 		else if(!strncmp(argv[i], "-selfg", 7)) {
 			if(++i < argc) selfg = argv[i];
 		}
+		else if(!strncmp(argv[i], "-p", 3)) {
+			if(++i < argc) prompt = argv[i];
+		}
 		else if(!strncmp(argv[i], "-t", 3)) {
 			if(++i < argc) timeout.tv_sec = atoi(argv[i]);
 		}
@@ -334,7 +346,7 @@ main(int argc, char *argv[]) {
 			exit(EXIT_SUCCESS);
 		}
 		else
-			eprint("usage: dmenu [-font <name>] [-{norm,sel}{bg,fg} <color>] [-t <seconds>] [-v]\n", stdout);
+			eprint("usage: dmenu [-font <name>] [-{norm,sel}{bg,fg} <color>] [-p <prompt>] [-t <seconds>] [-v]\n", stdout);
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)
@@ -380,6 +392,10 @@ main(int argc, char *argv[]) {
 		cmdw = textw(maxname);
 	if(cmdw > mw / 3)
 		cmdw = mw / 3;
+	if(prompt)
+		promptw = textw(prompt);
+	if(promptw > mw / 5)
+		promptw = mw / 5;
 	text[0] = 0;
 	match(text);
 	XMapRaised(dpy, win);

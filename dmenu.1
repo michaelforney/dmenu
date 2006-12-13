@@ -8,6 +8,7 @@ dmenu \- dynamic menu
 .RB [ \-normfg " <color>"]
 .RB [ \-selbg " <color>"]
 .RB [ \-selfg " <color>"]
+.RB [ \-p " <prompt>"]
 .RB [ \-t " <seconds>"]
 .RB [ \-v ]
 .SH DESCRIPTION
@@ -32,6 +33,9 @@ defines the selected background color (#RGB, #RRGGBB, and color names are suppor
 .TP
 .B \-selfg <color>
 defines the selected foreground color (#RGB, #RRGGBB, and color names are supported).
+.TP
+.B \-p <prompt>
+defines a prompt being displayed before input area.
 .TP
 .B \-t <seconds>
 defines the seconds to wait for standard input, before exiting (default is 3).
