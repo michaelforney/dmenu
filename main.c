@@ -200,11 +200,13 @@ kpress(XKeyEvent * e) {
 		}
 		break;
 	case XK_End:
+		if(!sel)
+			return;
 		while(next) {
 			sel = curr = next;
 			calcoffsets();
 		}
-		while(sel->right)
+		while(sel && sel->right)
 			sel = sel->right;
 		break;
 	case XK_Escape:
@@ -212,6 +214,8 @@ kpress(XKeyEvent * e) {
 		running = False;
 		break;
 	case XK_Home:
+		if(!item)
+			return;
 		sel = curr = item;
 		calcoffsets();
 		break;
@@ -225,16 +229,16 @@ kpress(XKeyEvent * e) {
 		}
 		break;
 	case XK_Next:
-		if(next) {
-			sel = curr = next;
-			calcoffsets();
-		}
+		if(!next)
+			return;
+		sel = curr = next;
+		calcoffsets();
 		break;
 	case XK_Prior:
-		if(prev) {
-			sel = curr = prev;
-			calcoffsets();
-		}
+		if(!prev)
+			return;
+		sel = curr = prev;
+		calcoffsets();
 		break;
 	case XK_Return:
 		if((e->state & ShiftMask) && text)
