@@ -178,6 +178,29 @@ kpress(XKeyEvent * e) {
 			break;
 		}
 	}
+	if(e->state & Mod1Mask) {
+		switch(ksym) {
+		default: return;
+		case XK_h:
+			 ksym = XK_Left;
+			 break;
+		case XK_l:
+			 ksym = XK_Right;
+			 break;
+		case XK_j:
+			 ksym = XK_Next;
+			 break;
+		case XK_l:
+			 ksym = XK_Prior;
+			 break;
+		case XK_g:
+			 ksym = XK_Home;
+			 break;
+		case XK_G:
+			 ksym = XK_End;
+			 break;
+		}
+	}
 	switch(ksym) {
 	default:
 		if(num && !iscntrl((int) buf[0])) {
