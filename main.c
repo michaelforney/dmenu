@@ -200,7 +200,7 @@ kpress(XKeyEvent * e) {
 		}
 		break;
 	case XK_End:
-		if(!sel)
+		if(!item)
 			return;
 		while(next) {
 			sel = curr = next;
