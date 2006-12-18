@@ -330,6 +330,7 @@ DC dc = {0};
 
 int
 main(int argc, char *argv[]) {
+	Bool bottom = False;
 	char *font = FONT;
 	char *maxname;
 	char *normbg = NORMBGCOLOR;
@@ -347,7 +348,10 @@ main(int argc, char *argv[]) {
 	timeout.tv_sec = 3;
 	/* command line args */
 	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-font", 6)) {
+		if(!strncmp(argv[i], "-bottom", 8)) {
+			bottom = True;
+		}
+		else if(!strncmp(argv[i], "-font", 6)) {
 			if(++i < argc) font = argv[i];
 		}
 		else if(!strncmp(argv[i], "-normbg", 8)) {
@@ -373,7 +377,8 @@ main(int argc, char *argv[]) {
 			exit(EXIT_SUCCESS);
 		}
 		else
-			eprint("usage: dmenu [-font <name>] [-{norm,sel}{bg,fg} <color>] [-p <prompt>] [-t <seconds>] [-v]\n", stdout);
+			eprint("usage: dmenu [-bottom] [-font <name>] [-{norm,sel}{bg,fg} <color>]\n"
+				"             [-p <prompt>] [-t <seconds>] [-v]\n", stdout);
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)
@@ -406,7 +411,12 @@ main(int argc, char *argv[]) {
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
 	mx = my = 0;
 	mw = DisplayWidth(dpy, screen);
-	mh = dc.font.height + 2;
+	if(bottom) {
+		mh = dc.font.ascent + dc.font.descent + 3; // match wmii
+		my = DisplayHeight(dpy, screen) - mh;
+	}
+	else
+		mh = dc.font.height + 2;
 	win = XCreateWindow(dpy, root, mx, my, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
