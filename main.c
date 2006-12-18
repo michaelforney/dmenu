@@ -411,12 +411,9 @@ main(int argc, char *argv[]) {
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
 	mx = my = 0;
 	mw = DisplayWidth(dpy, screen);
-	if(bottom) {
-		mh = dc.font.ascent + dc.font.descent + 3; // match wmii
-		my = DisplayHeight(dpy, screen) - mh;
-	}
-	else
-		mh = dc.font.height + 2;
+	mh = dc.font.height + 2;
+	if(bottom)
+		my += DisplayHeight(dpy, screen) - mh;
 	win = XCreateWindow(dpy, root, mx, my, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
