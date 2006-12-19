@@ -348,26 +348,26 @@ main(int argc, char *argv[]) {
 	timeout.tv_sec = 3;
 	/* command line args */
 	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-bottom", 8)) {
+		if(!strncmp(argv[i], "-b", 3)) {
 			bottom = True;
 		}
-		else if(!strncmp(argv[i], "-font", 6)) {
+		else if(!strncmp(argv[i], "-fn", 4)) {
 			if(++i < argc) font = argv[i];
 		}
-		else if(!strncmp(argv[i], "-normbg", 8)) {
+		else if(!strncmp(argv[i], "-nb", 4)) {
 			if(++i < argc) normbg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-normfg", 8)) {
+		else if(!strncmp(argv[i], "-nf", 4)) {
 			if(++i < argc) normfg = argv[i];
-		}
-		else if(!strncmp(argv[i], "-selbg", 7)) {
-			if(++i < argc) selbg = argv[i];
-		}
-		else if(!strncmp(argv[i], "-selfg", 7)) {
-			if(++i < argc) selfg = argv[i];
 		}
 		else if(!strncmp(argv[i], "-p", 3)) {
 			if(++i < argc) prompt = argv[i];
+		}
+		else if(!strncmp(argv[i], "-sb", 4)) {
+			if(++i < argc) selbg = argv[i];
+		}
+		else if(!strncmp(argv[i], "-sf", 4)) {
+			if(++i < argc) selfg = argv[i];
 		}
 		else if(!strncmp(argv[i], "-t", 3)) {
 			if(++i < argc) timeout.tv_sec = atoi(argv[i]);
@@ -377,8 +377,8 @@ main(int argc, char *argv[]) {
 			exit(EXIT_SUCCESS);
 		}
 		else
-			eprint("usage: dmenu [-bottom] [-font <name>] [-{norm,sel}{bg,fg} <color>]\n"
-				"             [-p <prompt>] [-t <seconds>] [-v]\n", stdout);
+			eprint("usage: dmenu [-b] [-fn <font>] [-nb <color>] [-nf <color>] [-p <prompt>]\n"
+				"             [-sb <color>] [-sf <color>] [-t <seconds>] [-v]\n", stdout);
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)

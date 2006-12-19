@@ -3,13 +3,13 @@
 dmenu \- dynamic menu
 .SH SYNOPSIS
 .B dmenu
-.RB [ \-bottom ]
-.RB [ \-font " <name>"]
-.RB [ \-normbg " <color>"]
-.RB [ \-normfg " <color>"]
-.RB [ \-selbg " <color>"]
-.RB [ \-selfg " <color>"]
+.RB [ \-b ]
+.RB [ \-fn " <font>"]
+.RB [ \-nb " <color>"]
+.RB [ \-nf " <color>"]
 .RB [ \-p " <prompt>"]
+.RB [ \-sb " <color>"]
+.RB [ \-sf " <color>"]
 .RB [ \-t " <seconds>"]
 .RB [ \-v ]
 .SH DESCRIPTION
@@ -20,26 +20,26 @@ It manages huge amounts (up to 10.000 and more) of user defined menu items
 efficiently.
 .SS Options
 .TP
-.B \-bottom
+.B \-b
 makes dmenu appear at the screen bottom (by default it appears at the screen top).
 .TP
-.B \-font <name>
+.B \-font <font>
 defines the font.
 .TP
-.B \-normbg <color>
+.B \-nb <color>
 defines the normal background color (#RGB, #RRGGBB, and color names are supported).
 .TP
-.B \-normfg <color>
+.B \-nf <color>
 defines the normal foreground color (#RGB, #RRGGBB, and color names are supported).
-.TP
-.B \-selbg <color>
-defines the selected background color (#RGB, #RRGGBB, and color names are supported).
-.TP
-.B \-selfg <color>
-defines the selected foreground color (#RGB, #RRGGBB, and color names are supported).
 .TP
 .B \-p <prompt>
 defines a prompt to be displayed before the input area.
+.TP
+.B \-sb <color>
+defines the selected background color (#RGB, #RRGGBB, and color names are supported).
+.TP
+.B \-sf <color>
+defines the selected foreground color (#RGB, #RRGGBB, and color names are supported).
 .TP
 .B \-t <seconds>
 defines the seconds to wait for standard input, before exiting (default is 3).
