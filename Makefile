@@ -1,5 +1,5 @@
 # dmenu - dynamic menu
-#   (C)opyright MMVI Anselm R. Garbe
+#   (C)opyright MMVII Anselm R. Garbe
 
 include config.mk
 

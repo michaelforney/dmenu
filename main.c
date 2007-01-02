@@ -1,5 +1,5 @@
-/* (C)opyright MMVI Anselm R. Garbe <garbeam at gmail dot com>
- * (C)opyright MMVI Sander van Dijk <a dot h dot vandijk at gmail dot com>
+/* (C)opyright MMVII Anselm R. Garbe <garbeam at gmail dot com>
+ * (C)opyright MMVII Sander van Dijk <a dot h dot vandijk at gmail dot com>
  * See LICENSE file for license details.
  */
 #include "dmenu.h"
@@ -373,7 +373,7 @@ main(int argc, char *argv[]) {
 			if(++i < argc) timeout.tv_sec = atoi(argv[i]);
 		}
 		else if(!strncmp(argv[i], "-v", 3)) {
-			fputs("dmenu-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
+			fputs("dmenu-"VERSION", (C)opyright MMVII Anselm R. Garbe\n", stdout);
 			exit(EXIT_SUCCESS);
 		}
 		else
