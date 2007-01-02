@@ -373,7 +373,7 @@ main(int argc, char *argv[]) {
 			if(++i < argc) timeout.tv_sec = atoi(argv[i]);
 		}
 		else if(!strncmp(argv[i], "-v", 3)) {
-			fputs("dmenu-"VERSION", (C)opyright MMVII Anselm R. Garbe\n", stdout);
+			fputs("dmenu-"VERSION", (C)opyright MMVI-MMVII Anselm R. Garbe\n", stdout);
 			exit(EXIT_SUCCESS);
 		}
 		else
