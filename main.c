@@ -1,5 +1,5 @@
-/* (C)opyright MMVII Anselm R. Garbe <garbeam at gmail dot com>
- * (C)opyright MMVII Sander van Dijk <a dot h dot vandijk at gmail dot com>
+/* (C)opyright MMVI-MMVII Anselm R. Garbe <garbeam at gmail dot com>
+ * (C)opyright MMVI-MMVII Sander van Dijk <a dot h dot vandijk at gmail dot com>
  * See LICENSE file for license details.
  */
 #include "dmenu.h"
