@@ -171,6 +171,14 @@ kpress(XKeyEvent * e) {
 		case XK_H:
 			ksym = XK_BackSpace;
 			break;
+		case XK_i:
+		case XK_I:
+			ksym = XK_Tab;
+			break;
+		case XK_j:
+		case XK_J:
+			ksym = XK_Return;
+			break;
 		case XK_u:
 		case XK_U:
 			text[0] = 0;
