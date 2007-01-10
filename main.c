@@ -164,6 +164,8 @@ kpress(XKeyEvent * e) {
 		switch (ksym) {
 		default:	/* ignore other control sequences */
 			return;
+		case XK_bracketleft:
+			ksym = XK_Escape;
 			break;
 		case XK_h:
 		case XK_H:
@@ -175,7 +177,6 @@ kpress(XKeyEvent * e) {
 			match(text);
 			drawmenu();
 			return;
-			break;
 		}
 	}
 	if(e->state & Mod1Mask) {
