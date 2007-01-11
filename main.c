@@ -15,6 +15,8 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 
+#define CLEANMASK(mask) (mask & ~(numlockmask | LockMask))
+
 typedef struct Item Item;
 struct Item {
 	Item *next;		/* traverses all items */
@@ -31,6 +33,7 @@ static int ret = 0;
 static int nitem = 0;
 static unsigned int cmdw = 0;
 static unsigned int promptw = 0;
+static unsigned int numlockmask = 0;
 static Bool running = True;
 static Item *allitems = NULL;	/* first of all items */
 static Item *item = NULL;	/* first of pattern matching items */
@@ -187,7 +190,7 @@ kpress(XKeyEvent * e) {
 			return;
 		}
 	}
-	if(e->state & Mod1Mask) {
+	if(CLEANMASK(e->state) & Mod1Mask) {
 		switch(ksym) {
 		default: return;
 		case XK_h:
@@ -347,10 +350,11 @@ main(int argc, char *argv[]) {
 	char *selbg = SELBGCOLOR;
 	char *selfg = SELFGCOLOR;
 	fd_set rd;
-	int i;
+	int i, j;
 	struct timeval timeout;
 	Item *itm;
 	XEvent ev;
+	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
 
 	timeout.tv_usec = 0;
@@ -408,6 +412,15 @@ main(int argc, char *argv[]) {
 	if(select(ConnectionNumber(dpy) + 1, &rd, NULL, NULL, &timeout) < 1)
 		goto UninitializedEnd;
 	maxname = readstdin();
+	/* init modifier map */
+	modmap = XGetModifierMapping(dpy);
+	for (i = 0; i < 8; i++) {
+		for (j = 0; j < modmap->max_keypermod; j++) {
+			if(modmap->modifiermap[i * modmap->max_keypermod + j] == XKeysymToKeycode(dpy, XK_Num_Lock))
+				numlockmask = (1 << i);
+		}
+	}
+	XFreeModifiermap(modmap);
 	/* style */
 	dc.norm[ColBG] = getcolor(normbg);
 	dc.norm[ColFG] = getcolor(normfg);
