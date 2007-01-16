@@ -5,10 +5,10 @@
 #include <X11/Xlib.h>
 
 #define FONT			"-*-fixed-medium-r-normal-*-13-*-*-*-*-*-*-*"
-#define NORMBGCOLOR		"#333366"
-#define NORMFGCOLOR		"#cccccc"
-#define SELBGCOLOR		"#666699"
-#define SELFGCOLOR		"#eeeeee"
+#define NORMBGCOLOR		"#eeeeee"
+#define NORMFGCOLOR		"#222222"
+#define SELBGCOLOR		"#006699"
+#define SELFGCOLOR		"#ffffff"
 #define SPACE			30 /* px */
 
 /* color */
