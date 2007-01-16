@@ -28,7 +28,7 @@ struct Item {
 
 static char text[4096];
 static char *prompt = NULL;
-static int mx, my, mw, mh;
+static int mw, mh;
 static int ret = 0;
 static int nitem = 0;
 static unsigned int cmdw = 0;
@@ -431,12 +431,11 @@ main(int argc, char *argv[]) {
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
-	mx = my = 0;
 	mw = DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
 	if(bottom)
 		my += DisplayHeight(dpy, screen) - mh;
-	win = XCreateWindow(dpy, root, mx, my, mw, mh, 0,
+	win = XCreateWindow(dpy, root, 0, 0, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
