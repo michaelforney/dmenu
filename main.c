@@ -350,7 +350,7 @@ main(int argc, char *argv[]) {
 	char *selbg = SELBGCOLOR;
 	char *selfg = SELFGCOLOR;
 	fd_set rd;
-	int i, j, my;
+	int i, j;
 	struct timeval timeout;
 	Item *itm;
 	XEvent ev;
@@ -431,12 +431,10 @@ main(int argc, char *argv[]) {
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
-	my = 0;
 	mw = DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
-	if(bottom)
-		my += DisplayHeight(dpy, screen) - mh;
-	win = XCreateWindow(dpy, root, 0, 0, mw, mh, 0,
+	win = XCreateWindow(dpy, root, 0,
+			bottom ? DisplayHeight(dpy, screen) - mh : 0, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
