@@ -342,7 +342,6 @@ DC dc = {0};
 
 int
 main(int argc, char *argv[]) {
-	Bool bottom = False;
 	char *font = FONT;
 	char *maxname;
 	char *normbg = NORMBGCOLOR;
@@ -361,10 +360,7 @@ main(int argc, char *argv[]) {
 	timeout.tv_sec = 3;
 	/* command line args */
 	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-b", 3)) {
-			bottom = True;
-		}
-		else if(!strncmp(argv[i], "-fn", 4)) {
+		if(!strncmp(argv[i], "-fn", 4)) {
 			if(++i < argc) font = argv[i];
 		}
 		else if(!strncmp(argv[i], "-nb", 4)) {
@@ -390,7 +386,7 @@ main(int argc, char *argv[]) {
 			exit(EXIT_SUCCESS);
 		}
 		else
-			eprint("usage: dmenu [-b] [-fn <font>] [-nb <color>] [-nf <color>] [-p <prompt>]\n"
+			eprint("usage: dmenu [-fn <font>] [-nb <color>] [-nf <color>] [-p <prompt>]\n"
 				"             [-sb <color>] [-sf <color>] [-t <seconds>] [-v]\n", stdout);
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
@@ -434,7 +430,7 @@ main(int argc, char *argv[]) {
 	mw = DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
 	win = XCreateWindow(dpy, root, 0,
-			bottom ? DisplayHeight(dpy, screen) - mh : 0, mw, mh, 0,
+			DisplayHeight(dpy, screen) - mh, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
