@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/select.h>
-#include <sys/time.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 
@@ -457,6 +455,12 @@ readstdin(void) {
 	return maxname;
 }
 
+static void
+usage(void) {
+	eprint("usage: dmenu [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+		"             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
+}
+
 /* extern */
 
 int screen;
@@ -472,16 +476,16 @@ main(int argc, char *argv[]) {
 	char *normfg = NORMFGCOLOR;
 	char *selbg = SELBGCOLOR;
 	char *selfg = SELFGCOLOR;
-	fd_set rd;
 	int i, j;
-	struct timeval timeout;
 	Item *itm;
 	XEvent ev;
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
 
-	timeout.tv_usec = 0;
-	timeout.tv_sec = 3;
+	if(isatty(STDIN_FILENO)) {
+		fputs("error: dmenu can't run in an interactive shell\n", stdout);
+		usage();
+	}
 	/* command line args */
 	for(i = 1; i < argc; i++)
 		if(!strncmp(argv[i], "-b", 3)) {
@@ -505,41 +509,26 @@ main(int argc, char *argv[]) {
 		else if(!strncmp(argv[i], "-sf", 4)) {
 			if(++i < argc) selfg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-t", 3)) {
-			if(++i < argc) timeout.tv_sec = atoi(argv[i]);
-		}
-		else if(!strncmp(argv[i], "-v", 3)) {
-			fputs("dmenu-"VERSION", (C)opyright MMVI-MMVII Anselm R. Garbe\n", stdout);
-			exit(EXIT_SUCCESS);
-		}
+		else if(!strncmp(argv[i], "-v", 3))
+			eprint("dmenu-"VERSION", (C)opyright MMVI-MMVII Anselm R. Garbe\n");
 		else
-			eprint("usage: dmenu [-b] [-fn <font>] [-nb <color>] [-nf <color>] [-p <prompt>]\n"
-				"             [-sb <color>] [-sf <color>] [-t <seconds>] [-v]\n", stdout);
+			usage();
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
-
-	/* Note, the select() construction allows to grab all keypresses as
-	 * early as possible, to not loose them. But if there is no standard
-	 * input supplied, we will make sure to exit after MAX_WAIT_STDIN
-	 * seconds. This is convenience behavior for rapid typers.
-	 */ 
 	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
 			 GrabModeAsync, CurrentTime) != GrabSuccess)
 		usleep(1000);
-	FD_ZERO(&rd);
-	FD_SET(STDIN_FILENO, &rd);
-	if(select(ConnectionNumber(dpy) + 1, &rd, NULL, NULL, &timeout) < 1)
-		goto UninitializedEnd;
 	maxname = readstdin();
 	/* init modifier map */
 	modmap = XGetModifierMapping(dpy);
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < modmap->max_keypermod; j++) {
-			if(modmap->modifiermap[i * modmap->max_keypermod + j] == XKeysymToKeycode(dpy, XK_Num_Lock))
+			if(modmap->modifiermap[i * modmap->max_keypermod + j]
+			== XKeysymToKeycode(dpy, XK_Num_Lock))
 				numlockmask = (1 << i);
 		}
 	}
@@ -607,7 +596,6 @@ main(int argc, char *argv[]) {
 	XFreePixmap(dpy, dc.drawable);
 	XFreeGC(dpy, dc.gc);
 	XDestroyWindow(dpy, win);
-UninitializedEnd:
 	XUngrabKeyboard(dpy, CurrentTime);
 	XCloseDisplay(dpy);
 	return ret;
