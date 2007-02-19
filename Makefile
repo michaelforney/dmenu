@@ -3,7 +3,7 @@
 
 include config.mk
 
-SRC = draw.c main.c util.c
+SRC = main.c util.c
 OBJ = ${SRC:.c=.o}
 
 all: options dmenu

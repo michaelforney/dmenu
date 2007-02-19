@@ -38,13 +38,6 @@ extern int screen;
 extern Display *dpy;
 extern DC dc;			/* global drawing context */
 
-/* draw.c */
-extern void drawtext(const char *text,
-			unsigned long col[ColLast]);	/* draws text with the defined color tuple */
-extern unsigned long getcolor(const char *colstr);	/* returns color of colstr */
-extern void setfont(const char *fontstr);		/* sets global font */
-extern unsigned int textw(const char *text);		/* returns width of text in px */
-
 /* util.c */
 extern void *emalloc(unsigned int size);		/* allocates memory, exits on error */
 extern void eprint(const char *errstr, ...);		/* prints errstr and exits with 1 */
