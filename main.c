@@ -109,7 +109,7 @@ drawmenu(void) {
 }
 
 static unsigned long
-getcolor(const char *colstr) {
+initcolor(const char *colstr) {
 	Colormap cmap = DefaultColormap(dpy, screen);
 	XColor color;
 
@@ -470,10 +470,10 @@ main(int argc, char *argv[]) {
 	}
 	XFreeModifiermap(modmap);
 	/* style */
-	dc.norm[ColBG] = getcolor(normbg);
-	dc.norm[ColFG] = getcolor(normfg);
-	dc.sel[ColBG] = getcolor(selbg);
-	dc.sel[ColFG] = getcolor(selfg);
+	dc.norm[ColBG] = initcolor(normbg);
+	dc.norm[ColFG] = initcolor(normfg);
+	dc.sel[ColBG] = initcolor(selbg);
+	dc.sel[ColFG] = initcolor(selfg);
 	initfont(font);
 	/* menu window */
 	wa.override_redirect = 1;
