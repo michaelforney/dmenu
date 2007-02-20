@@ -38,6 +38,11 @@ extern int screen;
 extern Display *dpy;
 extern DC dc;			/* global drawing context */
 
+/* draw.c */
+extern void drawtext(const char *text, unsigned long col[ColLast]);
+extern unsigned int textw(const char *text);
+extern unsigned int textnw(const char *text, unsigned int len);
+
 /* util.c */
 extern void *emalloc(unsigned int size);		/* allocates memory, exits on error */
 extern void eprint(const char *errstr, ...);		/* prints errstr and exits with 1 */
