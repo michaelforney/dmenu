@@ -119,7 +119,7 @@ getcolor(const char *colstr) {
 }
 
 static void
-setfont(const char *fontstr) {
+initfont(const char *fontstr) {
 	char *def, **missing;
 	int i, n;
 
@@ -474,7 +474,7 @@ main(int argc, char *argv[]) {
 	dc.norm[ColFG] = getcolor(normfg);
 	dc.sel[ColBG] = getcolor(selbg);
 	dc.sel[ColFG] = getcolor(selfg);
-	setfont(font);
+	initfont(font);
 	/* menu window */
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
