@@ -14,25 +14,20 @@
 /* color */
 enum { ColFG, ColBG, ColLast };
 
-typedef struct DC DC;
-typedef struct Fnt Fnt;
-
-struct Fnt {
-	XFontStruct *xfont;
-	XFontSet set;
-	int ascent;
-	int descent;
-	int height;
-};
-
-struct DC {
+typedef struct {
 	int x, y, w, h;
 	unsigned long norm[ColLast];
 	unsigned long sel[ColLast];
 	Drawable drawable;
-	Fnt font;
 	GC gc;
-}; /* draw context */
+	struct {
+		XFontStruct *xfont;
+		XFontSet set;
+		int ascent;
+		int descent;
+		int height;
+	} font;
+} DC; /* draw context */
 
 extern int screen;
 extern Display *dpy;
