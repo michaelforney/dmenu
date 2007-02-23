@@ -418,7 +418,9 @@ main(int argc, char *argv[]) {
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
 
-	if(isatty(STDIN_FILENO)) {
+	if(argc == 2 && !strncmp("-v", argv[1], 3))
+		eprint("dmenu-"VERSION", (C)opyright MMVI-MMVII Anselm R. Garbe\n");
+	else if(isatty(STDIN_FILENO)) {
 		fputs("error: dmenu can't run in an interactive shell\n", stdout);
 		usage();
 	}
@@ -445,8 +447,6 @@ main(int argc, char *argv[]) {
 		else if(!strncmp(argv[i], "-sf", 4)) {
 			if(++i < argc) selfg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-v", 3))
-			eprint("dmenu-"VERSION", (C)opyright MMVI-MMVII Anselm R. Garbe\n");
 		else
 			usage();
 	setlocale(LC_CTYPE, "");
