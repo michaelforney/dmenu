@@ -1,2 +1,9 @@
 #!/bin/sh
-/bin/ls -lL `echo $PATH | tr : ' '` 2> /dev/null | awk '$1 ~ /^[^d].*x/ { print $NF }' | sort -u
+IFS=:
+for dir in $PATH
+do
+	for file in "$dir"/*
+	do
+		test -x "$file" && echo "${file##*/}"
+	done
+done | sort -u
