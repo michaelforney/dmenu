@@ -1,2 +1,2 @@
 #!/bin/sh
-/bin/ls -lL `echo $PATH | tr : ' '` 2> /dev/null | awk '$1 ~ /^[^d].*x/ { print $NF }' | /usr/bin/sort -u
+/bin/ls -lL `echo $PATH | tr : ' '` 2> /dev/null | awk '$1 ~ /^[^d].*x/ { print $NF }' | sort | uniq
