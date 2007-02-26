@@ -108,6 +108,13 @@ drawmenu(void) {
 	XFlush(dpy);
 }
 
+static void
+grabkeyboard(void) {
+	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
+			 GrabModeAsync, CurrentTime) != GrabSuccess)
+		usleep(1000);
+}
+
 static unsigned long
 initcolor(const char *colstr) {
 	Colormap cmap = DefaultColormap(dpy, screen);
@@ -418,12 +425,6 @@ main(int argc, char *argv[]) {
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
 
-	if(argc == 2 && !strncmp("-v", argv[1], 3))
-		eprint("dmenu-"VERSION", (C)opyright MMVI-MMVII Anselm R. Garbe\n");
-	else if(isatty(STDIN_FILENO)) {
-		fputs("error: dmenu can't run in an interactive shell\n", stdout);
-		usage();
-	}
 	/* command line args */
 	for(i = 1; i < argc; i++)
 		if(!strncmp(argv[i], "-b", 3)) {
@@ -447,6 +448,8 @@ main(int argc, char *argv[]) {
 		else if(!strncmp(argv[i], "-sf", 4)) {
 			if(++i < argc) selfg = argv[i];
 		}
+		else if(!strncmp(argv[i], "-v", 3))
+			eprint("dmenu-"VERSION", (C)opyright MMVI-MMVII Anselm R. Garbe\n");
 		else
 			usage();
 	setlocale(LC_CTYPE, "");
@@ -455,10 +458,14 @@ main(int argc, char *argv[]) {
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
-	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
-			 GrabModeAsync, CurrentTime) != GrabSuccess)
-		usleep(1000);
-	maxname = readstdin();
+	if(isatty(STDIN_FILENO)) {
+		maxname = readstdin();
+		grabkeyboard();
+	}
+	else { /* prevent keypress loss */
+		grabkeyboard();
+		maxname = readstdin();
+	}
 	/* init modifier map */
 	modmap = XGetModifierMapping(dpy);
 	for (i = 0; i < 8; i++) {
