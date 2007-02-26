@@ -289,12 +289,8 @@ kpress(XKeyEvent * e) {
 		}
 		break;
 	case XK_BackSpace:
-		if((i = len)) {
-			prev_nitem = nitem;
-			do {
-				text[--i] = 0;
-				match(text);
-			} while(i && nitem && prev_nitem == nitem);
+		if(len) {
+			text[--len] = 0;
 			match(text);
 		}
 		break;
