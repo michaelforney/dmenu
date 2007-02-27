@@ -203,7 +203,7 @@ match(char *pattern) {
 static void
 kpress(XKeyEvent * e) {
 	char buf[32];
-	int i, num, prev_nitem;
+	int i, num;
 	unsigned int len;
 	KeySym ksym;
 
