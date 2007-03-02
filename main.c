@@ -493,6 +493,8 @@ main(int argc, char *argv[]) {
 	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
 	dc.gc = XCreateGC(dpy, root, 0, 0);
 	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
+	if(!dc.font.set)
+		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
 	if(maxname)
 		cmdw = textw(maxname);
 	if(cmdw > mw / 3)
