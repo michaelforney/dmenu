@@ -110,7 +110,7 @@ drawmenu(void) {
 
 static void
 grabkeyboard(void) {
-	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
+	while(XGrabKeyboard(dpy, win, True, GrabModeAsync,
 			 GrabModeAsync, CurrentTime) != GrabSuccess)
 		usleep(1000);
 }
@@ -454,24 +454,6 @@ main(int argc, char *argv[]) {
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
-	if(isatty(STDIN_FILENO)) {
-		maxname = readstdin();
-		grabkeyboard();
-	}
-	else { /* prevent keypress loss */
-		grabkeyboard();
-		maxname = readstdin();
-	}
-	/* init modifier map */
-	modmap = XGetModifierMapping(dpy);
-	for (i = 0; i < 8; i++) {
-		for (j = 0; j < modmap->max_keypermod; j++) {
-			if(modmap->modifiermap[i * modmap->max_keypermod + j]
-			== XKeysymToKeycode(dpy, XK_Num_Lock))
-				numlockmask = (1 << i);
-		}
-	}
-	XFreeModifiermap(modmap);
 	/* style */
 	dc.norm[ColBG] = initcolor(normbg);
 	dc.norm[ColFG] = initcolor(normfg);
@@ -495,6 +477,25 @@ main(int argc, char *argv[]) {
 	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
 	if(!dc.font.set)
 		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
+	drawmenu();
+	XMapRaised(dpy, win);
+	if(isatty(STDIN_FILENO)) {
+		maxname = readstdin();
+		grabkeyboard();
+	}
+	else { /* prevent keypress loss */
+		grabkeyboard();
+		maxname = readstdin();
+	}
+	/* init modifier map */
+	modmap = XGetModifierMapping(dpy);
+	for(i = 0; i < 8; i++)
+		for(j = 0; j < modmap->max_keypermod; j++) {
+			if(modmap->modifiermap[i * modmap->max_keypermod + j]
+			== XKeysymToKeycode(dpy, XK_Num_Lock))
+				numlockmask = (1 << i);
+		}
+	XFreeModifiermap(modmap);
 	if(maxname)
 		cmdw = textw(maxname);
 	if(cmdw > mw / 3)
@@ -505,8 +506,6 @@ main(int argc, char *argv[]) {
 		promptw = mw / 5;
 	text[0] = 0;
 	match(text);
-	XMapRaised(dpy, win);
-	drawmenu();
 	XSync(dpy, False);
 
 	/* main event loop */
