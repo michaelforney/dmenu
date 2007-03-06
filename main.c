@@ -479,6 +479,8 @@ main(int argc, char *argv[]) {
 		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
 	drawmenu();
 	XMapRaised(dpy, win);
+	XMaskEvent(dpy, ExposureMask, &ev);
+	drawmenu();
 	if(isatty(STDIN_FILENO)) {
 		maxname = readstdin();
 		grabkeyboard();
@@ -506,6 +508,7 @@ main(int argc, char *argv[]) {
 		promptw = mw / 5;
 	text[0] = 0;
 	match(text);
+	drawmenu();
 	XSync(dpy, False);
 
 	/* main event loop */
@@ -515,10 +518,6 @@ main(int argc, char *argv[]) {
 			break;
 		case KeyPress:
 			kpress(&ev.xkey);
-			break;
-		case Expose:
-			if(ev.xexpose.count == 0)
-				drawmenu();
 			break;
 		}
 
