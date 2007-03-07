@@ -108,11 +108,17 @@ drawmenu(void) {
 	XFlush(dpy);
 }
 
-static void
+static Bool
 grabkeyboard(void) {
-	while(XGrabKeyboard(dpy, root, True, GrabModeAsync,
-			 GrabModeAsync, CurrentTime) != GrabSuccess)
+	unsigned int len;
+
+	for(len = 1000; len; len--) {
+		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
+			== GrabSuccess)
+			break;
 		usleep(1000);
+	}
+	return len > 0;
 }
 
 static unsigned long
@@ -456,10 +462,10 @@ main(int argc, char *argv[]) {
 	root = RootWindow(dpy, screen);
 	if(isatty(STDIN_FILENO)) {
 		maxname = readstdin();
-		grabkeyboard();
+		running = grabkeyboard();
 	}
 	else { /* prevent keypress loss */
-		grabkeyboard();
+		running = grabkeyboard();
 		maxname = readstdin();
 	}
 	/* init modifier map */
