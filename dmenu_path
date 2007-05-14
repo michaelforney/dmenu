@@ -1,9 +1,30 @@
 #!/bin/sh
+CACHE=$HOME/.dmenu_cache
+UPTODATE=1
 IFS=:
-for dir in $PATH
-do
-	for file in "$dir"/*
+
+if test ! -f $CACHE 
+then
+	unset UPTODATE
+fi
+
+if test $UPTODATE
+then
+	for dir in $PATH
 	do
-		test -x "$file" && echo "${file##*/}"
+		test $dir -nt $CACHE && unset UPTODATE
 	done
-done | sort | uniq
+fi
+
+if test ! $UPTODATE
+then
+	for dir in $PATH
+	do
+		for file in "$dir"/*
+		do
+			test -x "$file" && echo "${file##*/}"
+		done
+	done | sort | uniq > $CACHE
+fi
+
+cat $CACHE
