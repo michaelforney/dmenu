@@ -23,7 +23,6 @@ ${OBJ}: dmenu.h config.mk
 dmenu: ${OBJ}
 	@echo CC -o $@
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
-	@strip $@
 
 clean:
 	@echo cleaning
