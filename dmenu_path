@@ -9,7 +9,7 @@ qfind() {
 uptodate() {                                                                       
 	test -f $CACHE &&
 		test "$(echo "$PATH")" = "$(sed 1q "$CACHE")" &&
-		qfind $PATH -maxdepth 0 -newer $CACHE >/dev/null
+		! qfind $PATH -maxdepth 0 -newer $CACHE >/dev/null
 }
 
 if ! uptodate
@@ -18,7 +18,7 @@ then
 		echo "$PATH"
 		qfind $PATH -type f -maxdepth 1 '(' -perm -u+x -o -perm -g+x -o -perm -o+x ')' |
 			sed 's,.*/,,' | sort | uniq
-	} > $CACHE.$pid
+	}
 	mv $CACHE.$pid $CACHE
 fi
 
