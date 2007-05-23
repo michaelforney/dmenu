@@ -1,22 +1,15 @@
 #!/bin/sh
 CACHE=$HOME/.dmenu_cache
-UPTODATE=1
 IFS=:
 
-uptodate() { [ $UPTODATE -eq 1 ]; }
-
-if test ! -f $CACHE 
-then
-	UPTODATE=0
-fi
-
-if uptodate
-then
-	for dir in $PATH
-	do
-		test $dir -nt $CACHE && { UPTODATE=0; break; }
-	done
-fi
+uptodate() {                                                                       
+	test ! -f $CACHE && return 1                                                   
+	for dir in $PATH                                                                
+	do                                                                              
+		test $dir -nt $CACHE && return 1                                           
+	done                                                                            
+	return 0                                                                       
+}          
 
 if ! uptodate
 then
