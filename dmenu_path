@@ -3,20 +3,22 @@ CACHE=$HOME/.dmenu_cache
 UPTODATE=1
 IFS=:
 
+uptodate() { [ $UPTODATE -eq 1 ]; }
+
 if test ! -f $CACHE 
 then
-	unset UPTODATE
+	UPTODATE=0
 fi
 
-if test $UPTODATE
+if uptodate
 then
 	for dir in $PATH
 	do
-		test $dir -nt $CACHE && unset UPTODATE
+		test $dir -nt $CACHE && { UPTODATE=0; break; }
 	done
 fi
 
-if test ! $UPTODATE
+if ! uptodate
 then
 	for dir in $PATH
 	do
