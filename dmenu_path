@@ -9,7 +9,7 @@ qfind() {
 uptodate() {                                                                       
 	test -f $CACHE &&
 		test "$(echo "$PATH")" = "$(sed 1q "$CACHE")" &&
-		qfind $PATH -maxdepth 0 -newer $CACHE
+		qfind $PATH -maxdepth 0 -newer $CACHE >/dev/null
 }
 
 if ! uptodate
