@@ -1,25 +1,26 @@
-#!/bin/sh
+#!/bin/sh -f
 CACHE=$HOME/.dmenu_cache
 IFS=:
 
+qfind() {
+	find "$@" 2>/dev/null
+}
+
 uptodate() {                                                                       
-	test ! -f $CACHE && return 1                                                   
-	for dir in $PATH                                                                
-	do                                                                              
-		test $dir -nt $CACHE && return 1                                           
-	done                                                                            
-	return 0                                                                       
-}          
+	test -f $CACHE &&
+		test "$(echo "$PATH")" = "$(sed 1q "$CACHE")" &&
+		qfind $PATH -maxdepth 0 -newer $CACHE
+}
 
 if ! uptodate
 then
-	for dir in $PATH
-	do
-		for file in "$dir"/*
-		do
-			test -x "$file" && echo "${file##*/}"
-		done
-	done | sort | uniq > $CACHE
+	{
+		echo "$PATH"
+		qfind $PATH -type f -maxdepth 1 -perm -u+x -o -perm -g+x -o -perm -o+x |
+			sed 's,.*/,,' | sort | uniq
+	} > $CACHE.$pid
+	mv $CACHE.$pid $CACHE
 fi
 
-cat $CACHE
+tail -n +2 $CACHE
+
