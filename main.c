@@ -437,28 +437,28 @@ main(int argc, char *argv[]) {
 
 	/* command line args */
 	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-b", 3)) {
+		if(!strcmp(argv[i], "-b")) {
 			bottom = True;
 		}
-		else if(!strncmp(argv[i], "-fn", 4)) {
+		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
 		}
-		else if(!strncmp(argv[i], "-nb", 4)) {
+		else if(!strcmp(argv[i], "-nb")) {
 			if(++i < argc) normbg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-nf", 4)) {
+		else if(!strcmp(argv[i], "-nf")) {
 			if(++i < argc) normfg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-p", 3)) {
+		else if(!strcmp(argv[i], "-p")) {
 			if(++i < argc) prompt = argv[i];
 		}
-		else if(!strncmp(argv[i], "-sb", 4)) {
+		else if(!strcmp(argv[i], "-sb")) {
 			if(++i < argc) selbg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-sf", 4)) {
+		else if(!strcmp(argv[i], "-sf")) {
 			if(++i < argc) selfg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-v", 3))
+		else if(!strcmp(argv[i], "-v"))
 			eprint("dmenu-"VERSION", © 2006-2007 Anselm R. Garbe, Sander van Dijk\n");
 		else
 			usage();
