@@ -1,6 +1,4 @@
-/* © 2006-2007 Anselm R. Garbe <garbeam at gmail dot com>
- * © 2006-2007 Sander van Dijk <a dot h dot vandijk at gmail dot com>
- * See LICENSE file for license details. */
+/* See LICENSE file for copyright and license details. */
 #include "dmenu.h"
 #include <string.h>
 
