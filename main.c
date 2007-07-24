@@ -168,6 +168,14 @@ initfont(const char *fontstr) {
 	dc.font.height = dc.font.ascent + dc.font.descent;
 }
 
+static int
+strido(const char *text, const char *pattern) {
+	for(; *text && *pattern; text++)
+		if (*text == *pattern)
+			pattern++;
+	return !*pattern;
+}                                  
+
 static void
 match(char *pattern) {
 	unsigned int plen;
@@ -192,6 +200,19 @@ match(char *pattern) {
 	for(i = allitems; i; i=i->next)
 		if(plen && strncmp(pattern, i->text, plen)
 				&& strstr(i->text, pattern)) {
+			if(!j)                               
+				item = i;                              
+			else                                     
+				j->right = i;                          
+			i->left = j;      
+			i->right = NULL;                         
+			j = i;                                      
+			nitem++;                                       
+		}                                              
+	for(i = allitems; i; i=i->next)                            
+		if(plen && strncmp(pattern, i->text, plen)             
+				&& !strstr(i->text, pattern)          
+				&& strido(i->text,pattern)) { 
 			if(!j)
 				item = i;
 			else
