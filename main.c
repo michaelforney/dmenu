@@ -160,8 +160,10 @@ initfont(const char *fontstr) {
 		if(dc.font.xfont)
 			XFreeFont(dpy, dc.font.xfont);
 		dc.font.xfont = NULL;
-		if(!(dc.font.xfont = XLoadQueryFont(dpy, fontstr)))
-			eprint("error, cannot load font: '%s'\n", fontstr);
+		if(!(dc.font.xfont = XLoadQueryFont(dpy, fontstr))) {
+			if(!(dc.font.xfont = XLoadQueryFont(dpy, "fixed")))
+				eprint("error, cannot load font: '%s'\n", fontstr);
+		}
 		dc.font.ascent = dc.font.xfont->ascent;
 		dc.font.descent = dc.font.xfont->descent;
 	}
