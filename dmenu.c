@@ -1,15 +1,36 @@
 /* See LICENSE file for copyright and license details. */
-#include "dmenu.h"
 #include <ctype.h>
 #include <locale.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 
+/* macros */
 #define CLEANMASK(mask) (mask & ~(numlockmask | LockMask))
+
+/* enums */
+enum { ColFG, ColBG, ColLast };
+
+/* typedefs */
+typedef struct {
+	int x, y, w, h;
+	unsigned long norm[ColLast];
+	unsigned long sel[ColLast];
+	Drawable drawable;
+	GC gc;
+	struct {
+		XFontStruct *xfont;
+		XFontSet set;
+		int ascent;
+		int descent;
+		int height;
+	} font;
+} DC; /* draw context */
 
 typedef struct Item Item;
 struct Item {
@@ -18,8 +39,29 @@ struct Item {
 	char *text;
 };
 
-/* static */
+/* forward declarations */
+static void *emalloc(unsigned int size);
+static void eprint(const char *errstr, ...);
+static char *estrdup(const char *str);
+static void drawtext(const char *text, unsigned long col[ColLast]);
+static unsigned int textw(const char *text);
+static unsigned int textnw(const char *text, unsigned int len);
+static void calcoffsets(void);
+static void drawmenu(void);
+static Bool grabkeyboard(void);
+static unsigned long getcolor(const char *colstr);
+static void initfont(const char *fontstr);
+static int strido(const char *text, const char *pattern);
+static void match(char *pattern);
+static void kpress(XKeyEvent * e);
+static char *readstdin(void);
+static void usage(void);
 
+
+/* variables */
+static int screen;
+static Display *dpy;
+static DC dc = {0};
 static char text[4096];
 static char *prompt = NULL;
 static int mw, mh;
@@ -37,6 +79,93 @@ static Item *prev = NULL;
 static Item *curr = NULL;
 static Window root;
 static Window win;
+
+#include "config.h"
+
+static void *
+emalloc(unsigned int size) {
+	void *res = malloc(size);
+
+	if(!res)
+		eprint("fatal: could not malloc() %u bytes\n", size);
+	return res;
+}
+
+static void
+eprint(const char *errstr, ...) {
+	va_list ap;
+
+	va_start(ap, errstr);
+	vfprintf(stderr, errstr, ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
+}
+
+static char *
+estrdup(const char *str) {
+	void *res = strdup(str);
+
+	if(!res)
+		eprint("fatal: could not malloc() %u bytes\n", strlen(str));
+	return res;
+}
+
+
+static void
+drawtext(const char *text, unsigned long col[ColLast]) {
+	int x, y, w, h;
+	static char buf[256];
+	unsigned int len, olen;
+	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
+
+	XSetForeground(dpy, dc.gc, col[ColBG]);
+	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
+	if(!text)
+		return;
+	w = 0;
+	olen = len = strlen(text);
+	if(len >= sizeof buf)
+		len = sizeof buf - 1;
+	memcpy(buf, text, len);
+	buf[len] = 0;
+	h = dc.font.ascent + dc.font.descent;
+	y = dc.y + (dc.h / 2) - (h / 2) + dc.font.ascent;
+	x = dc.x + (h / 2);
+	/* shorten text if necessary */
+	while(len && (w = textnw(buf, len)) > dc.w - h)
+		buf[--len] = 0;
+	if(len < olen) {
+		if(len > 1)
+			buf[len - 1] = '.';
+		if(len > 2)
+			buf[len - 2] = '.';
+		if(len > 3)
+			buf[len - 3] = '.';
+	}
+	if(w > dc.w)
+		return; /* too long */
+	XSetForeground(dpy, dc.gc, col[ColFG]);
+	if(dc.font.set)
+		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, buf, len);
+	else
+		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
+}
+
+static unsigned int
+textw(const char *text) {
+	return textnw(text, strlen(text)) + dc.font.height;
+}
+
+static unsigned int
+textnw(const char *text, unsigned int len) {
+	XRectangle r;
+
+	if(dc.font.set) {
+		XmbTextExtents(dc.font.set, text, len, NULL, &r);
+		return r.width;
+	}
+	return XTextWidth(dc.font.xfont, text, len);
+}
 
 static void
 calcoffsets(void) {
@@ -119,7 +248,7 @@ grabkeyboard(void) {
 }
 
 static unsigned long
-initcolor(const char *colstr) {
+getcolor(const char *colstr) {
 	Colormap cmap = DefaultColormap(dpy, screen);
 	XColor color;
 
@@ -435,12 +564,6 @@ usage(void) {
 		"             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 }
 
-/* extern */
-
-int screen;
-Display *dpy;
-DC dc = {0};
-
 int
 main(int argc, char *argv[]) {
 	Bool bottom = False;
@@ -508,10 +631,10 @@ main(int argc, char *argv[]) {
 	}
 	XFreeModifiermap(modmap);
 	/* style */
-	dc.norm[ColBG] = initcolor(normbg);
-	dc.norm[ColFG] = initcolor(normfg);
-	dc.sel[ColBG] = initcolor(selbg);
-	dc.sel[ColFG] = initcolor(selfg);
+	dc.norm[ColBG] = getcolor(normbg);
+	dc.norm[ColFG] = getcolor(normfg);
+	dc.sel[ColBG] = getcolor(selbg);
+	dc.sel[ColFG] = getcolor(selfg);
 	initfont(font);
 	/* menu window */
 	wa.override_redirect = 1;
