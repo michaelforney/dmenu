@@ -40,134 +40,55 @@ struct Item {
 };
 
 /* forward declarations */
-static void *emalloc(unsigned int size);
-static void eprint(const char *errstr, ...);
-static char *estrdup(const char *str);
-static void drawtext(const char *text, unsigned long col[ColLast]);
-static unsigned int textw(const char *text);
-static unsigned int textnw(const char *text, unsigned int len);
-static void calcoffsets(void);
-static void drawmenu(void);
-static Bool grabkeyboard(void);
-static unsigned long getcolor(const char *colstr);
-static void initfont(const char *fontstr);
-static int strido(const char *text, const char *pattern);
-static void match(char *pattern);
-static void kpress(XKeyEvent * e);
-static char *readstdin(void);
-static void usage(void);
-
-
-/* variables */
-static int screen;
-static Display *dpy;
-static DC dc = {0};
-static char text[4096];
-static char *prompt = NULL;
-static int mw, mh;
-static int ret = 0;
-static int nitem = 0;
-static unsigned int cmdw = 0;
-static unsigned int promptw = 0;
-static unsigned int numlockmask = 0;
-static Bool running = True;
-static Item *allitems = NULL;	/* first of all items */
-static Item *item = NULL;	/* first of pattern matching items */
-static Item *sel = NULL;
-static Item *next = NULL;
-static Item *prev = NULL;
-static Item *curr = NULL;
-static Window root;
-static Window win;
+void calcoffsets(void);
+void cleanup(void);
+void drawmenu(void);
+void drawtext(const char *text, unsigned long col[ColLast]);
+void *emalloc(unsigned int size);
+void eprint(const char *errstr, ...);
+char *estrdup(const char *str);
+unsigned long getcolor(const char *colstr);
+Bool grabkeyboard(void);
+void initfont(const char *fontstr);
+void kpress(XKeyEvent * e);
+void match(char *pattern);
+void readstdin(void);
+void run(void);
+void setup(Bool bottom);
+int strido(const char *text, const char *pattern);
+unsigned int textnw(const char *text, unsigned int len);
+unsigned int textw(const char *text);
 
 #include "config.h"
 
-static void *
-emalloc(unsigned int size) {
-	void *res = malloc(size);
+/* variables */
+char *font = FONT;
+char *maxname = NULL;
+char *normbg = NORMBGCOLOR;
+char *normfg = NORMFGCOLOR;
+char *prompt = NULL;
+char *selbg = SELBGCOLOR;
+char *selfg = SELFGCOLOR;
+char text[4096];
+int screen;
+int ret = 0;
+unsigned int cmdw = 0;
+unsigned int mw, mh;
+unsigned int promptw = 0;
+unsigned int nitem = 0;
+unsigned int numlockmask = 0;
+Bool running = True;
+Display *dpy;
+DC dc = {0};
+Item *allitems = NULL;	/* first of all items */
+Item *item = NULL;	/* first of pattern matching items */
+Item *sel = NULL;
+Item *next = NULL;
+Item *prev = NULL;
+Item *curr = NULL;
+Window root, win;
 
-	if(!res)
-		eprint("fatal: could not malloc() %u bytes\n", size);
-	return res;
-}
-
-static void
-eprint(const char *errstr, ...) {
-	va_list ap;
-
-	va_start(ap, errstr);
-	vfprintf(stderr, errstr, ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
-}
-
-static char *
-estrdup(const char *str) {
-	void *res = strdup(str);
-
-	if(!res)
-		eprint("fatal: could not malloc() %u bytes\n", strlen(str));
-	return res;
-}
-
-
-static void
-drawtext(const char *text, unsigned long col[ColLast]) {
-	int x, y, w, h;
-	static char buf[256];
-	unsigned int len, olen;
-	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
-
-	XSetForeground(dpy, dc.gc, col[ColBG]);
-	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
-	if(!text)
-		return;
-	w = 0;
-	olen = len = strlen(text);
-	if(len >= sizeof buf)
-		len = sizeof buf - 1;
-	memcpy(buf, text, len);
-	buf[len] = 0;
-	h = dc.font.ascent + dc.font.descent;
-	y = dc.y + (dc.h / 2) - (h / 2) + dc.font.ascent;
-	x = dc.x + (h / 2);
-	/* shorten text if necessary */
-	while(len && (w = textnw(buf, len)) > dc.w - h)
-		buf[--len] = 0;
-	if(len < olen) {
-		if(len > 1)
-			buf[len - 1] = '.';
-		if(len > 2)
-			buf[len - 2] = '.';
-		if(len > 3)
-			buf[len - 3] = '.';
-	}
-	if(w > dc.w)
-		return; /* too long */
-	XSetForeground(dpy, dc.gc, col[ColFG]);
-	if(dc.font.set)
-		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, buf, len);
-	else
-		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
-}
-
-static unsigned int
-textw(const char *text) {
-	return textnw(text, strlen(text)) + dc.font.height;
-}
-
-static unsigned int
-textnw(const char *text, unsigned int len) {
-	XRectangle r;
-
-	if(dc.font.set) {
-		XmbTextExtents(dc.font.set, text, len, NULL, &r);
-		return r.width;
-	}
-	return XTextWidth(dc.font.xfont, text, len);
-}
-
-static void
+void
 calcoffsets(void) {
 	unsigned int tw, w;
 
@@ -193,7 +114,27 @@ calcoffsets(void) {
 	}
 }
 
-static void
+void
+cleanup(void) {
+	Item *itm;
+
+	while(allitems) {
+		itm = allitems->next;
+		free(allitems->text);
+		free(allitems);
+		allitems = itm;
+	}
+	if(dc.font.set)
+		XFreeFontSet(dpy, dc.font.set);
+	else
+		XFreeFont(dpy, dc.font.xfont);
+	XFreePixmap(dpy, dc.drawable);
+	XFreeGC(dpy, dc.gc);
+	XDestroyWindow(dpy, win);
+	XUngrabKeyboard(dpy, CurrentTime);
+}
+
+void
 drawmenu(void) {
 	Item *i;
 
@@ -234,7 +175,85 @@ drawmenu(void) {
 	XFlush(dpy);
 }
 
-static Bool
+void
+drawtext(const char *text, unsigned long col[ColLast]) {
+	int x, y, w, h;
+	static char buf[256];
+	unsigned int len, olen;
+	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
+
+	XSetForeground(dpy, dc.gc, col[ColBG]);
+	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
+	if(!text)
+		return;
+	w = 0;
+	olen = len = strlen(text);
+	if(len >= sizeof buf)
+		len = sizeof buf - 1;
+	memcpy(buf, text, len);
+	buf[len] = 0;
+	h = dc.font.ascent + dc.font.descent;
+	y = dc.y + (dc.h / 2) - (h / 2) + dc.font.ascent;
+	x = dc.x + (h / 2);
+	/* shorten text if necessary */
+	while(len && (w = textnw(buf, len)) > dc.w - h)
+		buf[--len] = 0;
+	if(len < olen) {
+		if(len > 1)
+			buf[len - 1] = '.';
+		if(len > 2)
+			buf[len - 2] = '.';
+		if(len > 3)
+			buf[len - 3] = '.';
+	}
+	if(w > dc.w)
+		return; /* too long */
+	XSetForeground(dpy, dc.gc, col[ColFG]);
+	if(dc.font.set)
+		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, buf, len);
+	else
+		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
+}
+
+void *
+emalloc(unsigned int size) {
+	void *res = malloc(size);
+
+	if(!res)
+		eprint("fatal: could not malloc() %u bytes\n", size);
+	return res;
+}
+
+void
+eprint(const char *errstr, ...) {
+	va_list ap;
+
+	va_start(ap, errstr);
+	vfprintf(stderr, errstr, ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
+}
+
+char *
+estrdup(const char *str) {
+	void *res = strdup(str);
+
+	if(!res)
+		eprint("fatal: could not malloc() %u bytes\n", strlen(str));
+	return res;
+}
+
+unsigned long
+getcolor(const char *colstr) {
+	Colormap cmap = DefaultColormap(dpy, screen);
+	XColor color;
+
+	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
+		eprint("error, cannot allocate color '%s'\n", colstr);
+	return color.pixel;
+}
+
+Bool
 grabkeyboard(void) {
 	unsigned int len;
 
@@ -247,17 +266,7 @@ grabkeyboard(void) {
 	return len > 0;
 }
 
-static unsigned long
-getcolor(const char *colstr) {
-	Colormap cmap = DefaultColormap(dpy, screen);
-	XColor color;
-
-	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
-		eprint("error, cannot allocate color '%s'\n", colstr);
-	return color.pixel;
-}
-
-static void
+void
 initfont(const char *fontstr) {
 	char *def, **missing;
 	int i, n;
@@ -299,65 +308,7 @@ initfont(const char *fontstr) {
 	dc.font.height = dc.font.ascent + dc.font.descent;
 }
 
-static int
-strido(const char *text, const char *pattern) {
-	for(; *text && *pattern; text++)
-		if (*text == *pattern)
-			pattern++;
-	return !*pattern;
-}                                  
-
-static void
-match(char *pattern) {
-	unsigned int plen;
-	Item *i, *j;
-
-	if(!pattern)
-		return;
-	plen = strlen(pattern);
-	item = j = NULL;
-	nitem = 0;
-	for(i = allitems; i; i=i->next)
-		if(!plen || !strncmp(pattern, i->text, plen)) {
-			if(!j)
-				item = i;
-			else
-				j->right = i;
-			i->left = j;
-			i->right = NULL;
-			j = i;
-			nitem++;
-		}
-	for(i = allitems; i; i=i->next)
-		if(plen && strncmp(pattern, i->text, plen)
-				&& strstr(i->text, pattern)) {
-			if(!j)                               
-				item = i;                              
-			else                                     
-				j->right = i;                          
-			i->left = j;      
-			i->right = NULL;                         
-			j = i;                                      
-			nitem++;                                       
-		}                                              
-	for(i = allitems; i; i=i->next)                            
-		if(plen && strncmp(pattern, i->text, plen)             
-				&& !strstr(i->text, pattern)          
-				&& strido(i->text,pattern)) { 
-			if(!j)
-				item = i;
-			else
-				j->right = i;
-			i->left = j;
-			i->right = NULL;
-			j = i;
-			nitem++;
-		}
-	curr = prev = next = sel = item;
-	calcoffsets();
-}
-
-static void
+void
 kpress(XKeyEvent * e) {
 	char buf[32];
 	int i, num;
@@ -528,9 +479,58 @@ kpress(XKeyEvent * e) {
 	drawmenu();
 }
 
-static char *
+void
+match(char *pattern) {
+	unsigned int plen;
+	Item *i, *j;
+
+	if(!pattern)
+		return;
+	plen = strlen(pattern);
+	item = j = NULL;
+	nitem = 0;
+	for(i = allitems; i; i=i->next)
+		if(!plen || !strncmp(pattern, i->text, plen)) {
+			if(!j)
+				item = i;
+			else
+				j->right = i;
+			i->left = j;
+			i->right = NULL;
+			j = i;
+			nitem++;
+		}
+	for(i = allitems; i; i=i->next)
+		if(plen && strncmp(pattern, i->text, plen)
+				&& strstr(i->text, pattern)) {
+			if(!j)                               
+				item = i;                              
+			else                                     
+				j->right = i;                          
+			i->left = j;      
+			i->right = NULL;                         
+			j = i;                                      
+			nitem++;                                       
+		}                                              
+	for(i = allitems; i; i=i->next)                            
+		if(plen && strncmp(pattern, i->text, plen)             
+				&& !strstr(i->text, pattern)          
+				&& strido(i->text,pattern)) { 
+			if(!j)
+				item = i;
+			else
+				j->right = i;
+			i->left = j;
+			i->right = NULL;
+			j = i;
+			nitem++;
+		}
+	curr = prev = next = sel = item;
+	calcoffsets();
+}
+
+void
 readstdin(void) {
-	static char *maxname = NULL;
 	char *p, buf[1024];
 	unsigned int len = 0, max = 0;
 	Item *i, *new;
@@ -554,30 +554,109 @@ readstdin(void) {
 			i->next = new;
 		i = new;
 	}
-
-	return maxname;
 }
 
-static void
-usage(void) {
-	eprint("usage: dmenu [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
-		"             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
+void
+run(void) {
+	XEvent ev;
+
+	/* main event loop */
+	while(running && !XNextEvent(dpy, &ev))
+		switch (ev.type) {
+		default:	/* ignore all crap */
+			break;
+		case KeyPress:
+			kpress(&ev.xkey);
+			break;
+		case Expose:
+			if(ev.xexpose.count == 0)
+				drawmenu();
+			break;
+		}
+}
+
+void
+setup(Bool bottom) {
+	unsigned int i, j;
+	XModifierKeymap *modmap;
+	XSetWindowAttributes wa;
+
+	/* init modifier map */
+	modmap = XGetModifierMapping(dpy);
+	for(i = 0; i < 8; i++)
+		for(j = 0; j < modmap->max_keypermod; j++) {
+			if(modmap->modifiermap[i * modmap->max_keypermod + j]
+			== XKeysymToKeycode(dpy, XK_Num_Lock))
+				numlockmask = (1 << i);
+		}
+	XFreeModifiermap(modmap);
+
+	/* style */
+	dc.norm[ColBG] = getcolor(normbg);
+	dc.norm[ColFG] = getcolor(normfg);
+	dc.sel[ColBG] = getcolor(selbg);
+	dc.sel[ColFG] = getcolor(selfg);
+	initfont(font);
+
+	/* menu window */
+	wa.override_redirect = 1;
+	wa.background_pixmap = ParentRelative;
+	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
+	mw = DisplayWidth(dpy, screen);
+	mh = dc.font.height + 2;
+	win = XCreateWindow(dpy, root, 0,
+			bottom ? DisplayHeight(dpy, screen) - mh : 0, mw, mh, 0,
+			DefaultDepth(dpy, screen), CopyFromParent,
+			DefaultVisual(dpy, screen),
+			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
+
+	/* pixmap */
+	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
+	dc.gc = XCreateGC(dpy, root, 0, 0);
+	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
+	if(!dc.font.set)
+		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
+	if(maxname)
+		cmdw = textw(maxname);
+	if(cmdw > mw / 3)
+		cmdw = mw / 3;
+	if(prompt)
+		promptw = textw(prompt);
+	if(promptw > mw / 5)
+		promptw = mw / 5;
+	text[0] = 0;
+	match(text);
+	XMapRaised(dpy, win);
+}
+
+int
+strido(const char *text, const char *pattern) {
+	for(; *text && *pattern; text++)
+		if (*text == *pattern)
+			pattern++;
+	return !*pattern;
+}                                  
+
+unsigned int
+textnw(const char *text, unsigned int len) {
+	XRectangle r;
+
+	if(dc.font.set) {
+		XmbTextExtents(dc.font.set, text, len, NULL, &r);
+		return r.width;
+	}
+	return XTextWidth(dc.font.xfont, text, len);
+}
+
+unsigned int
+textw(const char *text) {
+	return textnw(text, strlen(text)) + dc.font.height;
 }
 
 int
 main(int argc, char *argv[]) {
 	Bool bottom = False;
-	char *font = FONT;
-	char *maxname;
-	char *normbg = NORMBGCOLOR;
-	char *normfg = NORMFGCOLOR;
-	char *selbg = SELBGCOLOR;
-	char *selfg = SELFGCOLOR;
-	int i, j;
-	Item *itm;
-	XEvent ev;
-	XModifierKeymap *modmap;
-	XSetWindowAttributes wa;
+	unsigned int i;
 
 	/* command line args */
 	for(i = 1; i < argc; i++)
@@ -605,97 +684,29 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-v"))
 			eprint("dmenu-"VERSION", © 2006-2007 Anselm R. Garbe, Sander van Dijk\n");
 		else
-			usage();
+			eprint("usage: dmenu [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+			"             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
+
 	if(isatty(STDIN_FILENO)) {
-		maxname = readstdin();
+		readstdin();
 		running = grabkeyboard();
 	}
 	else { /* prevent keypress loss */
 		running = grabkeyboard();
-		maxname = readstdin();
+		readstdin();
 	}
-	/* init modifier map */
-	modmap = XGetModifierMapping(dpy);
-	for (i = 0; i < 8; i++) {
-		for (j = 0; j < modmap->max_keypermod; j++) {
-			if(modmap->modifiermap[i * modmap->max_keypermod + j]
-			== XKeysymToKeycode(dpy, XK_Num_Lock))
-				numlockmask = (1 << i);
-		}
-	}
-	XFreeModifiermap(modmap);
-	/* style */
-	dc.norm[ColBG] = getcolor(normbg);
-	dc.norm[ColFG] = getcolor(normfg);
-	dc.sel[ColBG] = getcolor(selbg);
-	dc.sel[ColFG] = getcolor(selfg);
-	initfont(font);
-	/* menu window */
-	wa.override_redirect = 1;
-	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
-	mw = DisplayWidth(dpy, screen);
-	mh = dc.font.height + 2;
-	win = XCreateWindow(dpy, root, 0,
-			bottom ? DisplayHeight(dpy, screen) - mh : 0, mw, mh, 0,
-			DefaultDepth(dpy, screen), CopyFromParent,
-			DefaultVisual(dpy, screen),
-			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
-	/* pixmap */
-	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
-	dc.gc = XCreateGC(dpy, root, 0, 0);
-	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
-	if(!dc.font.set)
-		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
-	if(maxname)
-		cmdw = textw(maxname);
-	if(cmdw > mw / 3)
-		cmdw = mw / 3;
-	if(prompt)
-		promptw = textw(prompt);
-	if(promptw > mw / 5)
-		promptw = mw / 5;
-	text[0] = 0;
-	match(text);
-	XMapRaised(dpy, win);
+
+	setup(bottom);
 	drawmenu();
 	XSync(dpy, False);
-
-	/* main event loop */
-	while(running && !XNextEvent(dpy, &ev))
-		switch (ev.type) {
-		default:	/* ignore all crap */
-			break;
-		case KeyPress:
-			kpress(&ev.xkey);
-			break;
-		case Expose:
-			if(ev.xexpose.count == 0)
-				drawmenu();
-			break;
-		}
-
-	/* cleanup */
-	while(allitems) {
-		itm = allitems->next;
-		free(allitems->text);
-		free(allitems);
-		allitems = itm;
-	}
-	if(dc.font.set)
-		XFreeFontSet(dpy, dc.font.set);
-	else
-		XFreeFont(dpy, dc.font.xfont);
-	XFreePixmap(dpy, dc.drawable);
-	XFreeGC(dpy, dc.gc);
-	XDestroyWindow(dpy, win);
-	XUngrabKeyboard(dpy, CurrentTime);
+	run();
+	cleanup();
 	XCloseDisplay(dpy);
 	return ret;
 }
