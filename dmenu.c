@@ -37,9 +37,11 @@ struct Item {
 	Item *next;		/* traverses all items */
 	Item *left, *right;	/* traverses items matching current search pattern */
 	char *text;
+	Bool matched;
 };
 
 /* forward declarations */
+Item *appenditem(Item *i, Item *last);
 void calcoffsets(void);
 void cleanup(void);
 void drawmenu(void);
@@ -55,7 +57,7 @@ void match(char *pattern);
 void readstdin(void);
 void run(void);
 void setup(Bool bottom);
-int strido(const char *text, const char *pattern);
+int strcaseido(const char *text, const char *pattern);
 unsigned int textnw(const char *text, unsigned int len);
 unsigned int textw(const char *text);
 
@@ -77,6 +79,7 @@ unsigned int mw, mh;
 unsigned int promptw = 0;
 unsigned int nitem = 0;
 unsigned int numlockmask = 0;
+Bool idomatch = False;
 Bool running = True;
 Display *dpy;
 DC dc = {0};
@@ -87,6 +90,20 @@ Item *next = NULL;
 Item *prev = NULL;
 Item *curr = NULL;
 Window root, win;
+
+Item *
+appenditem(Item *i, Item *last) {
+	if(!last)
+		item = i;
+	else
+		last->right = i;
+	i->matched = True;
+	i->left = last;
+	i->right = NULL;
+	last = i;
+	nitem++;
+	return last;
+}
 
 void
 calcoffsets(void) {
@@ -489,41 +506,21 @@ match(char *pattern) {
 	item = j = NULL;
 	nitem = 0;
 	for(i = allitems; i; i=i->next)
-		if(!plen || !strncmp(pattern, i->text, plen)) {
-			if(!j)
-				item = i;
-			else
-				j->right = i;
-			i->left = j;
-			i->right = NULL;
-			j = i;
-			nitem++;
-		}
-	for(i = allitems; i; i=i->next)
-		if(plen && strncmp(pattern, i->text, plen)
-				&& strstr(i->text, pattern)) {
-			if(!j)                               
-				item = i;                              
-			else                                     
-				j->right = i;                          
-			i->left = j;      
-			i->right = NULL;                         
-			j = i;                                      
-			nitem++;                                       
-		}                                              
-	for(i = allitems; i; i=i->next)                            
-		if(plen && strncmp(pattern, i->text, plen)             
-				&& !strstr(i->text, pattern)          
-				&& strido(i->text,pattern)) { 
-			if(!j)
-				item = i;
-			else
-				j->right = i;
-			i->left = j;
-			i->right = NULL;
-			j = i;
-			nitem++;
-		}
+		i->matched = False;
+
+	for(i = allitems; i; i = i->next)
+		if(!i->matched && !strncasecmp(pattern, i->text, plen))
+			j = appenditem(i,j);
+
+	for (i = allitems; i; i = i->next)
+		if(!i->matched && strcasestr(i->text, pattern))
+			j = appenditem(i, j);
+
+	if(idomatch)
+		for (i = allitems; i; i = i->next)
+			if(!i->matched && strcaseido(i->text, pattern))
+				j = appenditem(i, j);
+
 	curr = prev = next = sel = item;
 	calcoffsets();
 }
@@ -629,9 +626,9 @@ setup(Bool bottom) {
 }
 
 int
-strido(const char *text, const char *pattern) {
+strcaseido(const char *text, const char *pattern) {
 	for(; *text && *pattern; text++)
-		if (*text == *pattern)
+		if (tolower(*text) == tolower(*pattern))
 			pattern++;
 	return !*pattern;
 }                                  
@@ -662,6 +659,8 @@ main(int argc, char *argv[]) {
 		if(!strcmp(argv[i], "-b")) {
 			bottom = True;
 		}
+		else if(!strcmp(argv[i], "-i"))
+			idomatch = True;
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
 		}
@@ -681,9 +680,9 @@ main(int argc, char *argv[]) {
 			if(++i < argc) selfg = argv[i];
 		}
 		else if(!strcmp(argv[i], "-v"))
-			eprint("dmenu-"VERSION", © 2006-2007 Anselm R. Garbe, Sander van Dijk\n");
+			eprint("dmenu-"VERSION", © 2006-2007 Anselm R. Garbe, Sander van Dijk, Michał Janeczek\n");
 		else
-			eprint("usage: dmenu [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+			eprint("usage: dmenu [-b] [-i] [-fn <font>] [-nb <color>] [-nf <color>]\n"
 			"             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
