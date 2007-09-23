@@ -507,20 +507,16 @@ match(char *pattern) {
 	nitem = 0;
 	for(i = allitems; i; i=i->next)
 		i->matched = False;
-
 	for(i = allitems; i; i = i->next)
 		if(!i->matched && !strncasecmp(pattern, i->text, plen))
 			j = appenditem(i, j);
-
-	for (i = allitems; i; i = i->next)
+	for(i = allitems; i; i = i->next)
 		if(!i->matched && strcasestr(i->text, pattern))
 			j = appenditem(i, j);
-
 	if(idomatch)
-		for (i = allitems; i; i = i->next)
+		for(i = allitems; i; i = i->next)
 			if(!i->matched && strcaseido(i->text, pattern))
 				j = appenditem(i, j);
-
 	curr = prev = next = sel = item;
 	calcoffsets();
 }
