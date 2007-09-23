@@ -510,7 +510,7 @@ match(char *pattern) {
 
 	for(i = allitems; i; i = i->next)
 		if(!i->matched && !strncasecmp(pattern, i->text, plen))
-			j = appenditem(i,j);
+			j = appenditem(i, j);
 
 	for (i = allitems; i; i = i->next)
 		if(!i->matched && strcasestr(i->text, pattern))
