@@ -624,7 +624,7 @@ setup(Bool bottom) {
 int
 strcaseido(const char *text, const char *pattern) {
 	for(; *text && *pattern; text++)
-		if (tolower(*text) == tolower(*pattern))
+		if(tolower((int)*text) == tolower((int)*pattern))
 			pattern++;
 	return !*pattern;
 }                                  
