@@ -2,9 +2,9 @@
 
 /* appearance */
 #define FONT			"-*-proggyclean-*-*-*-*-*-*-*-*-*-*-*-*"
-#define NORMBGCOLOR             "#ffffff"
+#define NORMBGCOLOR             "#dddddd"
 #define NORMFGCOLOR             "#333333"
-#define SELBGCOLOR              "#3366ff"
+#define SELBGCOLOR              "#0066cc"
 #define SELFGCOLOR              "#ffffff"
 /* next macro defines the space between menu items */
 #define SPACE			30 /* px */
