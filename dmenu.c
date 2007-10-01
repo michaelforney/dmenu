@@ -58,6 +58,7 @@ void readstdin(void);
 void run(void);
 void setup(Bool bottom);
 int strcaseido(const char *text, const char *pattern);
+char *cistrstr(const char *s, const char *sub);
 unsigned int textnw(const char *text, unsigned int len);
 unsigned int textw(const char *text);
 
@@ -511,7 +512,7 @@ match(char *pattern) {
 		if(!i->matched && !strncasecmp(pattern, i->text, plen))
 			j = appenditem(i, j);
 	for(i = allitems; i; i = i->next)
-		if(!i->matched && strcasestr(i->text, pattern))
+		if(!i->matched && cistrstr(i->text, pattern))
 			j = appenditem(i, j);
 	if(idomatch)
 		for(i = allitems; i; i = i->next)
@@ -628,6 +629,29 @@ strcaseido(const char *text, const char *pattern) {
 			pattern++;
 	return !*pattern;
 }                                  
+
+char *
+cistrstr(const char *s, const char *sub) {
+	int c, csub;
+	unsigned int len;
+
+	if(!sub)
+		return (char *)s;
+	if((c = *sub++) != 0) {
+		c = tolower(c);
+		len = strlen(sub);
+		do {
+			do {
+				if((csub = *s++) == 0)
+					return (NULL);
+			}
+			while(tolower(csub) != c);
+		}
+		while(strncasecmp(s, sub, len) != 0);
+		s--;
+	}
+	return (char *)s;
+}
 
 unsigned int
 textnw(const char *text, unsigned int len) {
