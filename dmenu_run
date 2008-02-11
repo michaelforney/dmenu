@@ -1,2 +1,2 @@
 #!/bin/sh
-exe=`dmenu_path | dmenu $*` && exec $exe
+set exe=`dmenu_path | dmenu $*` && exec $exe
