@@ -37,7 +37,6 @@ struct Item {
 	Item *next;		/* traverses all items */
 	Item *left, *right;	/* traverses items matching current search pattern */
 	char *text;
-	Bool matched;
 };
 
 /* forward declarations */
@@ -89,6 +88,7 @@ Item *next = NULL;
 Item *prev = NULL;
 Item *curr = NULL;
 Window root, win;
+int (*fstrncmp)(const char *, const char *, size_t n) = strncmp;
 char *(*fstrstr)(const char *, const char *) = strstr;
 
 Item *
@@ -97,7 +97,6 @@ appenditem(Item *i, Item *last) {
 		item = i;
 	else
 		last->right = i;
-	i->matched = True;
 	i->left = last;
 	i->right = NULL;
 	last = i;
@@ -505,13 +504,10 @@ match(char *pattern) {
 	plen = strlen(pattern);
 	item = j = NULL;
 	nitem = 0;
-	for(i = allitems; i; i=i->next)
-		i->matched = False;
 	for(i = allitems; i; i = i->next)
-		if(!i->matched && !strncasecmp(pattern, i->text, plen))
+		if(!fstrncmp(pattern, i->text, plen))
 			j = appenditem(i, j);
-	for(i = allitems; i; i = i->next)
-		if(!i->matched && fstrstr(i->text, pattern))
+		else if(fstrstr(i->text, pattern))
 			j = appenditem(i, j);
 	curr = prev = next = sel = item;
 	calcoffsets();
@@ -662,8 +658,10 @@ main(int argc, char *argv[]) {
 
 	/* command line args */
 	for(i = 1; i < argc; i++)
-		if(!strcmp(argv[i], "-i"))
+		if(!strcmp(argv[i], "-i")) {
+			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
+		}
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
 		}
