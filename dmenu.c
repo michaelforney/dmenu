@@ -56,8 +56,7 @@ void kpress(XKeyEvent * e);
 void match(char *pattern);
 void readstdin(void);
 void run(void);
-void setup(Bool bottom);
-int strcaseido(const char *text, const char *pattern);
+void setup(int x, int y, int w);
 char *cistrstr(const char *s, const char *sub);
 unsigned int textnw(const char *text, unsigned int len);
 unsigned int textw(const char *text);
@@ -80,7 +79,6 @@ unsigned int mw, mh;
 unsigned int promptw = 0;
 unsigned int nitem = 0;
 unsigned int numlockmask = 0;
-Bool idomatch = False;
 Bool running = True;
 Display *dpy;
 DC dc = {0};
@@ -91,6 +89,7 @@ Item *next = NULL;
 Item *prev = NULL;
 Item *curr = NULL;
 Window root, win;
+char *(*fstrstr)(const char *, const char *) = strstr;
 
 Item *
 appenditem(Item *i, Item *last) {
@@ -512,12 +511,8 @@ match(char *pattern) {
 		if(!i->matched && !strncasecmp(pattern, i->text, plen))
 			j = appenditem(i, j);
 	for(i = allitems; i; i = i->next)
-		if(!i->matched && cistrstr(i->text, pattern))
+		if(!i->matched && fstrstr(i->text, pattern))
 			j = appenditem(i, j);
-	if(idomatch)
-		for(i = allitems; i; i = i->next)
-			if(!i->matched && strcaseido(i->text, pattern))
-				j = appenditem(i, j);
 	curr = prev = next = sel = item;
 	calcoffsets();
 }
@@ -569,7 +564,7 @@ run(void) {
 }
 
 void
-setup(Bool bottom) {
+setup(int x, int y, int w) {
 	unsigned int i, j;
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
@@ -595,10 +590,9 @@ setup(Bool bottom) {
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
-	mw = DisplayWidth(dpy, screen);
+	mw = w ? w : DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
-	win = XCreateWindow(dpy, root, 0,
-			bottom ? DisplayHeight(dpy, screen) - mh : 0, mw, mh, 0,
+	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
@@ -621,14 +615,6 @@ setup(Bool bottom) {
 	match(text);
 	XMapRaised(dpy, win);
 }
-
-int
-strcaseido(const char *text, const char *pattern) {
-	for(; *text && *pattern; text++)
-		if(tolower((int)*text) == tolower((int)*pattern))
-			pattern++;
-	return !*pattern;
-}                                  
 
 char *
 cistrstr(const char *s, const char *sub) {
@@ -671,16 +657,13 @@ textw(const char *text) {
 
 int
 main(int argc, char *argv[]) {
-	Bool bottom = False;
+	int x = 0, y = 0, w = 0;
 	unsigned int i;
 
 	/* command line args */
 	for(i = 1; i < argc; i++)
-		if(!strcmp(argv[i], "-b")) {
-			bottom = True;
-		}
-		else if(!strcmp(argv[i], "-i"))
-			idomatch = True;
+		if(!strcmp(argv[i], "-i"))
+			fstrstr = cistrstr;
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
 		}
@@ -699,11 +682,21 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-sf")) {
 			if(++i < argc) selfg = argv[i];
 		}
+		else if(!strcmp(argv[i], "-x")) {
+			if(++i < argc) x = atoi(argv[i]);
+		}
+		else if(!strcmp(argv[i], "-y")) {
+			if(++i < argc) y = atoi(argv[i]);
+		}
+		else if(!strcmp(argv[i], "-w")) {
+			if(++i < argc) w = atoi(argv[i]);
+		}
 		else if(!strcmp(argv[i], "-v"))
-			eprint("dmenu-"VERSION", © 2006-2007 Anselm R. Garbe, Sander van Dijk, Michał Janeczek\n");
+			eprint("dmenu-"VERSION", © 2006-2008 dmenu engineers, see LICENSE for details\n");
 		else
-			eprint("usage: dmenu [-b] [-i] [-fn <font>] [-nb <color>] [-nf <color>]\n"
-			"             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
+			eprint("usage: dmenu [-i] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+			       "             [-p <prompt>] [-sb <color>] [-sf <color>]\n"
+			       "             [-x <x>] [-y <y>] [-w <w>] [-v]\n");
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)
@@ -720,7 +713,7 @@ main(int argc, char *argv[]) {
 		readstdin();
 	}
 
-	setup(bottom);
+	setup(x, y, w);
 	drawmenu();
 	XSync(dpy, False);
 	run();
