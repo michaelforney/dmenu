@@ -505,9 +505,8 @@ match(char *pattern) {
 	item = j = NULL;
 	nitem = 0;
 	for(i = allitems; i; i = i->next)
-		if(!fstrncmp(pattern, i->text, plen))
-			j = appenditem(i, j);
-		else if(fstrstr(i->text, pattern))
+		if(!fstrncmp(pattern, i->text, plen)
+				|| fstrstr(i->text, pattern))
 			j = appenditem(i, j);
 	curr = prev = next = sel = item;
 	calcoffsets();
