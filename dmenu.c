@@ -34,14 +34,16 @@ typedef struct {
 
 typedef struct Item Item;
 struct Item {
+	char *text;
+	Bool matched;
 	Item *next;		/* traverses all items */
 	Item *left, *right;	/* traverses items matching current search pattern */
-	char *text;
 };
 
 /* forward declarations */
 Item *appenditem(Item *i, Item *last);
 void calcoffsets(void);
+char *cistrstr(const char *s, const char *sub);
 void cleanup(void);
 void drawmenu(void);
 void drawtext(const char *text, unsigned long col[ColLast]);
@@ -56,7 +58,6 @@ void match(char *pattern);
 void readstdin(void);
 void run(void);
 void setup(int x, int y, int w);
-char *cistrstr(const char *s, const char *sub);
 unsigned int textnw(const char *text, unsigned int len);
 unsigned int textw(const char *text);
 
@@ -128,6 +129,29 @@ calcoffsets(void) {
 		if(w > mw)
 			break;
 	}
+}
+
+char *
+cistrstr(const char *s, const char *sub) {
+	int c, csub;
+	unsigned int len;
+
+	if(!sub)
+		return (char *)s;
+	if((c = *sub++) != 0) {
+		c = tolower(c);
+		len = strlen(sub);
+		do {
+			do {
+				if((csub = *s++) == 0)
+					return (NULL);
+			}
+			while(tolower(csub) != c);
+		}
+		while(strncasecmp(s, sub, len) != 0);
+		s--;
+	}
+	return (char *)s;
 }
 
 void
@@ -505,8 +529,10 @@ match(char *pattern) {
 	item = j = NULL;
 	nitem = 0;
 	for(i = allitems; i; i = i->next)
-		if(!fstrncmp(pattern, i->text, plen)
-				|| fstrstr(i->text, pattern))
+		if((i->matched = !fstrncmp(pattern, i->text, plen)))
+			j = appenditem(i, j);
+	for(i = allitems; i; i = i->next)
+		if(!i->matched && fstrstr(i->text, pattern))
 			j = appenditem(i, j);
 	curr = prev = next = sel = item;
 	calcoffsets();
@@ -587,6 +613,12 @@ setup(int x, int y, int w) {
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
 	mw = w ? w : DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
+	if(y < 0) {
+		if(y == (int)(unsigned int)-1)
+			y = DisplayHeight(dpy, screen) - mh;
+		else
+			y = (-1 * y) - mh;
+	}
 	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
@@ -609,29 +641,6 @@ setup(int x, int y, int w) {
 	text[0] = 0;
 	match(text);
 	XMapRaised(dpy, win);
-}
-
-char *
-cistrstr(const char *s, const char *sub) {
-	int c, csub;
-	unsigned int len;
-
-	if(!sub)
-		return (char *)s;
-	if((c = *sub++) != 0) {
-		c = tolower(c);
-		len = strlen(sub);
-		do {
-			do {
-				if((csub = *s++) == 0)
-					return (NULL);
-			}
-			while(tolower(csub) != c);
-		}
-		while(strncasecmp(s, sub, len) != 0);
-		s--;
-	}
-	return (char *)s;
 }
 
 unsigned int
@@ -683,7 +692,12 @@ main(int argc, char *argv[]) {
 			if(++i < argc) x = atoi(argv[i]);
 		}
 		else if(!strcmp(argv[i], "-y")) {
-			if(++i < argc) y = atoi(argv[i]);
+			if(++i < argc) {
+				if(!strcmp(argv[i], "-0"))
+					y = (int)(unsigned int)-1;
+				else
+					y = atoi(argv[i]);
+			}
 		}
 		else if(!strcmp(argv[i], "-w")) {
 			if(++i < argc) w = atoi(argv[i]);
