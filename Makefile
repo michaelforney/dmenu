@@ -1,5 +1,5 @@
 # dmenu - dynamic menu
-# © 2006-2007 Anselm R. Garbe, Sander van Dijk
+# See LICENSE file for copyright and license details.
 
 include config.mk
 

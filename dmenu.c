@@ -35,13 +35,12 @@ typedef struct {
 typedef struct Item Item;
 struct Item {
 	char *text;
-	Bool matched;
 	Item *next;		/* traverses all items */
 	Item *left, *right;	/* traverses items matching current search pattern */
 };
 
 /* forward declarations */
-Item *appenditem(Item *i, Item *last);
+void appenditem(Item *i, Item **list, Item **last);
 void calcoffsets(void);
 char *cistrstr(const char *s, const char *sub);
 void cleanup(void);
@@ -92,17 +91,15 @@ Window root, win;
 int (*fstrncmp)(const char *, const char *, size_t n) = strncmp;
 char *(*fstrstr)(const char *, const char *) = strstr;
 
-Item *
-appenditem(Item *i, Item *last) {
-	if(!last)
-		item = i;
+void
+appenditem(Item *i, Item **list, Item **last) {
+	if(!(*last))
+		*list = i;
 	else
-		last->right = i;
-	i->left = last;
+		(*last)->right = i;
+	i->left = *last;
 	i->right = NULL;
-	last = i;
-	nitem++;
-	return last;
+	*last = i;
 }
 
 void
@@ -521,19 +518,47 @@ kpress(XKeyEvent * e) {
 void
 match(char *pattern) {
 	unsigned int plen;
-	Item *i, *j;
+	Item *i, *itemend, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
 
 	if(!pattern)
 		return;
 	plen = strlen(pattern);
-	item = j = NULL;
+	item = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
 	nitem = 0;
 	for(i = allitems; i; i = i->next)
-		if((i->matched = !fstrncmp(pattern, i->text, plen)))
-			j = appenditem(i, j);
-	for(i = allitems; i; i = i->next)
-		if(!i->matched && fstrstr(i->text, pattern))
-			j = appenditem(i, j);
+		if(!fstrncmp(pattern, i->text, plen + 1)) {
+			appenditem(i, &lexact, &exactend);
+			nitem++;
+		}
+		else if(!fstrncmp(pattern, i->text, plen)) {
+			appenditem(i, &lprefix, &prefixend);
+			nitem++;
+		}
+		else if(fstrstr(i->text, pattern)) {
+			appenditem(i, &lsubstr, &substrend);
+			nitem++;
+		}
+	if(lexact) {
+		item = lexact;
+		itemend = exactend;
+	}
+	if(lprefix) {
+		if(itemend) {
+			itemend->right - lprefix;
+			lprefix->left = itemend;
+		}
+		else
+			item = lprefix;
+		itemend = prefixend;
+	}
+	if(lsubstr) {
+		if(itemend) {
+			itemend->right = lsubstr;
+			lsubstr->left = itemend;
+		}
+		else
+			item = lsubstr;
+	}
 	curr = prev = next = sel = item;
 	calcoffsets();
 }
