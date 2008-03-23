@@ -707,12 +707,11 @@ main(int argc, char *argv[]) {
 			if(++i < argc) x = atoi(argv[i]);
 		}
 		else if(!strcmp(argv[i], "-y")) {
-			if(++i < argc) {
+			if(++i < argc)
 				if(!strcmp(argv[i], "-0"))
 					y = (int)(unsigned int)-1;
 				else
 					y = atoi(argv[i]);
-			}
 		}
 		else if(!strcmp(argv[i], "-w")) {
 			if(++i < argc) w = atoi(argv[i]);
