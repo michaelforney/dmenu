@@ -353,13 +353,11 @@ kpress(XKeyEvent * e) {
 	len = strlen(text);
 	buf[0] = 0;
 	num = XLookupString(e, buf, sizeof buf, &ksym, 0);
-	if(IsKeypadKey(ksym)) { 
-		if(ksym == XK_KP_Enter) {
+	if(IsKeypadKey(ksym))
+		if(ksym == XK_KP_Enter)
 			ksym = XK_Return;
-		} else if(ksym >= XK_KP_0 && ksym <= XK_KP_9) {
+		else if(ksym >= XK_KP_0 && ksym <= XK_KP_9)
 			ksym = (ksym - XK_KP_0) + XK_0;
-		}
-	}
 	if(IsFunctionKey(ksym) || IsKeypadKey(ksym)
 	|| IsMiscFunctionKey(ksym) || IsPFKey(ksym)
 	|| IsPrivateKeypadKey(ksym))
