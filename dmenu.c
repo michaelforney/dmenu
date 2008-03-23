@@ -76,7 +76,6 @@ int ret = 0;
 unsigned int cmdw = 0;
 unsigned int mw, mh;
 unsigned int promptw = 0;
-unsigned int nitem = 0;
 unsigned int numlockmask = 0;
 Bool running = True;
 Display *dpy;
@@ -524,20 +523,13 @@ match(char *pattern) {
 		return;
 	plen = strlen(pattern);
 	item = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
-	nitem = 0;
 	for(i = allitems; i; i = i->next)
-		if(!fstrncmp(pattern, i->text, plen + 1)) {
+		if(!fstrncmp(pattern, i->text, plen + 1))
 			appenditem(i, &lexact, &exactend);
-			nitem++;
-		}
-		else if(!fstrncmp(pattern, i->text, plen)) {
+		else if(!fstrncmp(pattern, i->text, plen))
 			appenditem(i, &lprefix, &prefixend);
-			nitem++;
-		}
-		else if(fstrstr(i->text, pattern)) {
+		else if(fstrstr(i->text, pattern))
 			appenditem(i, &lsubstr, &substrend);
-			nitem++;
-		}
 	if(lexact) {
 		item = lexact;
 		itemend = exactend;
