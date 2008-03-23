@@ -295,7 +295,7 @@ grabkeyboard(void) {
 
 	for(len = 1000; len; len--) {
 		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
-			== GrabSuccess)
+		== GrabSuccess)
 			break;
 		usleep(1000);
 	}
@@ -361,8 +361,8 @@ kpress(XKeyEvent * e) {
 		}
 	}
 	if(IsFunctionKey(ksym) || IsKeypadKey(ksym)
-			|| IsMiscFunctionKey(ksym) || IsPFKey(ksym)
-			|| IsPrivateKeypadKey(ksym))
+	|| IsMiscFunctionKey(ksym) || IsPFKey(ksym)
+	|| IsPrivateKeypadKey(ksym))
 		return;
 	/* first check if a control mask is omitted */
 	if(e->state & ControlMask) {
