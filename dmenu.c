@@ -534,7 +534,7 @@ match(char *pattern) {
 	}
 	if(lprefix) {
 		if(itemend) {
-			itemend->right - lprefix;
+			itemend->right = lprefix;
 			lprefix->left = itemend;
 		}
 		else
