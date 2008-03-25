@@ -629,7 +629,7 @@ setup(int x, int y, int w) {
 	mw = w ? w : DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
 	if(y < 0) {
-		if(y == (int)(unsigned int)-1)
+		if(y == ((~(unsigned int)0)/2)+1)
 			y = DisplayHeight(dpy, screen) - mh;
 		else
 			y = (-1 * y) - mh;
@@ -709,7 +709,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-y")) {
 			if(++i < argc)
 				if(!strcmp(argv[i], "-0"))
-					y = (int)(unsigned int)-1;
+					y = ((~(unsigned int)0)/2)+1;
 				else
 					y = atoi(argv[i]);
 		}
