@@ -1,5 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 #include <ctype.h>
+#include <limits.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -629,7 +630,7 @@ setup(int x, int y, int w) {
 	mw = w ? w : DisplayWidth(dpy, screen);
 	mh = dc.font.height + 2;
 	if(y < 0) {
-		if(y == ((~(unsigned int)0)/2)+1)
+		if(y == INT_MIN)
 			y = DisplayHeight(dpy, screen) - mh;
 		else
 			y = (-1 * y) - mh;
@@ -709,7 +710,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-y")) {
 			if(++i < argc)
 				if(!strcmp(argv[i], "-0"))
-					y = ((~(unsigned int)0)/2)+1;
+					y = INT_MIN;
 				else
 					y = atoi(argv[i]);
 		}
