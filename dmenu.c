@@ -1,6 +1,5 @@
 /* See LICENSE file for copyright and license details. */
 #include <ctype.h>
-#include <limits.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -10,6 +9,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#ifdef XINERAMA
+#include <X11/extensions/Xinerama.h>
+#endif
 
 /* macros */
 #define CLEANMASK(mask) (mask & ~(numlockmask | LockMask))
@@ -57,7 +59,7 @@ void kpress(XKeyEvent * e);
 void match(char *pattern);
 void readstdin(void);
 void run(void);
-void setup(int x, int y, int w);
+void setup(Bool topbar);
 unsigned int textnw(const char *text, unsigned int len);
 unsigned int textw(const char *text);
 
@@ -601,10 +603,13 @@ run(void) {
 }
 
 void
-setup(int x, int y, int w) {
-	unsigned int i, j;
+setup(Bool topbar) {
+	int i, j, x, y;
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
+#if XINERAMA
+	XineramaScreenInfo *info = NULL;
+#endif
 
 	/* init modifier map */
 	modmap = XGetModifierMapping(dpy);
@@ -627,14 +632,25 @@ setup(int x, int y, int w) {
 	wa.override_redirect = 1;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
-	mw = w ? w : DisplayWidth(dpy, screen);
+
+	/* menu window geometry */
 	mh = dc.font.height + 2;
-	if(y < 0) {
-		if(y == INT_MIN)
-			y = DisplayHeight(dpy, screen) - mh;
-		else
-			y = (-1 * y) - mh;
+#if XINERAMA
+	if(XineramaIsActive(dpy)) {
+		info = XineramaQueryScreens(dpy, &i);
+		x = info[0].x_org;
+		y = topbar ? info[0].y_org : info[0].y_org + info[0].height - mh;
+		mw = info[0].width;
+		XFree(info);
 	}
+	else
+#endif
+	{
+		x = 0;
+		y = topbar ? 0 : DisplayHeight(dpy, screen) - mh;
+		mw = DisplayWidth(dpy, screen);
+	}
+
 	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
@@ -677,8 +693,8 @@ textw(const char *text) {
 
 int
 main(int argc, char *argv[]) {
-	int x = 0, y = 0, w = 0;
 	unsigned int i;
+	Bool topbar = True;
 
 	/* command line args */
 	for(i = 1; i < argc; i++)
@@ -686,6 +702,8 @@ main(int argc, char *argv[]) {
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
 		}
+		else if(!strcmp(argv[i], "-b"))
+			topbar = False;
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
 		}
@@ -704,25 +722,11 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-sf")) {
 			if(++i < argc) selfg = argv[i];
 		}
-		else if(!strcmp(argv[i], "-x")) {
-			if(++i < argc) x = atoi(argv[i]);
-		}
-		else if(!strcmp(argv[i], "-y")) {
-			if(++i < argc)
-				if(!strcmp(argv[i], "-0"))
-					y = INT_MIN;
-				else
-					y = atoi(argv[i]);
-		}
-		else if(!strcmp(argv[i], "-w")) {
-			if(++i < argc) w = atoi(argv[i]);
-		}
 		else if(!strcmp(argv[i], "-v"))
 			eprint("dmenu-"VERSION", © 2006-2008 dmenu engineers, see LICENSE for details\n");
 		else
-			eprint("usage: dmenu [-i] [-fn <font>] [-nb <color>] [-nf <color>]\n"
-			       "             [-p <prompt>] [-sb <color>] [-sf <color>]\n"
-			       "             [-x <x>] [-y <y>] [-w <w>] [-v]\n");
+			eprint("usage: dmenu [-i] [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+			       "             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	setlocale(LC_CTYPE, "");
 	dpy = XOpenDisplay(0);
 	if(!dpy)
@@ -739,7 +743,7 @@ main(int argc, char *argv[]) {
 		readstdin();
 	}
 
-	setup(x, y, w);
+	setup(topbar);
 	drawmenu();
 	XSync(dpy, False);
 	run();

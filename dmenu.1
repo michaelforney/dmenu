@@ -4,9 +4,7 @@ dmenu \- dynamic menu
 .SH SYNOPSIS
 .B dmenu
 .RB [ \-i ]
-.RB [ \-x " <x>"]
-.RB [ \-y " <y>"]
-.RB [ \-w " <width>"]
+.RB [ \-b ]
 .RB [ \-fn " <font>"]
 .RB [ \-nb " <color>"]
 .RB [ \-nf " <color>"]
@@ -22,19 +20,11 @@ It manages huge amounts (up to 10.000 and more) of user defined menu items
 efficiently.
 .SS Options
 .TP
-.B \-x
-defines the x coordinate dmenu appears at (0 by default).
-.TP
-.B \-y
-defines the y coordinate dmenu appears at (0 by default). If it is negative,
-dmenu will appear with the bottom at the given positive coordinate. If it is
--0, dmenu appears at the screen bottom.
-.TP
-.B \-w
-defines the width of the dmenu window (screen width by default).
-.TP
 .B \-i
 makes dmenu match menu entries case insensitively.
+.TP
+.B \-b
+defines that dmenu appears at the bottom.
 .TP
 .B \-fn <font>
 defines the font.
