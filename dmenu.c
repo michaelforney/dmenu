@@ -728,8 +728,7 @@ main(int argc, char *argv[]) {
 			eprint("usage: dmenu [-i] [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
 			       "             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	setlocale(LC_CTYPE, "");
-	dpy = XOpenDisplay(0);
-	if(!dpy)
+	if(!(dpy = XOpenDisplay(0)))
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
