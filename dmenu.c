@@ -634,9 +634,9 @@ setup(Bool topbar) {
 #if XINERAMA
 	if(XineramaIsActive(dpy)) {
 		info = XineramaQueryScreens(dpy, &i);
-		x = info[0].x_org;
-		y = topbar ? info[0].y_org : info[0].y_org + info[0].height - mh;
-		mw = info[0].width;
+		x = info[xidx].x_org;
+		y = topbar ? info[xidx].y_org : info[xidx].y_org + info[xidx].height - mh;
+		mw = info[xidx].width;
 		XFree(info);
 	}
 	else
