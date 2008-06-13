@@ -2,13 +2,14 @@
 #include <ctype.h>
 #include <locale.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
+#include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/keysym.h>
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif
@@ -45,55 +46,54 @@ struct Item {
 };
 
 /* forward declarations */
-void appenditem(Item *i, Item **list, Item **last);
-void calcoffsets(void);
-char *cistrstr(const char *s, const char *sub);
-void cleanup(void);
-void drawmenu(void);
-void drawtext(const char *text, ulong col[ColLast]);
-void *emalloc(uint size);
-void eprint(const char *errstr, ...);
-char *estrdup(const char *str);
-ulong getcolor(const char *colstr);
-Bool grabkeyboard(void);
-void initfont(const char *fontstr);
-void kpress(XKeyEvent * e);
-void match(char *pattern);
-void readstdin(void);
-void run(void);
-void setup(Bool topbar);
-uint textnw(const char *text, uint len);
-uint textw(const char *text);
+static void appenditem(Item *i, Item **list, Item **last);
+static void calcoffsets(void);
+static char *cistrstr(const char *s, const char *sub);
+static void cleanup(void);
+static void drawmenu(void);
+static void drawtext(const char *text, ulong col[ColLast]);
+static void *emalloc(uint size);
+static void eprint(const char *errstr, ...);
+static ulong getcolor(const char *colstr);
+static Bool grabkeyboard(void);
+static void initfont(const char *fontstr);
+static void kpress(XKeyEvent * e);
+static void match(char *pattern);
+static void readstdin(void);
+static void run(void);
+static void setup(Bool topbar);
+static int textnw(const char *text, uint len);
+static int textw(const char *text);
 
 #include "config.h"
 
 /* variables */
-char *font = FONT;
-char *maxname = NULL;
-char *normbg = NORMBGCOLOR;
-char *normfg = NORMFGCOLOR;
-char *prompt = NULL;
-char *selbg = SELBGCOLOR;
-char *selfg = SELFGCOLOR;
-char text[4096];
-int screen;
-int ret = 0;
-uint cmdw = 0;
-uint mw, mh;
-uint promptw = 0;
-uint numlockmask = 0;
-Bool running = True;
-Display *dpy;
-DC dc = {0};
-Item *allitems = NULL;	/* first of all items */
-Item *item = NULL;	/* first of pattern matching items */
-Item *sel = NULL;
-Item *next = NULL;
-Item *prev = NULL;
-Item *curr = NULL;
-Window root, win;
-int (*fstrncmp)(const char *, const char *, size_t n) = strncmp;
-char *(*fstrstr)(const char *, const char *) = strstr;
+static char *font = FONT;
+static char *maxname = NULL;
+static char *normbg = NORMBGCOLOR;
+static char *normfg = NORMFGCOLOR;
+static char *prompt = NULL;
+static char *selbg = SELBGCOLOR;
+static char *selfg = SELFGCOLOR;
+static char text[4096];
+static int cmdw = 0;
+static int promptw = 0;
+static int ret = 0;
+static int screen;
+static uint mw, mh;
+static uint numlockmask = 0;
+static Bool running = True;
+static Display *dpy;
+static DC dc = {0};
+static Item *allitems = NULL;	/* first of all items */
+static Item *item = NULL;	/* first of pattern matching items */
+static Item *sel = NULL;
+static Item *next = NULL;
+static Item *prev = NULL;
+static Item *curr = NULL;
+static Window root, win;
+static int (*fstrncmp)(const char *, const char *, size_t n) = strncmp;
+static char *(*fstrstr)(const char *, const char *) = strstr;
 
 void
 appenditem(Item *i, Item **list, Item **last) {
@@ -108,11 +108,12 @@ appenditem(Item *i, Item **list, Item **last) {
 
 void
 calcoffsets(void) {
-	uint tw, w;
+	int tw;
+	uint w;
 
 	if(!curr)
 		return;
-	w = promptw + cmdw + 2 * SPACE;
+	w = promptw + cmdw + 2 * spaceitem;
 	for(next = curr; next; next=next->right) {
 		tw = textw(next->text);
 		if(tw > mw / 3)
@@ -121,7 +122,7 @@ calcoffsets(void) {
 		if(w > mw)
 			break;
 	}
-	w = promptw + cmdw + 2 * SPACE;
+	w = promptw + cmdw + 2 * spaceitem;
 	for(prev = curr; prev && prev->left; prev=prev->left) {
 		tw = textw(prev->left->text);
 		if(tw > mw / 3)
@@ -197,7 +198,7 @@ drawmenu(void) {
 	drawtext(text[0] ? text : NULL, dc.norm);
 	dc.x += cmdw;
 	if(curr) {
-		dc.w = SPACE;
+		dc.w = spaceitem;
 		drawtext((curr && curr->left) ? "<" : NULL, dc.norm);
 		dc.x += dc.w;
 		/* determine maximum items */
@@ -208,8 +209,8 @@ drawmenu(void) {
 			drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
 			dc.x += dc.w;
 		}
-		dc.x = mw - SPACE;
-		dc.w = SPACE;
+		dc.x = mw - spaceitem;
+		dc.w = spaceitem;
 		drawtext(next ? ">" : NULL, dc.norm);
 	}
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
@@ -273,15 +274,6 @@ eprint(const char *errstr, ...) {
 	vfprintf(stderr, errstr, ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
-}
-
-char *
-estrdup(const char *str) {
-	void *res = strdup(str);
-
-	if(!res)
-		eprint("fatal: could not malloc() %u bytes\n", strlen(str));
-	return res;
 }
 
 ulong
@@ -358,14 +350,15 @@ kpress(XKeyEvent * e) {
 	len = strlen(text);
 	buf[0] = 0;
 	num = XLookupString(e, buf, sizeof buf, &ksym, 0);
-	if(IsKeypadKey(ksym))
+	if(IsKeypadKey(ksym)) {
 		if(ksym == XK_KP_Enter)
 			ksym = XK_Return;
 		else if(ksym >= XK_KP_0 && ksym <= XK_KP_9)
 			ksym = (ksym - XK_KP_0) + XK_0;
+	}
 	if(IsFunctionKey(ksym) || IsKeypadKey(ksym)
-	|| IsMiscFunctionKey(ksym) || IsPFKey(ksym)
-	|| IsPrivateKeypadKey(ksym))
+	   || IsMiscFunctionKey(ksym) || IsPFKey(ksym)
+	   || IsPrivateKeypadKey(ksym))
 		return;
 	/* first check if a control mask is omitted */
 	if(e->state & ControlMask) {
@@ -569,7 +562,8 @@ readstdin(void) {
 		len = strlen(buf);
 		if (buf[len - 1] == '\n')
 			buf[len - 1] = 0;
-		p = estrdup(buf);
+		if(!(p = strdup(buf)))
+			eprint("fatal: could not strdup() %u bytes\n", strlen(buf));
 		if(max < len) {
 			maxname = p;
 			max = len;
@@ -677,7 +671,7 @@ setup(Bool topbar) {
 	XMapRaised(dpy, win);
 }
 
-uint
+int
 textnw(const char *text, uint len) {
 	XRectangle r;
 
@@ -688,7 +682,7 @@ textnw(const char *text, uint len) {
 	return XTextWidth(dc.font.xfont, text, len);
 }
 
-uint
+int
 textw(const char *text) {
 	return textnw(text, strlen(text)) + dc.font.height;
 }
