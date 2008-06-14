@@ -68,13 +68,8 @@ static int textw(const char *text);
 #include "config.h"
 
 /* variables */
-static char *font = FONT;
 static char *maxname = NULL;
-static char *normbg = NORMBGCOLOR;
-static char *normfg = NORMFGCOLOR;
 static char *prompt = NULL;
-static char *selbg = SELBGCOLOR;
-static char *selfg = SELFGCOLOR;
 static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
@@ -618,10 +613,10 @@ setup(Bool topbar) {
 	XFreeModifiermap(modmap);
 
 	/* style */
-	dc.norm[ColBG] = getcolor(normbg);
-	dc.norm[ColFG] = getcolor(normfg);
-	dc.sel[ColBG] = getcolor(selbg);
-	dc.sel[ColFG] = getcolor(selfg);
+	dc.norm[ColBG] = getcolor(normbgcolor);
+	dc.norm[ColFG] = getcolor(normfgcolor);
+	dc.sel[ColBG] = getcolor(selbgcolor);
+	dc.sel[ColFG] = getcolor(selfgcolor);
 	initfont(font);
 
 	/* menu window */
@@ -704,19 +699,19 @@ main(int argc, char *argv[]) {
 			if(++i < argc) font = argv[i];
 		}
 		else if(!strcmp(argv[i], "-nb")) {
-			if(++i < argc) normbg = argv[i];
+			if(++i < argc) normbgcolor = argv[i];
 		}
 		else if(!strcmp(argv[i], "-nf")) {
-			if(++i < argc) normfg = argv[i];
+			if(++i < argc) normfgcolor = argv[i];
 		}
 		else if(!strcmp(argv[i], "-p")) {
 			if(++i < argc) prompt = argv[i];
 		}
 		else if(!strcmp(argv[i], "-sb")) {
-			if(++i < argc) selbg = argv[i];
+			if(++i < argc) selbgcolor = argv[i];
 		}
 		else if(!strcmp(argv[i], "-sf")) {
-			if(++i < argc) selfg = argv[i];
+			if(++i < argc) selfgcolor = argv[i];
 		}
 		else if(!strcmp(argv[i], "-v"))
 			eprint("dmenu-"VERSION", © 2006-2008 dmenu engineers, see LICENSE for details\n");
