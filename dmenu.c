@@ -52,7 +52,6 @@ static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
 static void drawmenu(void);
 static void drawtext(const char *text, ulong col[ColLast]);
-static void *emalloc(uint size);
 static void eprint(const char *errstr, ...);
 static ulong getcolor(const char *colstr);
 static Bool grabkeyboard(void);
@@ -250,15 +249,6 @@ drawtext(const char *text, ulong col[ColLast]) {
 		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, buf, len);
 	else
 		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
-}
-
-void *
-emalloc(uint size) {
-	void *res = malloc(size);
-
-	if(!res)
-		eprint("fatal: could not malloc() %u bytes\n", size);
-	return res;
 }
 
 void
@@ -563,7 +553,8 @@ readstdin(void) {
 			maxname = p;
 			max = len;
 		}
-		new = emalloc(sizeof(Item));
+		if((new = (Item *)malloc(sizeof(Item))) == NULL)
+			eprint("fatal: could not malloc() %u bytes\n", sizeof(Item));
 		new->next = new->left = new->right = NULL;
 		new->text = p;
 		if(!i)
