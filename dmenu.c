@@ -22,12 +22,10 @@
 enum { ColFG, ColBG, ColLast };
 
 /* typedefs */
-typedef unsigned int uint;
-typedef unsigned long ulong;
 typedef struct {
 	int x, y, w, h;
-	ulong norm[ColLast];
-	ulong sel[ColLast];
+	unsigned long norm[ColLast];
+	unsigned long sel[ColLast];
 	Drawable drawable;
 	GC gc;
 	struct {
@@ -52,9 +50,9 @@ static void calcoffsets(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
 static void drawmenu(void);
-static void drawtext(const char *text, ulong col[ColLast]);
+static void drawtext(const char *text, unsigned long col[ColLast]);
 static void eprint(const char *errstr, ...);
-static ulong getcolor(const char *colstr);
+static unsigned long getcolor(const char *colstr);
 static Bool grabkeyboard(void);
 static void initfont(const char *fontstr);
 static void kpress(XKeyEvent * e);
@@ -62,7 +60,7 @@ static void match(char *pattern);
 static void readstdin(void);
 static void run(void);
 static void setup(Bool topbar);
-static int textnw(const char *text, uint len);
+static int textnw(const char *text, unsigned int len);
 static int textw(const char *text);
 
 #include "config.h"
@@ -75,8 +73,8 @@ static int cmdw = 0;
 static int promptw = 0;
 static int ret = 0;
 static int screen;
-static uint mw, mh;
-static uint numlockmask = 0;
+static unsigned int mw, mh;
+static unsigned int numlockmask = 0;
 static Bool running = True;
 static Display *dpy;
 static DC dc = {0};
@@ -104,7 +102,7 @@ appenditem(Item *i, Item **list, Item **last) {
 void
 calcoffsets(void) {
 	int tw;
-	uint w;
+	unsigned int w;
 
 	if(!curr)
 		return;
@@ -131,7 +129,7 @@ calcoffsets(void) {
 char *
 cistrstr(const char *s, const char *sub) {
 	int c, csub;
-	uint len;
+	unsigned int len;
 
 	if(!sub)
 		return (char *)s;
@@ -213,10 +211,10 @@ drawmenu(void) {
 }
 
 void
-drawtext(const char *text, ulong col[ColLast]) {
+drawtext(const char *text, unsigned long col[ColLast]) {
 	int x, y, w, h;
 	static char buf[256];
-	uint len, olen;
+	unsigned int len, olen;
 	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
 
 	XSetForeground(dpy, dc.gc, col[ColBG]);
@@ -262,7 +260,7 @@ eprint(const char *errstr, ...) {
 	exit(EXIT_FAILURE);
 }
 
-ulong
+unsigned long
 getcolor(const char *colstr) {
 	Colormap cmap = DefaultColormap(dpy, screen);
 	XColor color;
@@ -274,7 +272,7 @@ getcolor(const char *colstr) {
 
 Bool
 grabkeyboard(void) {
-	uint len;
+	unsigned int len;
 
 	for(len = 1000; len; len--) {
 		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
@@ -330,7 +328,7 @@ void
 kpress(XKeyEvent * e) {
 	char buf[32];
 	int i, num;
-	uint len;
+	unsigned int len;
 	KeySym ksym;
 
 	len = strlen(text);
@@ -498,7 +496,7 @@ kpress(XKeyEvent * e) {
 
 void
 match(char *pattern) {
-	uint plen;
+	unsigned int plen;
 	Item *i, *itemend, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
 
 	if(!pattern)
@@ -540,7 +538,7 @@ match(char *pattern) {
 void
 readstdin(void) {
 	char *p, buf[1024];
-	uint len = 0, max = 0;
+	unsigned int len = 0, max = 0;
 	Item *i, *new;
 
 	i = 0;
@@ -659,7 +657,7 @@ setup(Bool topbar) {
 }
 
 int
-textnw(const char *text, uint len) {
+textnw(const char *text, unsigned int len) {
 	XRectangle r;
 
 	if(dc.font.set) {
@@ -676,7 +674,7 @@ textw(const char *text) {
 
 int
 main(int argc, char *argv[]) {
-	uint i;
+	unsigned int i;
 	Bool topbar = True;
 
 	/* command line args */
