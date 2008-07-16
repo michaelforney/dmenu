@@ -16,7 +16,8 @@
 #endif
 
 /* macros */
-#define CLEANMASK(mask) (mask & ~(numlockmask | LockMask))
+#define CLEANMASK(mask)         (mask & ~(numlockmask | LockMask))
+#define INRECT(X,Y,RX,RY,RW,RH) ((X) >= (RX) && (X) < (RX) + (RW) && (Y) >= (RY) && (Y) < (RY) + (RH))
 
 /* enums */
 enum { ColFG, ColBG, ColLast };
@@ -585,7 +586,7 @@ run(void) {
 
 void
 setup(Bool topbar) {
-	int i, j, x, y;
+	int i, j, n, x, y;
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
 #if XINERAMA
@@ -618,10 +619,20 @@ setup(Bool topbar) {
 	mh = dc.font.height + 2;
 #if XINERAMA
 	if(XineramaIsActive(dpy)) {
-		info = XineramaQueryScreens(dpy, &i);
-		x = info[xidx].x_org;
-		y = topbar ? info[xidx].y_org : info[xidx].y_org + info[xidx].height - mh;
-		mw = info[xidx].width;
+		i = 0;
+		info = XineramaQueryScreens(dpy, &n);
+		if(n > 1) {
+			int di;
+			unsigned int dui;
+			Window dummy;
+			if(XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui))
+				for(i = 0; i < n; i++)
+					if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
+						break;
+		}
+		x = info[i].x_org;
+		y = topbar ? info[i].y_org : info[i].y_org + info[i].height - mh;
+		mw = info[i].width;
 		XFree(info);
 	}
 	else
