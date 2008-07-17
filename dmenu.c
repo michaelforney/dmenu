@@ -586,7 +586,7 @@ run(void) {
 
 void
 setup(Bool topbar) {
-	int i, j, n, x, y;
+	int i, j, x, y;
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
 #if XINERAMA
@@ -619,6 +619,7 @@ setup(Bool topbar) {
 	mh = dc.font.height + 2;
 #if XINERAMA
 	if(XineramaIsActive(dpy)) {
+		int n;
 		i = 0;
 		info = XineramaQueryScreens(dpy, &n);
 		if(n > 1) {
