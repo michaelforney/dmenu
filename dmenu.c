@@ -587,11 +587,12 @@ run(void) {
 void
 setup(Bool topbar) {
 	int i, j, x, y;
-	XModifierKeymap *modmap;
-	XSetWindowAttributes wa;
 #if XINERAMA
+	int n;
 	XineramaScreenInfo *info = NULL;
 #endif
+	XModifierKeymap *modmap;
+	XSetWindowAttributes wa;
 
 	/* init modifier map */
 	modmap = XGetModifierMapping(dpy);
@@ -618,10 +619,8 @@ setup(Bool topbar) {
 	/* menu window geometry */
 	mh = dc.font.height + 2;
 #if XINERAMA
-	if(XineramaIsActive(dpy)) {
-		int n;
+	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
 		i = 0;
-		info = XineramaQueryScreens(dpy, &n);
 		if(n > 1) {
 			int di;
 			unsigned int dui;
