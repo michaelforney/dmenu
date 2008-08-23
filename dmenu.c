@@ -280,8 +280,6 @@ initfont(const char *fontstr) {
 	if(!fontstr || fontstr[0] == '\0')
 		eprint("error, cannot load font: '%s'\n", fontstr);
 	missing = NULL;
-	if(dc.font.set)
-		XFreeFontSet(dpy, dc.font.set);
 	dc.font.set = XCreateFontSet(dpy, fontstr, &missing, &n, &def);
 	if(missing)
 		XFreeStringList(missing);
