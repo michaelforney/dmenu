@@ -1,6 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 #define _BSD_SOURCE
 #include <ctype.h>
+#include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -705,7 +706,7 @@ main(int argc, char *argv[]) {
 		else
 			eprint("usage: dmenu [-i] [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
 			       "             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
-	if(!XSupportsLocale())
+	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(0)))
 		eprint("dmenu: cannot open display\n");
