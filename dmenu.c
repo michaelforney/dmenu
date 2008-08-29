@@ -79,7 +79,7 @@ static unsigned int mw, mh;
 static unsigned int numlockmask = 0;
 static Bool running = True;
 static Display *dpy;
-static DC dc = {0};
+static DC dc;
 static Item *allitems = NULL;	/* first of all items */
 static Item *item = NULL;	/* first of pattern matching items */
 static Item *sel = NULL;
@@ -300,9 +300,6 @@ initfont(const char *fontstr) {
 		}
 	}
 	else {
-		if(dc.font.xfont)
-			XFreeFont(dpy, dc.font.xfont);
-		dc.font.xfont = NULL;
 		if(!(dc.font.xfont = XLoadQueryFont(dpy, fontstr))
 		&& !(dc.font.xfont = XLoadQueryFont(dpy, "fixed")))
 			eprint("error, cannot load font: '%s'\n", fontstr);
