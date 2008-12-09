@@ -396,10 +396,7 @@ kpress(XKeyEvent * e) {
 	default:
 		if(num && !iscntrl((int) buf[0])) {
 			buf[num] = 0;
-			if(len > 0)
-				strncat(text, buf, sizeof text);
-			else
-				strncpy(text, buf, sizeof text);
+			strncpy(text + len, buf, sizeof text - len);
 			match(text);
 		}
 		break;
