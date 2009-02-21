@@ -1,5 +1,4 @@
 /* See LICENSE file for copyright and license details. */
-#define _BSD_SOURCE
 #include <ctype.h>
 #include <locale.h>
 #include <stdarg.h>
@@ -141,7 +140,7 @@ cistrstr(const char *s, const char *sub) {
 		do {
 			do {
 				if((csub = *s++) == 0)
-					return (NULL);
+					return NULL;
 			}
 			while(tolower(csub) != c);
 		}
@@ -318,7 +317,7 @@ kpress(XKeyEvent * e) {
 
 	len = strlen(text);
 	buf[0] = 0;
-	num = XLookupString(e, buf, sizeof buf, &ksym, 0);
+	num = XLookupString(e, buf, sizeof buf, &ksym, NULL);
 	if(IsKeypadKey(ksym)) {
 		if(ksym == XK_KP_Enter)
 			ksym = XK_Return;
@@ -534,7 +533,7 @@ readstdin(void) {
 			maxname = p;
 			max = len;
 		}
-		if((new = (Item *)malloc(sizeof(Item))) == NULL)
+		if(!(new = (Item *)malloc(sizeof(Item))))
 			eprint("fatal: could not malloc() %u bytes\n", sizeof(Item));
 		new->next = new->left = new->right = NULL;
 		new->text = p;
@@ -593,7 +592,7 @@ setup(Bool topbar) {
 	initfont(font);
 
 	/* menu window */
-	wa.override_redirect = 1;
+	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
 
@@ -631,7 +630,7 @@ setup(Bool topbar) {
 
 	/* pixmap */
 	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
-	dc.gc = XCreateGC(dpy, root, 0, 0);
+	dc.gc = XCreateGC(dpy, root, 0, NULL);
 	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
 	if(!dc.font.set)
 		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
@@ -702,7 +701,7 @@ main(int argc, char *argv[]) {
 			       "             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "warning: no locale support\n");
-	if(!(dpy = XOpenDisplay(0)))
+	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
