@@ -5,6 +5,7 @@ dmenu \- dynamic menu
 .B dmenu
 .RB [ \-i ]
 .RB [ \-b ]
+.RB [ \-l " <lines>"]
 .RB [ \-fn " <font>"]
 .RB [ \-nb " <color>"]
 .RB [ \-nf " <color>"]
@@ -25,6 +26,10 @@ makes dmenu match menu entries case insensitively.
 .TP
 .B \-b
 defines that dmenu appears at the bottom.
+.TP
+.B \-l <lines>
+activates vertical list mode.
+The given number of lines will be displayed. Window height will get adjusted.
 .TP
 .B \-fn <font>
 defines the font.
@@ -57,7 +62,7 @@ dmenu is completely controlled by the keyboard. The following keys are recognize
 Appends the character to the text in the input field.  This works as a filter:
 only items containing this text will be displayed.
 .TP
-.B Left/Right (Mod1\-h/Mod1\-l)
+.B Left/Right (Up/Down) (Mod1\-h/Mod1\-l)
 Select the previous/next item.
 .TP
 .B PageUp/PageDown (Mod1\-k/Mod1\-j)

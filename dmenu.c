@@ -18,6 +18,7 @@
 #define CLEANMASK(mask)         (mask & ~(numlockmask | LockMask))
 #define INRECT(X,Y,RX,RY,RW,RH) ((X) >= (RX) && (X) < (RX) + (RW) && (Y) >= (RY) && (Y) < (RY) + (RH))
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
+#define MAX(a, b)               ((a) > (b) ? (a) : (b))
 
 /* enums */
 enum { ColFG, ColBG, ColLast };
@@ -47,10 +48,12 @@ struct Item {
 
 /* forward declarations */
 static void appenditem(Item *i, Item **list, Item **last);
-static void calcoffsets(void);
+static void calcoffsetsh(void);
+static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
-static void drawmenu(void);
+static void drawmenuh(void);
+static void drawmenuv(void);
 static void drawtext(const char *text, unsigned long col[ColLast]);
 static void eprint(const char *errstr, ...);
 static unsigned long getcolor(const char *colstr);
@@ -73,6 +76,7 @@ static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
 static int ret = 0;
+static int cursor = 0;
 static int screen;
 static unsigned int mw, mh;
 static unsigned int numlockmask = 0;
@@ -88,6 +92,10 @@ static Item *curr = NULL;
 static Window root, win;
 static int (*fstrncmp)(const char *, const char *, size_t n) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
+static Bool vlist = False;
+static unsigned int lines = 5;
+static void (*calcoffsets)(void) = calcoffsetsh;
+static void (*drawmenu)(void) = drawmenuh;
 
 void
 appenditem(Item *i, Item **list, Item **last) {
@@ -101,7 +109,7 @@ appenditem(Item *i, Item **list, Item **last) {
 }
 
 void
-calcoffsets(void) {
+calcoffsetsh(void) {
 	int tw;
 	unsigned int w;
 
@@ -123,6 +131,26 @@ calcoffsets(void) {
 			tw = mw / 3;
 		w += tw;
 		if(w > mw)
+			break;
+	}
+}
+
+void
+calcoffsetsv(void) {
+	static unsigned int w;
+
+	if(!curr)
+		return;
+	w = (dc.font.height + 2) * (lines + 1);
+	for(next = curr; next; next=next->right) {
+		w -= dc.font.height + 2;
+		if(w <= 0)
+			break;
+	}
+	w = (dc.font.height + 2) * (lines + 1);
+	for(prev = curr; prev && prev->left; prev=prev->left) {
+		w -= dc.font.height + 2;
+		if(w <= 0)
 			break;
 	}
 }
@@ -171,7 +199,17 @@ cleanup(void) {
 }
 
 void
-drawmenu(void) {
+drawcursor(void) {
+	XRectangle r = { dc.x, dc.y + 2, 1, dc.h - 4 };
+
+	r.x += textnw(text, cursor) + dc.font.height / 2;
+
+	XSetForeground(dpy, dc.gc, dc.norm[ColFG]);
+	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
+}
+
+void
+drawmenuh(void) {
 	Item *i;
 
 	dc.x = 0;
@@ -190,6 +228,7 @@ drawmenu(void) {
 	if(cmdw && item)
 		dc.w = cmdw;
 	drawtext(text[0] ? text : NULL, dc.norm);
+	drawcursor();
 	dc.x += cmdw;
 	if(curr) {
 		dc.w = spaceitem;
@@ -212,6 +251,39 @@ drawmenu(void) {
 }
 
 void
+drawmenuv(void) {
+	Item *i;
+
+	dc.x = 0;
+	dc.y = 0;
+	dc.w = mw;
+	dc.h = mh;
+	drawtext(NULL, dc.norm);
+	/* print prompt? */
+	if(promptw) {
+		dc.w = promptw;
+		drawtext(prompt, dc.sel);
+	}
+	dc.x += promptw;
+	dc.w = mw - promptw;
+	/* print command */
+	drawtext(text[0] ? text : NULL, dc.norm);
+	if(curr) {
+		dc.x = 0;
+		dc.w = mw;
+		dc.y += dc.font.height + 2;
+		/* determine maximum items */
+		for(i = curr; i != next; i=i->right) {
+			drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
+			dc.y += dc.font.height + 2;
+		}
+		drawtext(NULL, dc.norm);
+	}
+	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
+	XFlush(dpy);
+}
+
+void
 drawtext(const char *text, unsigned long col[ColLast]) {
 	char buf[256];
 	int i, x, y, h, len, olen;
@@ -222,8 +294,8 @@ drawtext(const char *text, unsigned long col[ColLast]) {
 	if(!text)
 		return;
 	olen = strlen(text);
-	h = dc.font.ascent + dc.font.descent;
-	y = dc.y + (dc.h / 2) - (h / 2) + dc.font.ascent;
+	h = dc.font.height;
+	y = dc.y + ((h+2) / 2) - (h / 2) + dc.font.ascent;
 	x = dc.x + (h / 2);
 	/* shorten text if necessary */
 	for(len = MIN(olen, sizeof buf); len && textnw(text, len) > dc.w - h; len--);
@@ -353,7 +425,7 @@ kpress(XKeyEvent * e) {
 			text[0] = 0;
 			match(text);
 			drawmenu();
-			return;
+			break;
 		case XK_w:
 		case XK_W:
 			if(len) {
@@ -365,7 +437,7 @@ kpress(XKeyEvent * e) {
 				match(text);
 				drawmenu();
 			}
-			return;
+			break;
 		}
 	}
 	if(CLEANMASK(e->state) & Mod1Mask) {
@@ -389,19 +461,39 @@ kpress(XKeyEvent * e) {
 		case XK_G:
 			ksym = XK_End;
 			break;
+		case XK_p:
+			{
+				FILE *fp;
+				char *c;
+				if(!(fp = (FILE*)popen("sselp", "r")))
+					fprintf(stderr, "dmenu: Could not popen sselp\n");
+				c = fgets(text + len, sizeof(text) - len, fp);
+				pclose(fp);
+				if(c == NULL)
+					return;
+			}
+			len = strlen(text);
+			if(len && text[len-1] == '\n')
+				text[--len] = '\0';
+			match(text);
+			drawmenu();
+			return;
 		}
 	}
 	switch(ksym) {
 	default:
 		if(num && !iscntrl((int) buf[0])) {
 			buf[num] = 0;
-			strncpy(text + len, buf, sizeof text - len);
+			memmove(text + cursor + num, text + cursor, sizeof text - cursor);
+			strncpy(text + cursor, buf, sizeof text - cursor);
+			cursor+=num;
 			match(text);
 		}
 		break;
 	case XK_BackSpace:
-		if(len) {
-			text[--len] = 0;
+		if(cursor > 0) {
+			memmove(text + cursor + -1, text + cursor, sizeof text - cursor);
+			cursor--;
 			match(text);
 		}
 		break;
@@ -426,13 +518,18 @@ kpress(XKeyEvent * e) {
 		calcoffsets();
 		break;
 	case XK_Left:
-		if(!(sel && sel->left))
-			return;
-		sel=sel->left;
-		if(sel->right == curr) {
-			curr = prev;
-			calcoffsets();
+	case XK_Up:
+		if(sel && sel->left){
+			sel=sel->left;
+			if(sel->right == curr) {
+				curr = prev;
+				calcoffsets();
+			}
 		}
+		else if(cursor > 0)
+			cursor--;
+		else
+			return;
 		break;
 	case XK_Next:
 		if(!next)
@@ -457,21 +554,30 @@ kpress(XKeyEvent * e) {
 		running = False;
 		break;
 	case XK_Right:
-		if(!(sel && sel->right))
-			return;
-		sel=sel->right;
-		if(sel == next) {
-			curr = next;
-			calcoffsets();
+	case XK_Down:
+		if(cursor < len)
+			cursor++;
+		else if(sel && sel->right) {
+			sel=sel->right;
+			if(sel == next) {
+				curr = next;
+				calcoffsets();
+			}
 		}
+		else
+			return;
 		break;
 	case XK_Tab:
 		if(!sel)
 			return;
 		strncpy(text, sel->text, sizeof text);
+		cursor = strlen(text);
 		match(text);
 		break;
 	}
+	len = strlen(text);
+	cursor = MIN(cursor, len);
+	cursor = MAX(cursor, 0);
 	drawmenu();
 }
 
@@ -598,6 +704,7 @@ setup(Bool topbar) {
 
 	/* menu window geometry */
 	mh = dc.font.height + 2;
+	mh = vlist ? mh * (lines+1) : mh;
 #if XINERAMA
 	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
 		i = 0;
@@ -676,6 +783,12 @@ main(int argc, char *argv[]) {
 		}
 		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
+		else if(!strcmp(argv[i], "-l")) {
+			vlist = True;
+			calcoffsets = calcoffsetsv;
+			drawmenu = drawmenuv;
+			if(++i < argc) lines += atoi(argv[i]);
+		}
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
 		}
@@ -695,9 +808,9 @@ main(int argc, char *argv[]) {
 			if(++i < argc) selfgcolor = argv[i];
 		}
 		else if(!strcmp(argv[i], "-v"))
-			eprint("dmenu-"VERSION", © 2006-2008 dmenu engineers, see LICENSE for details\n");
+			eprint("dmenu-"VERSION", © 2006-2009 dmenu engineers, see LICENSE for details\n");
 		else
-			eprint("usage: dmenu [-i] [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+			eprint("usage: dmenu [-i] [-b] [-l <lines>] [-fn <font>] [-nb <color>] [-nf <color>]\n"
 			       "             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "warning: no locale support\n");
