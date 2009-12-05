@@ -466,7 +466,7 @@ kpress(XKeyEvent * e) {
 				FILE *fp;
 				char *c;
 				if(!(fp = (FILE*)popen("sselp", "r")))
-					fprintf(stderr, "dmenu: Could not popen sselp\n");
+					eprint("dmenu: Could not popen sselp\n");
 				c = fgets(text + len, sizeof(text) - len, fp);
 				pclose(fp);
 				if(c == NULL)
