@@ -52,6 +52,7 @@ static void calcoffsetsh(void);
 static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
+static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
 static void drawtext(const char *text, unsigned long col[ColLast]);
@@ -95,7 +96,6 @@ static char *(*fstrstr)(const char *, const char *) = strstr;
 static Bool vlist = False;
 static unsigned int lines = 5;
 static void (*calcoffsets)(void) = calcoffsetsh;
-static void (*drawmenu)(void) = drawmenuh;
 
 void
 appenditem(Item *i, Item **list, Item **last) {
@@ -200,7 +200,7 @@ cleanup(void) {
 
 void
 drawcursor(void) {
-	XRectangle r = { dc.x, dc.y + 2, 1, dc.h - 4 };
+	XRectangle r = { dc.x, dc.y + 2, 1, dc.font.height - 2 };
 
 	r.x += textnw(text, cursor) + dc.font.height / 2;
 
@@ -209,9 +209,7 @@ drawcursor(void) {
 }
 
 void
-drawmenuh(void) {
-	Item *i;
-
+drawmenu(void) {
 	dc.x = 0;
 	dc.y = 0;
 	dc.w = mw;
@@ -231,23 +229,33 @@ drawmenuh(void) {
 	drawcursor();
 	dc.x += cmdw;
 	if(curr) {
-		dc.w = spaceitem;
-		drawtext((curr && curr->left) ? "<" : NULL, dc.norm);
-		dc.x += dc.w;
-		/* determine maximum items */
-		for(i = curr; i != next; i=i->right) {
-			dc.w = textw(i->text);
-			if(dc.w > mw / 3)
-				dc.w = mw / 3;
-			drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
-			dc.x += dc.w;
-		}
-		dc.x = mw - spaceitem;
-		dc.w = spaceitem;
-		drawtext(next ? ">" : NULL, dc.norm);
+		if(vlist)
+			drawmenuv();
+		else
+			drawmenuh();
 	}
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
+}
+
+void
+drawmenuh(void) {
+	Item *i;
+
+	dc.w = spaceitem;
+	drawtext((curr && curr->left) ? "<" : NULL, dc.norm);
+	dc.x += dc.w;
+	/* determine maximum items */
+	for(i = curr; i != next; i=i->right) {
+		dc.w = textw(i->text);
+		if(dc.w > mw / 3)
+			dc.w = mw / 3;
+		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
+		dc.x += dc.w;
+	}
+	dc.x = mw - spaceitem;
+	dc.w = spaceitem;
+	drawtext(next ? ">" : NULL, dc.norm);
 }
 
 void
@@ -255,32 +263,14 @@ drawmenuv(void) {
 	Item *i;
 
 	dc.x = 0;
-	dc.y = 0;
 	dc.w = mw;
-	dc.h = mh;
-	drawtext(NULL, dc.norm);
-	/* print prompt? */
-	if(promptw) {
-		dc.w = promptw;
-		drawtext(prompt, dc.sel);
-	}
-	dc.x += promptw;
-	dc.w = mw - promptw;
-	/* print command */
-	drawtext(text[0] ? text : NULL, dc.norm);
-	if(curr) {
-		dc.x = 0;
-		dc.w = mw;
+	dc.y += dc.font.height + 2;
+	/* determine maximum items */
+	for(i = curr; i != next; i=i->right) {
+		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
 		dc.y += dc.font.height + 2;
-		/* determine maximum items */
-		for(i = curr; i != next; i=i->right) {
-			drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
-			dc.y += dc.font.height + 2;
-		}
-		drawtext(NULL, dc.norm);
 	}
-	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
-	XFlush(dpy);
+	drawtext(NULL, dc.norm);
 }
 
 void
@@ -786,8 +776,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-l")) {
 			vlist = True;
 			calcoffsets = calcoffsetsv;
-			drawmenu = drawmenuv;
-			if(++i < argc) lines += atoi(argv[i]);
+			if(++i < argc) lines = atoi(argv[i]);
 		}
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
