@@ -372,7 +372,7 @@ initfont(const char *fontstr) {
 
 void
 kpress(XKeyEvent * e) {
-	char buf[32];
+	char buf[sizeof text];
 	int i, num;
 	unsigned int len;
 	KeySym ksym;
@@ -457,25 +457,23 @@ kpress(XKeyEvent * e) {
 				char *c;
 				if(!(fp = (FILE*)popen("sselp", "r")))
 					eprint("dmenu: Could not popen sselp\n");
-				c = fgets(text + len, sizeof(text) - len, fp);
+				c = fgets(buf, sizeof buf, fp);
 				pclose(fp);
 				if(c == NULL)
 					return;
 			}
-			len = strlen(text);
-			if(len && text[len-1] == '\n')
-				text[--len] = '\0';
-			match(text);
-			drawmenu();
-			return;
+			num = strlen(buf);
+			if(num && buf[num-1] == '\n')
+				buf[--num] = '\0';
+			break;
 		}
 	}
 	switch(ksym) {
 	default:
+		num = MIN(num, sizeof text - cursor);
 		if(num && !iscntrl((int) buf[0])) {
-			buf[num] = 0;
-			memmove(text + cursor + num, text + cursor, sizeof text - cursor);
-			strncpy(text + cursor, buf, sizeof text - cursor);
+			memmove(text + cursor + num, text + cursor, sizeof text - cursor - num);
+			memmove(text + cursor, buf, num);
 			cursor+=num;
 			match(text);
 		}
@@ -486,6 +484,10 @@ kpress(XKeyEvent * e) {
 			cursor--;
 			match(text);
 		}
+		break;
+	case XK_Delete:
+		memmove(text + cursor, text + cursor + 1, sizeof text - cursor);
+		match(text);
 		break;
 	case XK_End:
 		if(!item)
