@@ -768,6 +768,9 @@ main(int argc, char *argv[]) {
 		}
 		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
+		else if(!strcmp(argv[i], "-e")) {
+			if(++i < argc) root = atoi(argv[i]);
+		}
 		else if(!strcmp(argv[i], "-l")) {
 			vlist = True;
 			calcoffsets = calcoffsetsv;
@@ -801,7 +804,8 @@ main(int argc, char *argv[]) {
 	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
-	root = RootWindow(dpy, screen);
+	if(!root)
+		root = RootWindow(dpy, screen);
 
 	if(isatty(STDIN_FILENO)) {
 		readstdin();
