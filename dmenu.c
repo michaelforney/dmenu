@@ -52,6 +52,7 @@ static void calcoffsetsh(void);
 static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
+static void drawcursor(void);
 static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
@@ -247,9 +248,7 @@ drawmenuh(void) {
 	dc.x += dc.w;
 	/* determine maximum items */
 	for(i = curr; i != next; i=i->right) {
-		dc.w = textw(i->text);
-		if(dc.w > mw / 3)
-			dc.w = mw / 3;
+		dc.w = MIN(textw(i->text), mw / 3);
 		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
 		dc.x += dc.w;
 	}
@@ -395,7 +394,8 @@ kpress(XKeyEvent * e) {
 		switch (ksym) {
 		default:	/* ignore other control sequences */
 			return;
-		case XK_bracketleft:
+		case XK_c:
+		case XK_C:
 			ksym = XK_Escape;
 			break;
 		case XK_h:
@@ -414,18 +414,16 @@ kpress(XKeyEvent * e) {
 		case XK_U:
 			text[0] = 0;
 			match(text);
-			drawmenu();
 			break;
 		case XK_w:
 		case XK_W:
-			if(len) {
-				i = len - 1;
-				while(i >= 0 && text[i] == ' ')
-					text[i--] = 0;
-				while(i >= 0 && text[i] != ' ')
-					text[i--] = 0;
+			if(cursor > 0) {
+				i = cursor;
+				while(i-- > 0 && text[i] == ' ');
+				while(i-- > 0 && text[i] != ' ');
+				memmove(text + i + 1, text + cursor, sizeof text - cursor);
+				cursor = i + 1;
 				match(text);
-				drawmenu();
 			}
 			break;
 		}
@@ -473,14 +471,14 @@ kpress(XKeyEvent * e) {
 		num = MIN(num, sizeof text - cursor);
 		if(num && !iscntrl((int) buf[0])) {
 			memmove(text + cursor + num, text + cursor, sizeof text - cursor - num);
-			memmove(text + cursor, buf, num);
+			memcpy(text + cursor, buf, num);
 			cursor+=num;
 			match(text);
 		}
 		break;
 	case XK_BackSpace:
 		if(cursor > 0) {
-			memmove(text + cursor + -1, text + cursor, sizeof text - cursor);
+			memmove(text + cursor - 1, text + cursor, sizeof text - cursor + 1);
 			cursor--;
 			match(text);
 		}
@@ -490,8 +488,10 @@ kpress(XKeyEvent * e) {
 		match(text);
 		break;
 	case XK_End:
-		if(!item)
-			return;
+		if(cursor < len) {
+			cursor = len;
+			break;
+		}
 		while(next) {
 			sel = curr = next;
 			calcoffsets();
@@ -504,8 +504,10 @@ kpress(XKeyEvent * e) {
 		running = False;
 		break;
 	case XK_Home:
-		if(!item)
-			return;
+		if(sel == item) {
+			cursor = 0;
+			break;
+		}
 		sel = curr = item;
 		calcoffsets();
 		break;
@@ -536,12 +538,10 @@ kpress(XKeyEvent * e) {
 		calcoffsets();
 		break;
 	case XK_Return:
-		if((e->state & ShiftMask) && *text)
+		if((e->state & ShiftMask) || !sel)
 			fprintf(stdout, "%s", text);
-		else if(sel)
+		else
 			fprintf(stdout, "%s", sel->text);
-		else if(*text)
-			fprintf(stdout, "%s", text);
 		fflush(stdout);
 		running = False;
 		break;
@@ -567,9 +567,6 @@ kpress(XKeyEvent * e) {
 		match(text);
 		break;
 	}
-	len = strlen(text);
-	cursor = MIN(cursor, len);
-	cursor = MAX(cursor, 0);
 	drawmenu();
 }
 
@@ -620,13 +617,13 @@ readstdin(void) {
 	unsigned int len = 0, max = 0;
 	Item *i, *new;
 
-	i = 0;
+	i = NULL;
 	while(fgets(buf, sizeof buf, stdin)) {
 		len = strlen(buf);
-		if (buf[len - 1] == '\n')
-			buf[len - 1] = 0;
+		if(buf[len-1] == '\n')
+			buf[--len] = '\0';
 		if(!(p = strdup(buf)))
-			eprint("fatal: could not strdup() %u bytes\n", strlen(buf));
+			eprint("fatal: could not strdup() %u bytes\n", len);
 		if(max < len) {
 			maxname = p;
 			max = len;
@@ -734,13 +731,9 @@ setup(Bool topbar) {
 	if(!dc.font.set)
 		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
 	if(maxname)
-		cmdw = textw(maxname);
-	if(cmdw > mw / 3)
-		cmdw = mw / 3;
+		cmdw = MIN(textw(maxname), mw / 3);
 	if(prompt)
-		promptw = textw(prompt);
-	if(promptw > mw / 5)
-		promptw = mw / 5;
+		promptw = MIN(textw(prompt), mw / 5);
 	text[0] = 0;
 	match(text);
 	XMapRaised(dpy, win);
@@ -799,7 +792,7 @@ main(int argc, char *argv[]) {
 			if(++i < argc) selfgcolor = argv[i];
 		}
 		else if(!strcmp(argv[i], "-v"))
-			eprint("dmenu-"VERSION", © 2006-2009 dmenu engineers, see LICENSE for details\n");
+			eprint("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n");
 		else
 			eprint("usage: dmenu [-i] [-b] [-l <lines>] [-fn <font>] [-nb <color>] [-nf <color>]\n"
 			       "             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
