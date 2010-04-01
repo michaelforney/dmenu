@@ -622,24 +622,31 @@ match(char *pattern) {
 void
 readstdin(void) {
 	char *p, buf[1024];
-	unsigned int len = 0, max = 0;
+	unsigned int len = 0, blen = 0, max = 0;
 	Item *i, *new;
 
-	i = NULL;
+	i = 0, p = NULL;
 	while(fgets(buf, sizeof buf, stdin)) {
-		len = strlen(buf);
-		if(buf[len-1] == '\n')
-			buf[--len] = '\0';
-		if(!(p = strdup(buf)))
-			eprint("fatal: could not strdup() %u bytes\n", len);
+		len += (blen = strlen(buf));
+		if(!(p = realloc(p, len))) {
+			eprint("fatal: could not realloc() %u bytes\n", len);
+			return;
+		}
+		memcpy (p + len - blen, buf, blen);
+		if (p[len - 1] == '\n')
+			p[len - 1] = 0;
+		else if (!feof(stdin))
+			continue;
 		if(max < len) {
 			maxname = p;
 			max = len;
 		}
+		len = 0;
 		if(!(new = (Item *)malloc(sizeof(Item))))
 			eprint("fatal: could not malloc() %u bytes\n", sizeof(Item));
 		new->next = new->left = new->right = NULL;
 		new->text = p;
+		p = NULL;
 		if(!i)
 			allitems = new;
 		else 
