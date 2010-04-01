@@ -118,18 +118,14 @@ calcoffsetsh(void) {
 		return;
 	w = promptw + cmdw + 2 * spaceitem;
 	for(next = curr; next; next=next->right) {
-		tw = textw(next->text);
-		if(tw > mw / 3)
-			tw = mw / 3;
+		tw = MIN(textw(next->text), mw / 3);
 		w += tw;
 		if(w > mw)
 			break;
 	}
 	w = promptw + cmdw + 2 * spaceitem;
 	for(prev = curr; prev && prev->left; prev=prev->left) {
-		tw = textw(prev->left->text);
-		if(tw > mw / 3)
-			tw = mw / 3;
+		tw = MIN(textw(prev->left->text), mw / 3);
 		w += tw;
 		if(w > mw)
 			break;
@@ -138,20 +134,20 @@ calcoffsetsh(void) {
 
 void
 calcoffsetsv(void) {
-	static unsigned int w;
+	static unsigned int h;
 
 	if(!curr)
 		return;
-	w = (dc.font.height + 2) * (lines + 1);
+	h = (dc.font.height + 2) * (lines + 1);
 	for(next = curr; next; next=next->right) {
-		w -= dc.font.height + 2;
-		if(w <= 0)
+		h -= dc.font.height + 2;
+		if(h <= 0)
 			break;
 	}
-	w = (dc.font.height + 2) * (lines + 1);
+	h = (dc.font.height + 2) * (lines + 1);
 	for(prev = curr; prev && prev->left; prev=prev->left) {
-		w -= dc.font.height + 2;
-		if(w <= 0)
+		h -= dc.font.height + 2;
+		if(h <= 0)
 			break;
 	}
 }
@@ -352,10 +348,8 @@ initfont(const char *fontstr) {
 		font_extents = XExtentsOfFontSet(dc.font.set);
 		n = XFontsOfFontSet(dc.font.set, &xfonts, &font_names);
 		for(i = 0, dc.font.ascent = 0, dc.font.descent = 0; i < n; i++) {
-			if(dc.font.ascent < (*xfonts)->ascent)
-				dc.font.ascent = (*xfonts)->ascent;
-			if(dc.font.descent < (*xfonts)->descent)
-				dc.font.descent = (*xfonts)->descent;
+			dc.font.ascent = MAX(dc.font.ascent, (*xfonts)->ascent);
+			dc.font.descent = MAX(dc.font.descent, (*xfonts)->descent);
 			xfonts++;
 		}
 	}
@@ -396,15 +390,15 @@ kpress(XKeyEvent * e) {
 			return;
 		case XK_a:
 		case XK_A:
-			cursor = 0;
-			break;
-		case XK_e:
-		case XK_E:
-			cursor = strlen(text);
+			ksym = XK_Home;
 			break;
 		case XK_c:
 		case XK_C:
 			ksym = XK_Escape;
+			break;
+		case XK_e:
+		case XK_E:
+			ksym = XK_End;
 			break;
 		case XK_h:
 		case XK_H:
@@ -429,7 +423,7 @@ kpress(XKeyEvent * e) {
 				i = cursor;
 				while(i-- > 0 && text[i] == ' ');
 				while(i-- > 0 && text[i] != ' ');
-				memmove(text + i + 1, text + cursor, sizeof text - cursor);
+				memmove(text + i + 1, text + cursor, sizeof text - cursor + 1);
 				cursor = i + 1;
 				match(text);
 			}
@@ -460,12 +454,12 @@ kpress(XKeyEvent * e) {
 		case XK_p:
 			{
 				FILE *fp;
-				char *c;
+				char *s;
 				if(!(fp = (FILE*)popen("sselp", "r")))
 					eprint("dmenu: Could not popen sselp\n");
-				c = fgets(buf, sizeof buf, fp);
+				s = fgets(buf, sizeof buf, fp);
 				pclose(fp);
-				if(c == NULL)
+				if(s == NULL)
 					return;
 			}
 			num = strlen(buf);
@@ -621,32 +615,25 @@ match(char *pattern) {
 
 void
 readstdin(void) {
-	char *p, buf[1024];
-	unsigned int len = 0, blen = 0, max = 0;
+	char *p, buf[sizeof text];
+	unsigned int len = 0, max = 0;
 	Item *i, *new;
 
-	i = 0, p = NULL;
+	i = NULL;
 	while(fgets(buf, sizeof buf, stdin)) {
-		len += (blen = strlen(buf));
-		if(!(p = realloc(p, len))) {
-			eprint("fatal: could not realloc() %u bytes\n", len);
-			return;
-		}
-		memcpy (p + len - blen, buf, blen);
-		if (p[len - 1] == '\n')
-			p[len - 1] = 0;
-		else if (!feof(stdin))
-			continue;
+		len = strlen(buf);
+		if(buf[len-1] == '\n')
+			buf[--len] = '\0';
+		if(!(p = strdup(buf)))
+			eprint("fatal: could not strdup() %u bytes\n", len);
 		if(max < len) {
 			maxname = p;
 			max = len;
 		}
-		len = 0;
 		if(!(new = (Item *)malloc(sizeof(Item))))
 			eprint("fatal: could not malloc() %u bytes\n", sizeof(Item));
 		new->next = new->left = new->right = NULL;
 		new->text = p;
-		p = NULL;
 		if(!i)
 			allitems = new;
 		else 
@@ -812,8 +799,8 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-v"))
 			eprint("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n");
 		else
-			eprint("usage: dmenu [-i] [-b] [-l <lines>] [-fn <font>] [-nb <color>] [-nf <color>]\n"
-			       "             [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
+			eprint("usage: dmenu [-i] [-b] [-e <xid>] [-l <lines>] [-fn <font>] [-nb <color>]\n"
+			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))
@@ -822,14 +809,8 @@ main(int argc, char *argv[]) {
 	if(!root)
 		root = RootWindow(dpy, screen);
 
-	if(isatty(STDIN_FILENO)) {
-		readstdin();
-		running = grabkeyboard();
-	}
-	else { /* prevent keypress loss */
-		running = grabkeyboard();
-		readstdin();
-	}
+	readstdin();
+	running = grabkeyboard();
 
 	setup(topbar);
 	drawmenu();
