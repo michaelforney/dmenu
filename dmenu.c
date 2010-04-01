@@ -658,6 +658,10 @@ run(void) {
 			if(ev.xexpose.count == 0)
 				drawmenu();
 			break;
+		case VisibilityNotify:
+			if (ev.xvisibility.state != VisibilityUnobscured)
+				XRaiseWindow(dpy, win);
+			break;
 		}
 }
 
@@ -691,7 +695,7 @@ setup(Bool topbar) {
 	/* menu window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask;
+	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask | VisibilityChangeMask;
 
 	/* menu window geometry */
 	mh = dc.font.height + 2;
