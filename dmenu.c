@@ -394,6 +394,14 @@ kpress(XKeyEvent * e) {
 		switch (ksym) {
 		default:	/* ignore other control sequences */
 			return;
+		case XK_a:
+		case XK_A:
+			cursor = 0;
+			break;
+		case XK_e:
+		case XK_E:
+			cursor = strlen(text);
+			break;
 		case XK_c:
 		case XK_C:
 			ksym = XK_Escape;
