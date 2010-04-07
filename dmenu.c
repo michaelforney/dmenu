@@ -159,12 +159,12 @@ cistrstr(const char *s, const char *sub) {
 
 	if(!sub)
 		return (char *)s;
-	if((c = *sub++) != 0) {
+	if((c = *sub++) != '\0') {
 		c = tolower(c);
 		len = strlen(sub);
 		do {
 			do {
-				if((csub = *s++) == 0)
+				if((csub = *s++) == '\0')
 					return NULL;
 			}
 			while(tolower(csub) != c);
@@ -220,7 +220,7 @@ drawmenu(void) {
 	dc.x += promptw;
 	dc.w = mw - promptw;
 	/* print command */
-	if(cmdw && item)
+	if(cmdw && item && !vlist)
 		dc.w = cmdw;
 	drawtext(text[0] ? text : NULL, dc.norm);
 	drawcursor();
@@ -371,7 +371,7 @@ kpress(XKeyEvent * e) {
 	KeySym ksym;
 
 	len = strlen(text);
-	buf[0] = 0;
+	buf[0] = '\0';
 	num = XLookupString(e, buf, sizeof buf, &ksym, NULL);
 	if(IsKeypadKey(ksym)) {
 		if(ksym == XK_KP_Enter)
@@ -414,7 +414,8 @@ kpress(XKeyEvent * e) {
 			break;
 		case XK_u:
 		case XK_U:
-			text[0] = 0;
+			cursor = 0;
+			text[0] = '\0';
 			match(text);
 			break;
 		case XK_w:
@@ -626,7 +627,7 @@ readstdin(void) {
 			buf[--len] = '\0';
 		if(!(p = strdup(buf)))
 			eprint("fatal: could not strdup() %u bytes\n", len);
-		if(max < len) {
+		if(max < len || !maxname) {
 			maxname = p;
 			max = len;
 		}
@@ -740,7 +741,7 @@ setup(Bool topbar) {
 		cmdw = MIN(textw(maxname), mw / 3);
 	if(prompt)
 		promptw = MIN(textw(prompt), mw / 5);
-	text[0] = 0;
+	text[0] = '\0';
 	match(text);
 	XMapRaised(dpy, win);
 }
