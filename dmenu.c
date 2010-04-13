@@ -414,8 +414,8 @@ kpress(XKeyEvent * e) {
 			break;
 		case XK_u:
 		case XK_U:
+			memmove(text, text + cursor, sizeof text - cursor + 1);
 			cursor = 0;
-			text[0] = '\0';
 			match(text);
 			break;
 		case XK_w:
