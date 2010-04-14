@@ -91,11 +91,10 @@ static Item *sel = NULL;
 static Item *next = NULL;
 static Item *prev = NULL;
 static Item *curr = NULL;
-static Window root, win;
+static Window parent, win;
 static int (*fstrncmp)(const char *, const char *, size_t n) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
-static Bool vlist = False;
-static unsigned int lines = 5;
+static unsigned int lines = 0;
 static void (*calcoffsets)(void) = calcoffsetsh;
 
 void
@@ -220,13 +219,12 @@ drawmenu(void) {
 	dc.x += promptw;
 	dc.w = mw - promptw;
 	/* print command */
-	if(cmdw && item && !vlist)
+	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
 	drawtext(text[0] ? text : NULL, dc.norm);
 	drawcursor();
-	dc.x += cmdw;
 	if(curr) {
-		if(vlist)
+		if(lines > 0)
 			drawmenuv();
 		else
 			drawmenuh();
@@ -239,8 +237,9 @@ void
 drawmenuh(void) {
 	Item *i;
 
+	dc.x += cmdw;
 	dc.w = spaceitem;
-	drawtext((curr && curr->left) ? "<" : NULL, dc.norm);
+	drawtext(curr->left ? "<" : NULL, dc.norm);
 	dc.x += dc.w;
 	/* determine maximum items */
 	for(i = curr; i != next; i=i->right) {
@@ -321,7 +320,7 @@ grabkeyboard(void) {
 	unsigned int len;
 
 	for(len = 1000; len; len--) {
-		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
+		if(XGrabKeyboard(dpy, parent, True, GrabModeAsync, GrabModeAsync, CurrentTime)
 		== GrabSuccess)
 			break;
 		usleep(1000);
@@ -675,6 +674,7 @@ setup(Bool topbar) {
 #endif
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
+	XWindowAttributes pwa;
 
 	/* init modifier map */
 	modmap = XGetModifierMapping(dpy);
@@ -699,16 +699,15 @@ setup(Bool topbar) {
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask | VisibilityChangeMask;
 
 	/* menu window geometry */
-	mh = dc.font.height + 2;
-	mh = vlist ? mh * (lines+1) : mh;
+	mh = (dc.font.height + 2) * (lines + 1);
 #if XINERAMA
-	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
+	if(parent == RootWindow(dpy, screen) && XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
 		i = 0;
 		if(n > 1) {
 			int di;
 			unsigned int dui;
 			Window dummy;
-			if(XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui))
+			if(XQueryPointer(dpy, parent, &dummy, &dummy, &x, &y, &di, &di, &dui))
 				for(i = 0; i < n; i++)
 					if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
 						break;
@@ -721,19 +720,20 @@ setup(Bool topbar) {
 	else
 #endif
 	{
+		XGetWindowAttributes(dpy, parent, &pwa);
 		x = 0;
-		y = topbar ? 0 : DisplayHeight(dpy, screen) - mh;
-		mw = DisplayWidth(dpy, screen);
+		y = topbar ? 0 : pwa.height - mh;
+		mw = pwa.width;
 	}
 
-	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
+	win = XCreateWindow(dpy, parent, x, y, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
 	/* pixmap */
-	dc.drawable = XCreatePixmap(dpy, root, mw, mh, DefaultDepth(dpy, screen));
-	dc.gc = XCreateGC(dpy, root, 0, NULL);
+	dc.drawable = XCreatePixmap(dpy, parent, mw, mh, DefaultDepth(dpy, screen));
+	dc.gc = XCreateGC(dpy, parent, 0, NULL);
 	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
 	if(!dc.font.set)
 		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
@@ -776,10 +776,9 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
 		else if(!strcmp(argv[i], "-e")) {
-			if(++i < argc) root = atoi(argv[i]);
+			if(++i < argc) parent = atoi(argv[i]);
 		}
 		else if(!strcmp(argv[i], "-l")) {
-			vlist = True;
 			calcoffsets = calcoffsetsv;
 			if(++i < argc) lines = atoi(argv[i]);
 		}
@@ -811,8 +810,8 @@ main(int argc, char *argv[]) {
 	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
-	if(!root)
-		root = RootWindow(dpy, screen);
+	if(!parent)
+		parent = RootWindow(dpy, screen);
 
 	readstdin();
 	running = grabkeyboard();
