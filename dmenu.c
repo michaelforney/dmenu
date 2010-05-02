@@ -212,12 +212,12 @@ drawmenu(void) {
 	dc.h = mh;
 	drawtext(NULL, dc.norm);
 	/* print prompt? */
-	if(promptw) {
+	if(prompt) {
 		dc.w = promptw;
 		drawtext(prompt, dc.sel);
+		dc.x += dc.w;
 	}
-	dc.x += promptw;
-	dc.w = mw - promptw;
+	dc.w = mw - dc.x;
 	/* print command */
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
@@ -241,14 +241,13 @@ drawmenuh(void) {
 	dc.w = spaceitem;
 	drawtext(curr->left ? "<" : NULL, dc.norm);
 	dc.x += dc.w;
-	/* determine maximum items */
 	for(i = curr; i != next; i=i->right) {
 		dc.w = MIN(textw(i->text), mw / 3);
 		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
 		dc.x += dc.w;
 	}
-	dc.x = mw - spaceitem;
 	dc.w = spaceitem;
+	dc.x = mw - dc.w;
 	drawtext(next ? ">" : NULL, dc.norm);
 }
 
@@ -259,7 +258,6 @@ drawmenuv(void) {
 	dc.x = 0;
 	dc.w = mw;
 	dc.y += dc.font.height + 2;
-	/* determine maximum items */
 	for(i = curr; i != next; i=i->right) {
 		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
 		dc.y += dc.font.height + 2;
@@ -340,13 +338,11 @@ initfont(const char *fontstr) {
 	if(missing)
 		XFreeStringList(missing);
 	if(dc.font.set) {
-		XFontSetExtents *font_extents;
 		XFontStruct **xfonts;
 		char **font_names;
 		dc.font.ascent = dc.font.descent = 0;
-		font_extents = XExtentsOfFontSet(dc.font.set);
 		n = XFontsOfFontSet(dc.font.set, &xfonts, &font_names);
-		for(i = 0, dc.font.ascent = 0, dc.font.descent = 0; i < n; i++) {
+		for(i = 0; i < n; i++) {
 			dc.font.ascent = MAX(dc.font.ascent, (*xfonts)->ascent);
 			dc.font.descent = MAX(dc.font.descent, (*xfonts)->descent);
 			xfonts++;
