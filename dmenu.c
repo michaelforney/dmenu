@@ -255,8 +255,7 @@ void
 drawmenuv(void) {
 	Item *i;
 
-	dc.x = 0;
-	dc.w = mw;
+	dc.w = mw - dc.x;
 	dc.y += dc.font.height + 2;
 	for(i = curr; i != next; i=i->right) {
 		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
