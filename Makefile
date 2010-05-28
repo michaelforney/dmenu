@@ -20,6 +20,10 @@ options:
 
 ${OBJ}: config.h config.mk
 
+config.h:
+	@echo creating $@ from config.def.h
+	@cp config.def.h $@
+
 dmenu: ${OBJ}
 	@echo CC -o $@
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
@@ -31,7 +35,7 @@ clean:
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp -R LICENSE Makefile README config.mk dmenu.1 config.h dmenu_path dmenu_run ${SRC} dmenu-${VERSION}
+	@cp -R LICENSE Makefile README config.mk dmenu.1 config.def.h dmenu_path dmenu_run ${SRC} dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}

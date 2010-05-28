@@ -42,8 +42,8 @@ typedef struct {
 typedef struct Item Item;
 struct Item {
 	char *text;
-	Item *next;		/* traverses all items */
-	Item *left, *right;	/* traverses items matching current search pattern */
+	Item *next;         /* traverses all items */
+	Item *left, *right; /* traverses items matching current search pattern */
 };
 
 /* forward declarations */
@@ -85,8 +85,8 @@ static unsigned int numlockmask = 0;
 static Bool running = True;
 static Display *dpy;
 static DC dc;
-static Item *allitems = NULL;	/* first of all items */
-static Item *item = NULL;	/* first of pattern matching items */
+static Item *allitems = NULL;  /* first of all items */
+static Item *item = NULL;      /* first of pattern matching items */
 static Item *sel = NULL;
 static Item *next = NULL;
 static Item *prev = NULL;
