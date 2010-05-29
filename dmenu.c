@@ -19,6 +19,7 @@
 #define INRECT(X,Y,RX,RY,RW,RH) ((X) >= (RX) && (X) < (RX) + (RW) && (Y) >= (RY) && (Y) < (RY) + (RH))
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
 #define MAX(a, b)               ((a) > (b) ? (a) : (b))
+#define IS_UTF8_1ST_CHAR(c)     ((((c) & 0xc0) == 0xc0) || !((c) & 0x80))
 
 /* enums */
 enum { ColFG, ColBG, ColLast };
@@ -360,7 +361,7 @@ initfont(const char *fontstr) {
 void
 kpress(XKeyEvent * e) {
 	char buf[sizeof text];
-	int i, num;
+	int i, num, off;
 	unsigned int len;
 	KeySym ksym;
 
@@ -475,13 +476,19 @@ kpress(XKeyEvent * e) {
 		break;
 	case XK_BackSpace:
 		if(cursor > 0) {
-			memmove(text + cursor - 1, text + cursor, sizeof text - cursor + 1);
-			cursor--;
+			off = 1;
+			while(cursor > off && !IS_UTF8_1ST_CHAR(text[cursor - off]))
+				off++;
+			memmove(text + cursor - off, text + cursor, sizeof text - cursor + off);
+			cursor -= off;
 			match(text);
 		}
 		break;
 	case XK_Delete:
-		memmove(text + cursor, text + cursor + 1, sizeof text - cursor);
+		off = 1;
+		while(cursor + off < sizeof text - 1 && !IS_UTF8_1ST_CHAR(text[cursor + off]))
+			off++;
+		memmove(text + cursor, text + cursor + off, sizeof text - cursor);
 		match(text);
 		break;
 	case XK_End:
@@ -517,9 +524,11 @@ kpress(XKeyEvent * e) {
 				calcoffsets();
 			}
 		}
-		else if(cursor > 0)
-			cursor--;
-		else
+		else if(cursor > 0) {
+			do {
+				cursor--;
+			} while(cursor > 0 && !IS_UTF8_1ST_CHAR(text[cursor]));
+		} else
 			return;
 		break;
 	case XK_Next:
@@ -544,9 +553,11 @@ kpress(XKeyEvent * e) {
 		break;
 	case XK_Right:
 	case XK_Down:
-		if(cursor < len)
-			cursor++;
-		else if(sel && sel->right) {
+		if(cursor < len) {
+			do {
+				cursor++;
+			} while(cursor < len && !IS_UTF8_1ST_CHAR(text[cursor]));
+		} else if(sel && sel->right) {
 			sel=sel->right;
 			if(sel == next) {
 				curr = next;
