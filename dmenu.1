@@ -5,13 +5,14 @@ dmenu \- dynamic menu
 .B dmenu
 .RB [ \-i ]
 .RB [ \-b ]
-.RB [ \-l " <lines>"]
-.RB [ \-fn " <font>"]
-.RB [ \-nb " <color>"]
-.RB [ \-nf " <color>"]
-.RB [ \-p " <prompt>"]
-.RB [ \-sb " <color>"]
-.RB [ \-sf " <color>"]
+.RB [ \-e " <xid>]"
+.RB [ \-l " <lines>]"
+.RB [ \-fn " <font>]"
+.RB [ \-nb " <color>]"
+.RB [ \-nf " <color>]"
+.RB [ \-p " <prompt>]"
+.RB [ \-sb " <color>]"
+.RB [ \-sf " <color>]"
 .RB [ \-v ]
 .SH DESCRIPTION
 .SS Overview
@@ -26,6 +27,9 @@ makes dmenu match menu entries case insensitively.
 .TP
 .B \-b
 defines that dmenu appears at the bottom.
+.TP
+.B \-e <xid>
+reparents dmenu to the window specified by xid.
 .TP
 .B \-l <lines>
 activates vertical list mode.
