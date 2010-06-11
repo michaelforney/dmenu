@@ -111,45 +111,30 @@ appenditem(Item *i, Item **list, Item **last) {
 
 void
 calcoffsetsh(void) {
-	int tw;
 	unsigned int w;
 
 	if(!curr)
 		return;
 	w = promptw + cmdw + 2 * spaceitem;
-	for(next = curr; next; next=next->right) {
-		tw = MIN(textw(next->text), mw / 3);
-		w += tw;
-		if(w > mw)
-			break;
-	}
+	for(next = curr; next && w < mw; next=next->right)
+		w += MIN(textw(next->text), mw / 3);
 	w = promptw + cmdw + 2 * spaceitem;
-	for(prev = curr; prev && prev->left; prev=prev->left) {
-		tw = MIN(textw(prev->left->text), mw / 3);
-		w += tw;
-		if(w > mw)
-			break;
-	}
+	for(prev = curr; prev && prev->left && w < mw; prev=prev->left)
+		w += MIN(textw(prev->left->text), mw / 3);
 }
 
 void
 calcoffsetsv(void) {
-	static unsigned int h;
+	unsigned int h;
 
 	if(!curr)
 		return;
-	h = (dc.font.height + 2) * (lines + 1);
-	for(next = curr; next; next=next->right) {
+	h = (dc.font.height + 2) * lines;
+	for(next = curr; next && h > 0; next = next->right)
 		h -= dc.font.height + 2;
-		if(h <= 0)
-			break;
-	}
-	h = (dc.font.height + 2) * (lines + 1);
-	for(prev = curr; prev && prev->left; prev=prev->left) {
+	h = (dc.font.height + 2) * lines;
+	for(prev = curr; prev && prev->left && h > 0; prev = prev->left)
 		h -= dc.font.height + 2;
-		if(h <= 0)
-			break;
-	}
 }
 
 char *
@@ -177,14 +162,6 @@ cistrstr(const char *s, const char *sub) {
 
 void
 cleanup(void) {
-	Item *itm;
-
-	while(allitems) {
-		itm = allitems->next;
-		free(allitems->text);
-		free(allitems);
-		allitems = itm;
-	}
 	if(dc.font.set)
 		XFreeFontSet(dpy, dc.font.set);
 	else
@@ -257,11 +234,13 @@ drawmenuv(void) {
 	Item *i;
 
 	dc.w = mw - dc.x;
-	dc.y += dc.font.height + 2;
+	dc.h = dc.font.height + 2;
+	dc.y = dc.h;
 	for(i = curr; i != next; i=i->right) {
 		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
-		dc.y += dc.font.height + 2;
+		dc.y += dc.h;
 	}
+	dc.h = mh - dc.y;
 	drawtext(NULL, dc.norm);
 }
 
@@ -309,7 +288,7 @@ getcolor(const char *colstr) {
 	XColor color;
 
 	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
-		eprint("error, cannot allocate color '%s'\n", colstr);
+		eprint("dmenu: cannot allocate color '%s'\n", colstr);
 	return color.pixel;
 }
 
@@ -328,12 +307,11 @@ grabkeyboard(void) {
 
 void
 initfont(const char *fontstr) {
-	char *def, **missing;
+	char *def, **missing = NULL;
 	int i, n;
 
 	if(!fontstr || fontstr[0] == '\0')
-		eprint("error, cannot load font: '%s'\n", fontstr);
-	missing = NULL;
+		eprint("dmenu: cannot load font: '%s'\n", fontstr);
 	dc.font.set = XCreateFontSet(dpy, fontstr, &missing, &n, &def);
 	if(missing)
 		XFreeStringList(missing);
@@ -351,7 +329,7 @@ initfont(const char *fontstr) {
 	else {
 		if(!(dc.font.xfont = XLoadQueryFont(dpy, fontstr))
 		&& !(dc.font.xfont = XLoadQueryFont(dpy, "fixed")))
-			eprint("error, cannot load font: '%s'\n", fontstr);
+			eprint("dmenu: cannot load font: '%s'\n", fontstr);
 		dc.font.ascent = dc.font.xfont->ascent;
 		dc.font.descent = dc.font.xfont->descent;
 	}
@@ -361,12 +339,11 @@ initfont(const char *fontstr) {
 void
 kpress(XKeyEvent * e) {
 	char buf[sizeof text];
-	int i, num, off;
+	int i, num;
 	unsigned int len;
 	KeySym ksym;
 
 	len = strlen(text);
-	buf[0] = '\0';
 	num = XLookupString(e, buf, sizeof buf, &ksym, NULL);
 	if(IsKeypadKey(ksym)) {
 		if(ksym == XK_KP_Enter)
@@ -451,8 +428,8 @@ kpress(XKeyEvent * e) {
 			{
 				FILE *fp;
 				char *s;
-				if(!(fp = (FILE*)popen("sselp", "r")))
-					eprint("dmenu: Could not popen sselp\n");
+				if(!(fp = popen("sselp", "r")))
+					eprint("dmenu: cannot popen sselp\n");
 				s = fgets(buf, sizeof buf, fp);
 				pclose(fp);
 				if(s == NULL)
@@ -470,25 +447,21 @@ kpress(XKeyEvent * e) {
 		if(num && !iscntrl((int) buf[0])) {
 			memmove(text + cursor + num, text + cursor, sizeof text - cursor - num);
 			memcpy(text + cursor, buf, num);
-			cursor+=num;
+			cursor += num;
 			match(text);
 		}
 		break;
 	case XK_BackSpace:
 		if(cursor > 0) {
-			off = 1;
-			while(cursor > off && !IS_UTF8_1ST_CHAR(text[cursor - off]))
-				off++;
-			memmove(text + cursor - off, text + cursor, sizeof text - cursor + off);
-			cursor -= off;
+			for(i = 1; cursor - i > 0 && !IS_UTF8_1ST_CHAR(text[cursor - i]); i++);
+			memmove(text + cursor - i, text + cursor, sizeof text - cursor + i);
+			cursor -= i;
 			match(text);
 		}
 		break;
 	case XK_Delete:
-		off = 1;
-		while(cursor + off < sizeof text - 1 && !IS_UTF8_1ST_CHAR(text[cursor + off]))
-			off++;
-		memmove(text + cursor, text + cursor + off, sizeof text - cursor);
+		for(i = 1; cursor + i < len && !IS_UTF8_1ST_CHAR(text[cursor + i]); i++);
+		memmove(text + cursor, text + cursor + i, sizeof text - cursor);
 		match(text);
 		break;
 	case XK_End:
@@ -631,13 +604,13 @@ readstdin(void) {
 		if(buf[len-1] == '\n')
 			buf[--len] = '\0';
 		if(!(p = strdup(buf)))
-			eprint("fatal: could not strdup() %u bytes\n", len);
+			eprint("dmenu: cannot strdup %u bytes\n", len);
 		if(max < len || !maxname) {
 			maxname = p;
 			max = len;
 		}
-		if(!(new = (Item *)malloc(sizeof(Item))))
-			eprint("fatal: could not malloc() %u bytes\n", sizeof(Item));
+		if(!(new = malloc(sizeof *new)))
+			eprint("dmenu: cannot malloc %u bytes\n", sizeof *new);
 		new->next = new->left = new->right = NULL;
 		new->text = p;
 		if(!i)
@@ -785,8 +758,9 @@ main(int argc, char *argv[]) {
 			if(++i < argc) parent = atoi(argv[i]);
 		}
 		else if(!strcmp(argv[i], "-l")) {
-			calcoffsets = calcoffsetsv;
 			if(++i < argc) lines = atoi(argv[i]);
+			if(lines > 0)
+				calcoffsets = calcoffsetsv;
 		}
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
@@ -812,7 +786,7 @@ main(int argc, char *argv[]) {
 			eprint("usage: dmenu [-i] [-b] [-e <xid>] [-l <lines>] [-fn <font>] [-nb <color>]\n"
 			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
-		fprintf(stderr, "warning: no locale support\n");
+		fprintf(stderr, "dmenu: warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("dmenu: cannot open display\n");
 	screen = DefaultScreen(dpy);
