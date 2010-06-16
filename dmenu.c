@@ -93,7 +93,7 @@ static Item *next = NULL;
 static Item *prev = NULL;
 static Item *curr = NULL;
 static Window parent, win;
-static int (*fstrncmp)(const char *, const char *, size_t n) = strncmp;
+static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 static unsigned int lines = 0;
 static void (*calcoffsets)(void) = calcoffsetsh;
@@ -144,8 +144,7 @@ cistrstr(const char *s, const char *sub) {
 
 	if(!sub)
 		return (char *)s;
-	if((c = *sub++) != '\0') {
-		c = tolower(c);
+	if((c = tolower(*sub++)) != '\0') {
 		len = strlen(sub);
 		do {
 			do {
@@ -199,7 +198,7 @@ drawmenu(void) {
 	/* print command */
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
-	drawtext(text[0] ? text : NULL, dc.norm);
+	drawtext(*text ? text : NULL, dc.norm);
 	drawcursor();
 	if(curr) {
 		if(lines > 0)
@@ -345,15 +344,13 @@ kpress(XKeyEvent * e) {
 
 	len = strlen(text);
 	num = XLookupString(e, buf, sizeof buf, &ksym, NULL);
-	if(IsKeypadKey(ksym)) {
-		if(ksym == XK_KP_Enter)
-			ksym = XK_Return;
-		else if(ksym >= XK_KP_0 && ksym <= XK_KP_9)
-			ksym = (ksym - XK_KP_0) + XK_0;
-	}
-	if(IsFunctionKey(ksym) || IsKeypadKey(ksym)
-	   || IsMiscFunctionKey(ksym) || IsPFKey(ksym)
-	   || IsPrivateKeypadKey(ksym))
+	if(ksym == XK_KP_Enter)
+		ksym = XK_Return;
+	else if(ksym >= XK_KP_0 && ksym <= XK_KP_9)
+		ksym = (ksym - XK_KP_0) + XK_0;
+	else if(IsFunctionKey(ksym) || IsKeypadKey(ksym)
+	|| IsMiscFunctionKey(ksym) || IsPFKey(ksym)
+	|| IsPrivateKeypadKey(ksym))
 		return;
 	/* first check if a control mask is omitted */
 	if(e->state & ControlMask) {
@@ -405,7 +402,8 @@ kpress(XKeyEvent * e) {
 	}
 	if(CLEANMASK(e->state) & Mod1Mask) {
 		switch(ksym) {
-		default: return;
+		default:
+			return;
 		case XK_h:
 			ksym = XK_Left;
 			break;
@@ -491,17 +489,15 @@ kpress(XKeyEvent * e) {
 	case XK_Left:
 	case XK_Up:
 		if(sel && sel->left){
-			sel=sel->left;
+			sel = sel->left;
 			if(sel->right == curr) {
 				curr = prev;
 				calcoffsets();
 			}
 		}
-		else if(cursor > 0) {
-			do {
-				cursor--;
-			} while(cursor > 0 && !IS_UTF8_1ST_CHAR(text[cursor]));
-		} else
+		else if(cursor > 0)
+			while(cursor-- > 0 && !IS_UTF8_1ST_CHAR(text[cursor]));
+		else
 			return;
 		break;
 	case XK_Next:
@@ -526,12 +522,10 @@ kpress(XKeyEvent * e) {
 		break;
 	case XK_Right:
 	case XK_Down:
-		if(cursor < len) {
-			do {
-				cursor++;
-			} while(cursor < len && !IS_UTF8_1ST_CHAR(text[cursor]));
-		} else if(sel && sel->right) {
-			sel=sel->right;
+		if(cursor < len)
+			while(cursor++ < len && !IS_UTF8_1ST_CHAR(text[cursor]));
+		else if(sel && sel->right) {
+			sel = sel->right;
 			if(sel == next) {
 				curr = next;
 				calcoffsets();
@@ -605,10 +599,8 @@ readstdin(void) {
 			buf[--len] = '\0';
 		if(!(p = strdup(buf)))
 			eprint("dmenu: cannot strdup %u bytes\n", len);
-		if(max < len || !maxname) {
+		if((max = MAX(max, len)) == len)
 			maxname = p;
-			max = len;
-		}
 		if(!(new = malloc(sizeof *new)))
 			eprint("dmenu: cannot malloc %u bytes\n", sizeof *new);
 		new->next = new->left = new->right = NULL;
@@ -628,8 +620,6 @@ run(void) {
 	/* main event loop */
 	while(running && !XNextEvent(dpy, &ev))
 		switch (ev.type) {
-		default:	/* ignore all crap */
-			break;
 		case KeyPress:
 			kpress(&ev.xkey);
 			break;
