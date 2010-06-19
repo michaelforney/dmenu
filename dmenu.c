@@ -79,9 +79,9 @@ static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
 static int ret = 0;
-static int cursor = 0;
 static int screen;
 static unsigned int mw, mh;
+static unsigned int cursor = 0;
 static unsigned int numlockmask = 0;
 static Bool running = True;
 static Display *dpy;
@@ -338,8 +338,8 @@ initfont(const char *fontstr) {
 void
 kpress(XKeyEvent * e) {
 	char buf[sizeof text];
-	int i, num;
-	unsigned int len;
+	int num;
+	unsigned int i, len;
 	KeySym ksym;
 
 	len = strlen(text);
@@ -380,6 +380,10 @@ kpress(XKeyEvent * e) {
 		case XK_j:
 		case XK_J:
 			ksym = XK_Return;
+			break;
+		case XK_k:
+		case XK_K:
+			text[cursor] = '\0';
 			break;
 		case XK_u:
 		case XK_U:
@@ -450,12 +454,12 @@ kpress(XKeyEvent * e) {
 		}
 		break;
 	case XK_BackSpace:
-		if(cursor > 0) {
-			for(i = 1; cursor - i > 0 && !IS_UTF8_1ST_CHAR(text[cursor - i]); i++);
-			memmove(text + cursor - i, text + cursor, sizeof text - cursor + i);
-			cursor -= i;
-			match(text);
-		}
+		if(cursor == 0)
+			return;
+		for(i = 1; cursor - i > 0 && !IS_UTF8_1ST_CHAR(text[cursor - i]); i++);
+		memmove(text + cursor - i, text + cursor, sizeof text - cursor + i);
+		cursor -= i;
+		match(text);
 		break;
 	case XK_Delete:
 		for(i = 1; cursor + i < len && !IS_UTF8_1ST_CHAR(text[cursor + i]); i++);
@@ -477,7 +481,7 @@ kpress(XKeyEvent * e) {
 	case XK_Escape:
 		ret = 1;
 		running = False;
-		break;
+		return;
 	case XK_Home:
 		if(sel == item) {
 			cursor = 0;
@@ -519,7 +523,7 @@ kpress(XKeyEvent * e) {
 			fprintf(stdout, "%s", sel->text);
 		fflush(stdout);
 		running = False;
-		break;
+		return;
 	case XK_Right:
 	case XK_Down:
 		if(cursor < len)
