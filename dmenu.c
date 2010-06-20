@@ -354,45 +354,36 @@ kpress(XKeyEvent * e) {
 		return;
 	/* first check if a control mask is omitted */
 	if(e->state & ControlMask) {
-		switch (ksym) {
+		switch(tolower(ksym)) {
 		default:	/* ignore other control sequences */
 			return;
 		case XK_a:
-		case XK_A:
 			ksym = XK_Home;
 			break;
 		case XK_c:
-		case XK_C:
 			ksym = XK_Escape;
 			break;
 		case XK_e:
-		case XK_E:
 			ksym = XK_End;
 			break;
 		case XK_h:
-		case XK_H:
 			ksym = XK_BackSpace;
 			break;
 		case XK_i:
-		case XK_I:
 			ksym = XK_Tab;
 			break;
 		case XK_j:
-		case XK_J:
 			ksym = XK_Return;
 			break;
 		case XK_k:
-		case XK_K:
 			text[cursor] = '\0';
 			break;
 		case XK_u:
-		case XK_U:
 			memmove(text, text + cursor, sizeof text - cursor + 1);
 			cursor = 0;
 			match(text);
 			break;
 		case XK_w:
-		case XK_W:
 			if(cursor > 0) {
 				i = cursor;
 				while(i-- > 0 && text[i] == ' ');
