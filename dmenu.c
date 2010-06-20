@@ -355,16 +355,22 @@ kpress(XKeyEvent * e) {
 	/* first check if a control mask is omitted */
 	if(e->state & ControlMask) {
 		switch(tolower(ksym)) {
-		default:	/* ignore other control sequences */
+		default:
 			return;
 		case XK_a:
 			ksym = XK_Home;
+			break;
+		case XK_b:
+			ksym = XK_Left;
 			break;
 		case XK_c:
 			ksym = XK_Escape;
 			break;
 		case XK_e:
 			ksym = XK_End;
+			break;
+		case XK_f:
+			ksym = XK_Right;
 			break;
 		case XK_h:
 			ksym = XK_BackSpace;
@@ -377,6 +383,12 @@ kpress(XKeyEvent * e) {
 			break;
 		case XK_k:
 			text[cursor] = '\0';
+			break;
+		case XK_n:
+			ksym = XK_Down;
+			break;
+		case XK_p:
+			ksym = XK_Up;
 			break;
 		case XK_u:
 			memmove(text, text + cursor, sizeof text - cursor + 1);
@@ -393,31 +405,7 @@ kpress(XKeyEvent * e) {
 				match(text);
 			}
 			break;
-		}
-	}
-	if(CLEANMASK(e->state) & Mod1Mask) {
-		switch(ksym) {
-		default:
-			return;
-		case XK_h:
-			ksym = XK_Left;
-			break;
-		case XK_l:
-			ksym = XK_Right;
-			break;
-		case XK_j:
-			ksym = XK_Next;
-			break;
-		case XK_k:
-			ksym = XK_Prior;
-			break;
-		case XK_g:
-			ksym = XK_Home;
-			break;
-		case XK_G:
-			ksym = XK_End;
-			break;
-		case XK_p:
+		case XK_y:
 			{
 				FILE *fp;
 				char *s;
@@ -453,6 +441,8 @@ kpress(XKeyEvent * e) {
 		match(text);
 		break;
 	case XK_Delete:
+		if(cursor == len)
+			return;
 		for(i = 1; cursor + i < len && !IS_UTF8_1ST_CHAR(text[cursor + i]); i++);
 		memmove(text + cursor, text + cursor + i, sizeof text - cursor);
 		match(text);
@@ -482,18 +472,20 @@ kpress(XKeyEvent * e) {
 		calcoffsets();
 		break;
 	case XK_Left:
-	case XK_Up:
-		if(sel && sel->left){
-			sel = sel->left;
-			if(sel->right == curr) {
-				curr = prev;
-				calcoffsets();
-			}
-		}
-		else if(cursor > 0)
+		if(cursor > 0 && (!sel || !sel->left)) {
 			while(cursor-- > 0 && !IS_UTF8_1ST_CHAR(text[cursor]));
-		else
+			break;
+		}
+		if(lines > 0)
 			return;
+	case XK_Up:
+		if(!sel || !sel->left)
+			return;
+		sel = sel->left;
+		if(sel->right == curr) {
+			curr = prev;
+			calcoffsets();
+		}
 		break;
 	case XK_Next:
 		if(!next)
@@ -516,18 +508,20 @@ kpress(XKeyEvent * e) {
 		running = False;
 		return;
 	case XK_Right:
-	case XK_Down:
-		if(cursor < len)
+		if(cursor < len) {
 			while(cursor++ < len && !IS_UTF8_1ST_CHAR(text[cursor]));
-		else if(sel && sel->right) {
-			sel = sel->right;
-			if(sel == next) {
-				curr = next;
-				calcoffsets();
-			}
+			break;
 		}
-		else
+		if(lines > 0)
 			return;
+	case XK_Down:
+		if(!sel || !sel->right)
+			return;
+		sel = sel->right;
+		if(sel == next) {
+			curr = next;
+			calcoffsets();
+		}
 		break;
 	case XK_Tab:
 		if(!sel)
