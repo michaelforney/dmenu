@@ -472,7 +472,7 @@ kpress(XKeyEvent * e) {
 		calcoffsets();
 		break;
 	case XK_Left:
-		if(cursor > 0 && (!sel || !sel->left)) {
+		if(cursor > 0 && (!sel || !sel->left || lines > 0)) {
 			while(cursor-- > 0 && !IS_UTF8_1ST_CHAR(text[cursor]));
 			break;
 		}
