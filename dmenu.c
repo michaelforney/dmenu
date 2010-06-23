@@ -37,7 +37,6 @@ static void cleanup(void);
 static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
-static void eprint(const char *errstr, ...);
 static Bool grabkeyboard(void);
 static void kpress(XKeyEvent * e);
 static void match(char *pattern);
