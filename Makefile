@@ -6,7 +6,7 @@ include config.mk
 SRC = dinput.c dmenu.c draw.c
 OBJ = ${SRC:.c=.o}
 
-all: options draw.o dinput dmenu
+all: options dinput dmenu
 
 options:
 	@echo dmenu build options:
@@ -24,9 +24,13 @@ config.h:
 	@echo creating $@ from config.def.h
 	@cp config.def.h $@
 
-.o:
+dinput: dinput.o draw.o
 	@echo CC -o $@
-	@${CC} -o $@ $< draw.o ${LDFLAGS}
+	@${CC} -o $@ $+ ${LDFLAGS}
+
+dmenu: dmenu.o draw.o
+	@echo CC -o $@
+	@${CC} -o $@ $+ ${LDFLAGS}
 
 clean:
 	@echo cleaning
