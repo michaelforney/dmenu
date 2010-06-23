@@ -25,32 +25,27 @@
 static void cleanup(void);
 static void drawcursor(void);
 static void drawinput(void);
-static void eprint(const char *errstr, ...);
 static Bool grabkeyboard(void);
 static void kpress(XKeyEvent * e);
 static void run(void);
 static void setup(Bool topbar);
 
 #include "config.h"
+#include "draw.h"
 
 /* variables */
 static char *prompt = NULL;
 static char text[4096];
 static int promptw = 0;
 static int ret = 0;
-static int screen;
-static unsigned int mw, mh;
 static unsigned int cursor = 0;
 static unsigned int numlockmask = 0;
 static Bool running = True;
-static Display *dpy;
-static Window parent, win;
-
-#include "draw.c"
+static Window win;
 
 void
 cleanup(void) {
-	dccleanup();
+	drawcleanup();
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
 }
@@ -84,16 +79,6 @@ drawinput(void)
 	drawcursor();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
-}
-
-void
-eprint(const char *errstr, ...) {
-	va_list ap;
-
-	va_start(ap, errstr);
-	vfprintf(stderr, errstr, ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
 }
 
 Bool
@@ -318,7 +303,7 @@ setup(Bool topbar) {
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
-	dcsetup();
+	drawsetup();
 	if(prompt)
 		promptw = MIN(textw(prompt), mw / 5);
 	cursor = strlen(text);

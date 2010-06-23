@@ -1,37 +1,20 @@
 /* See LICENSE file for copyright and license details. */
+#include <ctype.h>
+#include <locale.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <X11/Xlib.h>
+#include "draw.h"
 
-/* enums */
-enum { ColFG, ColBG, ColLast };
-
-/* typedefs */
-typedef struct {
-	int x, y, w, h;
-	unsigned long norm[ColLast];
-	unsigned long sel[ColLast];
-	Drawable drawable;
-	GC gc;
-	struct {
-		XFontStruct *xfont;
-		XFontSet set;
-		int ascent;
-		int descent;
-		int height;
-	} font;
-} DC; /* draw context */
-
-/* forward declarations */
-static void dccleanup(void);
-static void dcsetup(void);
-static void drawtext(const char *text, unsigned long col[ColLast]);
-static unsigned long getcolor(const char *colstr);
-static void initfont(const char *fontstr);
-static int textnw(const char *text, unsigned int len);
-static int textw(const char *text);
-
-static DC dc;
+/* macros */
+#define MIN(a, b)               ((a) < (b) ? (a) : (b))
+#define MAX(a, b)               ((a) > (b) ? (a) : (b))
 
 void
-dccleanup(void) {
+drawcleanup(void) {
 	if(dc.font.set)
 		XFreeFontSet(dpy, dc.font.set);
 	else
@@ -41,7 +24,7 @@ dccleanup(void) {
 }
 
 void
-dcsetup(void) {
+drawsetup(void) {
 	/* style */
 	dc.norm[ColBG] = getcolor(normbgcolor);
 	dc.norm[ColFG] = getcolor(normfgcolor);
@@ -82,6 +65,16 @@ drawtext(const char *text, unsigned long col[ColLast]) {
 		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, buf, len);
 	else
 		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
+}
+
+void
+eprint(const char *errstr, ...) {
+	va_list ap;
+
+	va_start(ap, errstr);
+	vfprintf(stderr, errstr, ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
 }
 
 unsigned long

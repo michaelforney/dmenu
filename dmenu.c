@@ -46,6 +46,7 @@ static void run(void);
 static void setup(Bool topbar);
 
 #include "config.h"
+#include "draw.h"
 
 /* variables */
 static char *maxname = NULL;
@@ -54,24 +55,19 @@ static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
 static int ret = 0;
-static int screen;
-static unsigned int mw, mh;
 static unsigned int numlockmask = 0;
 static Bool running = True;
-static Display *dpy;
 static Item *allitems = NULL;  /* first of all items */
 static Item *item = NULL;      /* first of pattern matching items */
 static Item *sel = NULL;
 static Item *next = NULL;
 static Item *prev = NULL;
 static Item *curr = NULL;
-static Window parent, win;
+static Window win;
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 static unsigned int lines = 0;
 static void (*calcoffsets)(void) = calcoffsetsh;
-
-#include "draw.c"
 
 void
 appenditem(Item *i, Item **list, Item **last) {
@@ -136,7 +132,7 @@ cistrstr(const char *s, const char *sub) {
 
 void
 cleanup(void) {
-	dccleanup();
+	drawcleanup();
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
 }
@@ -200,16 +196,6 @@ drawmenuv(void) {
 	}
 	dc.h = mh - dc.y;
 	drawtext(NULL, dc.norm);
-}
-
-void
-eprint(const char *errstr, ...) {
-	va_list ap;
-
-	va_start(ap, errstr);
-	vfprintf(stderr, errstr, ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
 }
 
 Bool
@@ -529,7 +515,7 @@ setup(Bool topbar) {
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
-	dcsetup();
+	drawsetup();
 	if(maxname)
 		cmdw = MIN(textw(maxname), mw / 3);
 	if(prompt)
