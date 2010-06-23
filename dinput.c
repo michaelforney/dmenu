@@ -43,6 +43,12 @@ static unsigned int numlockmask = 0;
 static Bool running = True;
 static Window win;
 
+Display *dpy;
+DC dc;
+int screen;
+unsigned int mw, mh;
+Window parent;
+
 void
 cleanup(void) {
 	drawcleanup();

@@ -30,16 +30,15 @@ int textnw(const char *text, unsigned int len);
 int textw(const char *text);
 
 /* variables */
-Display *dpy;
-DC dc;
-int screen;
-unsigned int mw, mh;
-unsigned int spaceitem;
-Window parent;
+extern Display *dpy;
+extern DC dc;
+extern int screen;
+extern unsigned int mw, mh;
+extern Window parent;
 
 /* style */
-const char *font;
-const char *normbgcolor;
-const char *normfgcolor;
-const char *selbgcolor;
-const char *selfgcolor;
+extern const char *font;
+extern const char *normbgcolor;
+extern const char *normfgcolor;
+extern const char *selbgcolor;
+extern const char *selfgcolor;

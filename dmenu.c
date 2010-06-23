@@ -54,6 +54,7 @@ static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
 static int ret = 0;
+static unsigned int lines = 0;
 static unsigned int numlockmask = 0;
 static Bool running = True;
 static Item *allitems = NULL;  /* first of all items */
@@ -65,8 +66,13 @@ static Item *curr = NULL;
 static Window win;
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
-static unsigned int lines = 0;
 static void (*calcoffsets)(void) = calcoffsetsh;
+
+Display *dpy;
+DC dc;
+int screen;
+unsigned int mw, mh;
+Window parent;
 
 void
 appenditem(Item *i, Item **list, Item **last) {
@@ -131,6 +137,14 @@ cistrstr(const char *s, const char *sub) {
 
 void
 cleanup(void) {
+	Item *itm;
+
+	while(allitems) {
+		itm = allitems->next;
+		free(allitems->text);
+		free(allitems);
+		allitems = itm;
+	}
 	drawcleanup();
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
