@@ -278,11 +278,6 @@ setup(Bool topbar) {
 		}
 	XFreeModifiermap(modmap);
 
-	/* style */
-	dc.norm[ColBG] = getcolor(normbgcolor);
-	dc.norm[ColFG] = getcolor(normfgcolor);
-	dc.sel[ColBG] = getcolor(selbgcolor);
-	dc.sel[ColFG] = getcolor(selfgcolor);
 	initfont(font);
 
 	/* menu window */
@@ -323,7 +318,6 @@ setup(Bool topbar) {
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
-	/* pixmap */
 	dcsetup();
 	if(prompt)
 		promptw = MIN(textw(prompt), mw / 5);
