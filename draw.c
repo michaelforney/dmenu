@@ -41,7 +41,7 @@ dccleanup(void) {
 }
 
 void
-dcsetup() {
+dcsetup(void) {
 	/* style */
 	dc.norm[ColBG] = getcolor(normbgcolor);
 	dc.norm[ColFG] = getcolor(normfgcolor);
