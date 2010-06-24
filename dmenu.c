@@ -59,6 +59,8 @@ static int screen;
 static unsigned int lines = 0;
 static unsigned int numlockmask = 0;
 static unsigned int mw, mh;
+static unsigned long normcol[ColLast];
+static unsigned long selcol[ColLast];
 static Bool running = True;
 static DC dc;
 static Display *dpy;
@@ -159,18 +161,18 @@ drawmenu(void) {
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, dc.norm);
+	drawtext(&dc, NULL, normcol);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, dc.sel);
+		drawtext(&dc, prompt, selcol);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
 	/* print command */
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
-	drawtext(&dc, *text ? text : NULL, dc.norm);
+	drawtext(&dc, *text ? text : NULL, normcol);
 	if(curr) {
 		if(lines > 0)
 			drawmenuv();
@@ -187,16 +189,16 @@ drawmenuh(void) {
 
 	dc.x += cmdw;
 	dc.w = spaceitem;
-	drawtext(&dc, curr->left ? "<" : NULL, dc.norm);
+	drawtext(&dc, curr->left ? "<" : NULL, normcol);
 	dc.x += dc.w;
 	for(i = curr; i != next; i=i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
-		drawtext(&dc, i->text, (sel == i) ? dc.sel : dc.norm);
+		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
 		dc.x += dc.w;
 	}
 	dc.w = spaceitem;
 	dc.x = mw - dc.w;
-	drawtext(&dc, next ? ">" : NULL, dc.norm);
+	drawtext(&dc, next ? ">" : NULL, normcol);
 }
 
 void
@@ -207,11 +209,11 @@ drawmenuv(void) {
 	dc.h = dc.font.height + 2;
 	dc.y = dc.h;
 	for(i = curr; i != next; i=i->right) {
-		drawtext(&dc, i->text, (sel == i) ? dc.sel : dc.norm);
+		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
 		dc.y += dc.h;
 	}
 	dc.h = mh - dc.y;
-	drawtext(&dc, NULL, dc.norm);
+	drawtext(&dc, NULL, normcol);
 }
 
 Bool
@@ -490,10 +492,10 @@ setup(Bool topbar) {
 	XFreeModifiermap(modmap);
 
 	dc.dpy = dpy;
-	dc.norm[ColBG] = getcolor(&dc, normbgcolor);
-	dc.norm[ColFG] = getcolor(&dc, normfgcolor);
-	dc.sel[ColBG] = getcolor(&dc, selbgcolor);
-	dc.sel[ColFG] = getcolor(&dc, selfgcolor);
+	normcol[ColBG] = getcolor(&dc, normbgcolor);
+	normcol[ColFG] = getcolor(&dc, normfgcolor);
+	selcol[ColBG] = getcolor(&dc, selbgcolor);
+	selcol[ColFG] = getcolor(&dc, selfgcolor);
 	initfont(&dc, font);
 
 	/* menu window */

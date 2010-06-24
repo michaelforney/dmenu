@@ -42,6 +42,8 @@ static int screen;
 static unsigned int cursor = 0;
 static unsigned int numlockmask = 0;
 static unsigned int mw, mh;
+static unsigned long normcol[ColLast];
+static unsigned long selcol[ColLast];
 static Bool running = True;
 static DC dc;
 static Display *dpy;
@@ -60,7 +62,7 @@ drawcursor(void) {
 
 	r.x += textnw(&dc, text, cursor) + dc.font.height / 2;
 
-	XSetForeground(dpy, dc.gc, dc.norm[ColFG]);
+	XSetForeground(dpy, dc.gc, normcol[ColFG]);
 	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
 }
 
@@ -71,15 +73,15 @@ drawinput(void)
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, dc.norm);
+	drawtext(&dc, NULL, normcol);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, dc.sel);
+		drawtext(&dc, prompt, selcol);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
-	drawtext(&dc, *text ? text : NULL, dc.norm);
+	drawtext(&dc, *text ? text : NULL, normcol);
 	drawcursor();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
@@ -268,10 +270,10 @@ setup(Bool topbar) {
 	XFreeModifiermap(modmap);
 
 	dc.dpy = dpy;
-	dc.norm[ColBG] = getcolor(&dc, normbgcolor);
-	dc.norm[ColFG] = getcolor(&dc, normfgcolor);
-	dc.sel[ColBG] = getcolor(&dc, selbgcolor);
-	dc.sel[ColFG] = getcolor(&dc, selfgcolor);
+	normcol[ColBG] = getcolor(&dc, normbgcolor);
+	normcol[ColFG] = getcolor(&dc, normfgcolor);
+	selcol[ColBG] = getcolor(&dc, selbgcolor);
+	selcol[ColFG] = getcolor(&dc, selfgcolor);
 	initfont(&dc, font);
 	fprintf(stderr, "dc.font.xfont: %u\n", (size_t)dc.font.xfont);
 

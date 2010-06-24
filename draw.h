@@ -6,8 +6,6 @@ enum { ColFG, ColBG, ColLast };
 /* typedefs */
 typedef struct {
 	int x, y, w, h;
-	unsigned long norm[ColLast];
-	unsigned long sel[ColLast];
 	Drawable drawable;
 	Display *dpy;
 	GC gc;
