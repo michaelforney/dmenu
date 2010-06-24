@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+#include <X11/Xlib.h>
 
 /* enums */
 enum { ColFG, ColBG, ColLast };
@@ -20,11 +21,11 @@ typedef struct {
 
 /* forward declarations */
 void cleanupdraw(DC *dc);
-void setupdraw(DC *dc, Window w);
 void drawtext(DC *dc, const char *text, unsigned long col[ColLast]);
 void eprint(const char *fmt, ...);
 unsigned long getcolor(DC *dc, const char *colstr);
 void initfont(DC *dc, const char *fontstr);
+void setupdraw(DC *dc, Window w);
 int textnw(DC *dc, const char *text, unsigned int len);
 int textw(DC *dc, const char *text);
 

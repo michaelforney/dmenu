@@ -15,8 +15,8 @@ XINERAMALIBS = -L${X11LIB} -lXinerama
 XINERAMAFLAGS = -DXINERAMA
 
 # includes and libs
-INCS = -I. -I/usr/include -I${X11INC}
-LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 ${XINERAMALIBS}
+INCS = -I. -Idraw -I/usr/include -I${X11INC}
+LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 -Ldraw -ldraw ${XINERAMALIBS}
 
 # flags
 CPPFLAGS = -D_BSD_SOURCE -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}

@@ -3,7 +3,7 @@
 
 include config.mk
 
-SRC = dinput.c dmenu.c draw.c
+SRC = dinput.c dmenu.c
 OBJ = ${SRC:.c=.o}
 
 all: options dinput dmenu
@@ -18,28 +18,28 @@ options:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${OBJ}: config.h config.mk draw.h
+${OBJ}: config.h config.mk draw/libdraw.a
 
 config.h:
 	@echo creating $@ from config.def.h
 	@cp config.def.h $@
 
-dinput: dinput.o draw.o
+.o:
 	@echo CC -o $@
-	@${CC} -o $@ $+ ${LDFLAGS}
+	@${CC} -o $@ $< ${LDFLAGS}
 
-dmenu: dmenu.o draw.o
-	@echo CC -o $@
-	@${CC} -o $@ $+ ${LDFLAGS}
+draw/libdraw.a:
+	@cd draw && make
 
 clean:
 	@echo cleaning
 	@rm -f dinput dmenu ${OBJ} dmenu-${VERSION}.tar.gz
+	@cd draw && make clean
 
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp -R LICENSE Makefile README config.mk dmenu.1 config.def.h dmenu_path dmenu_run ${SRC} dmenu-${VERSION}
+	@cp -R LICENSE Makefile README config.mk dmenu.1 config.def.h dmenu_path dmenu_run draw ${SRC} dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
