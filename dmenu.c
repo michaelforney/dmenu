@@ -55,25 +55,23 @@ static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
 static int ret = 0;
+static int screen;
 static unsigned int lines = 0;
 static unsigned int numlockmask = 0;
+static unsigned int mw, mh;
 static Bool running = True;
+static DC dc;
+static Display *dpy;
 static Item *allitems = NULL;  /* first of all items */
 static Item *item = NULL;      /* first of pattern matching items */
 static Item *sel = NULL;
 static Item *next = NULL;
 static Item *prev = NULL;
 static Item *curr = NULL;
-static Window win;
+static Window win, parent;
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 static void (*calcoffsets)(void) = calcoffsetsh;
-
-Display *dpy;
-DC dc;
-int screen;
-unsigned int mw, mh;
-Window parent;
 
 void
 appenditem(Item *i, Item **list, Item **last) {
@@ -92,11 +90,11 @@ calcoffsetsh(void) {
 
 	w = promptw + cmdw + (2 * spaceitem);
 	for(next = curr; next; next = next->right)
-		if((w += MIN(textw(next->text), mw / 3)) > mw)
+		if((w += MIN(textw(&dc, next->text), mw / 3)) > mw)
 			break;
 	w = promptw + cmdw + (2 * spaceitem);
 	for(prev = curr; prev && prev->left; prev = prev->left)
-		if((w += MIN(textw(prev->left->text), mw / 3)) > mw)
+		if((w += MIN(textw(&dc, prev->left->text), mw / 3)) > mw)
 			break;
 }
 
@@ -143,7 +141,7 @@ cleanup(void) {
 		free(allitems);
 		allitems = itm;
 	}
-	drawcleanup();
+	cleanupdraw(&dc);
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
 }
@@ -161,18 +159,18 @@ drawmenu(void) {
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(NULL, dc.norm);
+	drawtext(&dc, NULL, dc.norm);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(prompt, dc.sel);
+		drawtext(&dc, prompt, dc.sel);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
 	/* print command */
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
-	drawtext(*text ? text : NULL, dc.norm);
+	drawtext(&dc, *text ? text : NULL, dc.norm);
 	if(curr) {
 		if(lines > 0)
 			drawmenuv();
@@ -189,16 +187,16 @@ drawmenuh(void) {
 
 	dc.x += cmdw;
 	dc.w = spaceitem;
-	drawtext(curr->left ? "<" : NULL, dc.norm);
+	drawtext(&dc, curr->left ? "<" : NULL, dc.norm);
 	dc.x += dc.w;
 	for(i = curr; i != next; i=i->right) {
-		dc.w = MIN(textw(i->text), mw / 3);
-		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
+		dc.w = MIN(textw(&dc, i->text), mw / 3);
+		drawtext(&dc, i->text, (sel == i) ? dc.sel : dc.norm);
 		dc.x += dc.w;
 	}
 	dc.w = spaceitem;
 	dc.x = mw - dc.w;
-	drawtext(next ? ">" : NULL, dc.norm);
+	drawtext(&dc, next ? ">" : NULL, dc.norm);
 }
 
 void
@@ -209,11 +207,11 @@ drawmenuv(void) {
 	dc.h = dc.font.height + 2;
 	dc.y = dc.h;
 	for(i = curr; i != next; i=i->right) {
-		drawtext(i->text, (sel == i) ? dc.sel : dc.norm);
+		drawtext(&dc, i->text, (sel == i) ? dc.sel : dc.norm);
 		dc.y += dc.h;
 	}
 	dc.h = mh - dc.y;
-	drawtext(NULL, dc.norm);
+	drawtext(&dc, NULL, dc.norm);
 }
 
 Bool
@@ -491,7 +489,12 @@ setup(Bool topbar) {
 		}
 	XFreeModifiermap(modmap);
 
-	initfont(font);
+	dc.dpy = dpy;
+	dc.norm[ColBG] = getcolor(&dc, normbgcolor);
+	dc.norm[ColFG] = getcolor(&dc, normfgcolor);
+	dc.sel[ColBG] = getcolor(&dc, selbgcolor);
+	dc.sel[ColFG] = getcolor(&dc, selfgcolor);
+	initfont(&dc, font);
 
 	/* menu window */
 	wa.override_redirect = True;
@@ -531,11 +534,11 @@ setup(Bool topbar) {
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
-	drawsetup();
+	setupdraw(&dc, win);
 	if(maxname)
-		cmdw = MIN(textw(maxname), mw / 3);
+		cmdw = MIN(textw(&dc, maxname), mw / 3);
 	if(prompt)
-		promptw = MIN(textw(prompt), mw / 5);
+		promptw = MIN(textw(&dc, prompt), mw / 5);
 	text[0] = '\0';
 	match(text);
 	XMapRaised(dpy, win);

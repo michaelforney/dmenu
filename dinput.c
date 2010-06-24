@@ -38,20 +38,18 @@ static char *prompt = NULL;
 static char text[4096];
 static int promptw = 0;
 static int ret = 0;
+static int screen;
 static unsigned int cursor = 0;
 static unsigned int numlockmask = 0;
+static unsigned int mw, mh;
 static Bool running = True;
-static Window win;
-
-Display *dpy;
-DC dc;
-int screen;
-unsigned int mw, mh;
-Window parent;
+static DC dc;
+static Display *dpy;
+static Window win, parent;
 
 void
 cleanup(void) {
-	drawcleanup();
+	cleanupdraw(&dc);
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
 }
@@ -60,7 +58,7 @@ void
 drawcursor(void) {
 	XRectangle r = { dc.x, dc.y + 2, 1, dc.font.height - 2 };
 
-	r.x += textnw(text, cursor) + dc.font.height / 2;
+	r.x += textnw(&dc, text, cursor) + dc.font.height / 2;
 
 	XSetForeground(dpy, dc.gc, dc.norm[ColFG]);
 	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
@@ -73,15 +71,15 @@ drawinput(void)
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(NULL, dc.norm);
+	drawtext(&dc, NULL, dc.norm);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(prompt, dc.sel);
+		drawtext(&dc, prompt, dc.sel);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
-	drawtext(*text ? text : NULL, dc.norm);
+	drawtext(&dc, *text ? text : NULL, dc.norm);
 	drawcursor();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
@@ -269,15 +267,21 @@ setup(Bool topbar) {
 		}
 	XFreeModifiermap(modmap);
 
-	initfont(font);
+	dc.dpy = dpy;
+	dc.norm[ColBG] = getcolor(&dc, normbgcolor);
+	dc.norm[ColFG] = getcolor(&dc, normfgcolor);
+	dc.sel[ColBG] = getcolor(&dc, selbgcolor);
+	dc.sel[ColFG] = getcolor(&dc, selfgcolor);
+	initfont(&dc, font);
+	fprintf(stderr, "dc.font.xfont: %u\n", (size_t)dc.font.xfont);
 
-	/* menu window */
+	/* input window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask | VisibilityChangeMask;
 
-	/* menu window geometry */
-	mh = (dc.font.height + 2);
+	/* input window geometry */
+	mh = dc.font.height + 2;
 #if XINERAMA
 	if(parent == RootWindow(dpy, screen) && XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
 		i = 0;
@@ -309,9 +313,9 @@ setup(Bool topbar) {
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
-	drawsetup();
+	setupdraw(&dc, win);
 	if(prompt)
-		promptw = MIN(textw(prompt), mw / 5);
+		promptw = MIN(textw(&dc, prompt), mw / 5);
 	cursor = strlen(text);
 	XMapRaised(dpy, win);
 }
