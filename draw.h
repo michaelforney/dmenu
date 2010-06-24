@@ -30,13 +30,13 @@ int textnw(const char *text, unsigned int len);
 int textw(const char *text);
 
 /* variables */
+extern char *progname;
 extern Display *dpy;
 extern DC dc;
 extern int screen;
 extern unsigned int mw, mh;
 extern Window parent;
 
-/* style */
 extern const char *font;
 extern const char *normbgcolor;
 extern const char *normfgcolor;

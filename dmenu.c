@@ -34,6 +34,7 @@ static void calcoffsetsh(void);
 static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
+static void dinput(void);
 static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
@@ -89,28 +90,25 @@ void
 calcoffsetsh(void) {
 	unsigned int w;
 
-	if(!curr)
-		return;
-	w = promptw + cmdw + 2 * spaceitem;
-	for(next = curr; next && w < mw; next=next->right)
-		w += MIN(textw(next->text), mw / 3);
-	w = promptw + cmdw + 2 * spaceitem;
-	for(prev = curr; prev && prev->left && w < mw; prev=prev->left)
-		w += MIN(textw(prev->left->text), mw / 3);
+	w = promptw + cmdw + (2 * spaceitem);
+	for(next = curr; next; next = next->right)
+		if((w += MIN(textw(next->text), mw / 3)) > mw)
+			break;
+	w = promptw + cmdw + (2 * spaceitem);
+	for(prev = curr; prev && prev->left; prev = prev->left)
+		if((w += MIN(textw(prev->left->text), mw / 3)) > mw)
+			break;
 }
 
 void
 calcoffsetsv(void) {
-	unsigned int h;
+	unsigned int i;
 
-	if(!curr)
-		return;
-	h = (dc.font.height + 2) * lines;
-	for(next = curr; next && h > 0; next = next->right)
-		h -= dc.font.height + 2;
-	h = (dc.font.height + 2) * lines;
-	for(prev = curr; prev && prev->left && h > 0; prev = prev->left)
-		h -= dc.font.height + 2;
+	next = prev = curr;
+	for(i = 0; i < lines && next; i++)
+		next = next->right;
+	for(i = 0; i < lines && prev && prev->left; i++)
+		prev = prev->left;
 }
 
 char *
@@ -148,6 +146,13 @@ cleanup(void) {
 	drawcleanup();
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
+}
+
+void
+dinput(void) {
+	cleanup();
+	execlp("dinput", "dinput", text, NULL); /* todo: argv */
+	eprint("cannot exec dinput\n");
 }
 
 void
@@ -290,8 +295,7 @@ kpress(XKeyEvent * e) {
 			match(text);
 			break;
 		case XK_x:
-			execlp("dinput", "dinput", text, NULL); /* todo: argv */
-			eprint("dmenu: cannot exec dinput:");
+			dinput();
 			break;
 		}
 	}
@@ -369,10 +373,9 @@ kpress(XKeyEvent * e) {
 		}
 		break;
 	case XK_Tab:
-		if(!sel)
-			return;
-		strncpy(text, sel->text, sizeof text);
-		match(text);
+		if(sel)
+			strncpy(text, sel->text, sizeof text);
+		dinput();
 		break;
 	}
 	drawmenu();
@@ -431,11 +434,11 @@ readstdin(void) {
 		if(buf[len-1] == '\n')
 			buf[--len] = '\0';
 		if(!(p = strdup(buf)))
-			eprint("dmenu: cannot strdup %u bytes\n", len);
+			eprint("cannot strdup %u bytes\n", len);
 		if((max = MAX(max, len)) == len)
 			maxname = p;
 		if(!(new = malloc(sizeof *new)))
-			eprint("dmenu: cannot malloc %u bytes\n", sizeof *new);
+			eprint("cannot malloc %u bytes\n", sizeof *new);
 		new->next = new->left = new->right = NULL;
 		new->text = p;
 		if(!i)
@@ -544,6 +547,7 @@ main(int argc, char *argv[]) {
 	Bool topbar = True;
 
 	/* command line args */
+	progname = argv[0];
 	for(i = 1; i < argc; i++)
 		if(!strcmp(argv[i], "-i")) {
 			fstrncmp = strncasecmp;
@@ -585,7 +589,7 @@ main(int argc, char *argv[]) {
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "dmenu: warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))
-		eprint("dmenu: cannot open display\n");
+		eprint("cannot open display\n");
 	screen = DefaultScreen(dpy);
 	if(!parent)
 		parent = RootWindow(dpy, screen);

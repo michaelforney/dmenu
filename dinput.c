@@ -164,7 +164,7 @@ kpress(XKeyEvent * e) {
 				FILE *fp;
 				char *s;
 				if(!(fp = popen("sselp", "r")))
-					eprint("dinput: cannot popen sselp\n");
+					eprint("cannot popen sselp\n");
 				s = fgets(buf, sizeof buf, fp);
 				pclose(fp);
 				if(s == NULL)
@@ -322,6 +322,7 @@ main(int argc, char *argv[]) {
 	Bool topbar = True;
 
 	/* command line args */
+	progname = argv[0];
 	for(i = 1; i < argc; i++)
 		if(!strcmp(argv[i], "-b"))
 			topbar = False;
@@ -356,7 +357,7 @@ main(int argc, char *argv[]) {
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "dinput: warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))
-		eprint("dinput: cannot open display\n");
+		eprint("cannot open display\n");
 	screen = DefaultScreen(dpy);
 	if(!parent)
 		parent = RootWindow(dpy, screen);

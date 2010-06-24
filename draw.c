@@ -13,6 +13,9 @@
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
 #define MAX(a, b)               ((a) > (b) ? (a) : (b))
 
+/* variables */
+char *progname;
+
 void
 drawcleanup(void) {
 	if(dc.font.set)
@@ -71,6 +74,7 @@ void
 eprint(const char *errstr, ...) {
 	va_list ap;
 
+	fprintf(stderr, "%s: ", progname);
 	va_start(ap, errstr);
 	vfprintf(stderr, errstr, ap);
 	va_end(ap);
@@ -83,7 +87,7 @@ getcolor(const char *colstr) {
 	XColor color;
 
 	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
-		eprint("drawtext: cannot allocate color '%s'\n", colstr);
+		eprint("cannot allocate color '%s'\n", colstr);
 	return color.pixel;
 }
 
@@ -92,8 +96,8 @@ initfont(const char *fontstr) {
 	char *def, **missing = NULL;
 	int i, n;
 
-	if(!fontstr || fontstr[0] == '\0')
-		eprint("drawtext: cannot load font: '%s'\n", fontstr);
+	if(!fontstr || !*fontstr)
+		eprint("cannot load null font\n");
 	dc.font.set = XCreateFontSet(dpy, fontstr, &missing, &n, &def);
 	if(missing)
 		XFreeStringList(missing);
@@ -111,7 +115,7 @@ initfont(const char *fontstr) {
 	else {
 		if(!(dc.font.xfont = XLoadQueryFont(dpy, fontstr))
 		&& !(dc.font.xfont = XLoadQueryFont(dpy, "fixed")))
-			eprint("drawtext: cannot load font: '%s'\n", fontstr);
+			eprint("cannot load font '%s'\n", fontstr);
 		dc.font.ascent = dc.font.xfont->ascent;
 		dc.font.descent = dc.font.xfont->descent;
 	}
