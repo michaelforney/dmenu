@@ -25,7 +25,7 @@ static void cleanup(void);
 static void drawcursor(void);
 static void drawinput(void);
 static Bool grabkeyboard(void);
-static void kpress(XKeyEvent * e);
+static void kpress(XKeyEvent *e);
 static void run(void);
 static void setup(Bool topbar);
 
@@ -100,7 +100,7 @@ grabkeyboard(void) {
 }
 
 void
-kpress(XKeyEvent * e) {
+kpress(XKeyEvent *e) {
 	char buf[sizeof text];
 	int num;
 	unsigned int i, len;
@@ -140,6 +140,7 @@ kpress(XKeyEvent * e) {
 			ksym = XK_BackSpace;
 			break;
 		case XK_j:
+		case XK_m:
 			ksym = XK_Return;
 			break;
 		case XK_k:
@@ -274,12 +275,11 @@ setup(Bool topbar) {
 	selcol[ColBG] = getcolor(&dc, selbgcolor);
 	selcol[ColFG] = getcolor(&dc, selfgcolor);
 	initfont(&dc, font);
-	fprintf(stderr, "dc.font.xfont: %u\n", (size_t)dc.font.xfont);
 
 	/* input window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask | VisibilityChangeMask;
+	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
 
 	/* input window geometry */
 	mh = dc.font.height + 2;

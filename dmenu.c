@@ -39,7 +39,7 @@ static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
 static Bool grabkeyboard(void);
-static void kpress(XKeyEvent * e);
+static void kpress(XKeyEvent *e);
 static void match(char *pattern);
 static void readstdin(void);
 static void run(void);
@@ -191,7 +191,7 @@ drawmenuh(void) {
 	dc.w = spaceitem;
 	drawtext(&dc, curr->left ? "<" : NULL, normcol);
 	dc.x += dc.w;
-	for(i = curr; i != next; i=i->right) {
+	for(i = curr; i != next; i = i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
 		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
 		dc.x += dc.w;
@@ -208,7 +208,7 @@ drawmenuv(void) {
 	dc.w = mw - dc.x;
 	dc.h = dc.font.height + 2;
 	dc.y = dc.h;
-	for(i = curr; i != next; i=i->right) {
+	for(i = curr; i != next; i = i->right) {
 		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
 		dc.y += dc.h;
 	}
@@ -230,7 +230,7 @@ grabkeyboard(void) {
 }
 
 void
-kpress(XKeyEvent * e) {
+kpress(XKeyEvent *e) {
 	char buf[sizeof text];
 	int num;
 	unsigned int i, len;
@@ -273,6 +273,7 @@ kpress(XKeyEvent * e) {
 			ksym = XK_Tab;
 			break;
 		case XK_j:
+		case XK_m:
 			ksym = XK_Return;
 			break;
 		case XK_n:
@@ -501,7 +502,7 @@ setup(Bool topbar) {
 	/* menu window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | ButtonPressMask | KeyPressMask | VisibilityChangeMask;
+	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
 
 	/* menu window geometry */
 	mh = (dc.font.height + 2) * (lines + 1);
