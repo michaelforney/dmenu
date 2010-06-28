@@ -2,7 +2,7 @@
 #include <X11/Xlib.h>
 
 /* enums */
-enum { ColFG, ColBG, ColLast };
+enum { ColBorder, ColFG, ColBG, ColLast };
 
 /* typedefs */
 typedef struct {
@@ -21,7 +21,8 @@ typedef struct {
 
 /* forward declarations */
 void cleanupdraw(DC *dc);
-void drawtext(DC *dc, const char *text, unsigned long col[ColLast]);
+void drawsquare(DC *dc, Bool filled, unsigned long col[ColLast], Bool invert);
+void drawtext(DC *dc, const char *text, unsigned long col[ColLast], Bool invert);
 void eprint(const char *fmt, ...);
 unsigned long getcolor(DC *dc, const char *colstr);
 void initfont(DC *dc, const char *fontstr);

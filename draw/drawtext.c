@@ -6,12 +6,12 @@
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
 
 void
-drawtext(DC *dc, const char *text, unsigned long col[ColLast]) {
+drawtext(DC *dc, const char *text, unsigned long col[ColLast], Bool invert) {
 	char buf[256];
 	int i, x, y, h, len, olen;
 	XRectangle r = { dc->x, dc->y, dc->w, dc->h };
 
-	XSetForeground(dc->dpy, dc->gc, col[ColBG]);
+	XSetForeground(dc->dpy, dc->gc, col[invert ? ColFG : ColBG]);
 	XFillRectangles(dc->dpy, dc->drawable, dc->gc, &r, 1);
 	if(!text)
 		return;
@@ -26,7 +26,7 @@ drawtext(DC *dc, const char *text, unsigned long col[ColLast]) {
 	memcpy(buf, text, len);
 	if(len < olen)
 		for(i = len; i && i > len - 3; buf[--i] = '.');
-	XSetForeground(dc->dpy, dc->gc, col[ColFG]);
+	XSetForeground(dc->dpy, dc->gc, col[invert ? ColBG : ColFG]);
 	if(dc->font.set)
 		XmbDrawString(dc->dpy, dc->drawable, dc->font.set, dc->gc, x, y, buf, len);
 	else

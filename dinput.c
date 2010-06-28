@@ -72,15 +72,15 @@ drawinput(void)
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, normcol);
+	drawtext(&dc, NULL, normcol, False);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, selcol);
+		drawtext(&dc, prompt, selcol, False);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
-	drawtext(&dc, *text ? text : NULL, normcol);
+	drawtext(&dc, *text ? text : NULL, normcol, False);
 	drawcursor();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
@@ -233,7 +233,7 @@ run(void) {
 
 	/* main event loop */
 	while(running && !XNextEvent(dpy, &ev))
-		switch (ev.type) {
+		switch(ev.type) {
 		case KeyPress:
 			kpress(&ev.xkey);
 			break;

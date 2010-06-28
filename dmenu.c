@@ -161,18 +161,18 @@ drawmenu(void) {
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, normcol);
+	drawtext(&dc, NULL, normcol, False);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, selcol);
+		drawtext(&dc, prompt, selcol, False);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
 	/* print command */
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
-	drawtext(&dc, *text ? text : NULL, normcol);
+	drawtext(&dc, *text ? text : NULL, normcol, False);
 	if(curr) {
 		if(lines > 0)
 			drawmenuv();
@@ -189,16 +189,16 @@ drawmenuh(void) {
 
 	dc.x += cmdw;
 	dc.w = spaceitem;
-	drawtext(&dc, curr->left ? "<" : NULL, normcol);
+	drawtext(&dc, curr->left ? "<" : NULL, normcol, False);
 	dc.x += dc.w;
 	for(i = curr; i != next; i = i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
-		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
+		drawtext(&dc, i->text, (sel == i) ? selcol : normcol, False);
 		dc.x += dc.w;
 	}
 	dc.w = spaceitem;
 	dc.x = mw - dc.w;
-	drawtext(&dc, next ? ">" : NULL, normcol);
+	drawtext(&dc, next ? ">" : NULL, normcol, False);
 }
 
 void
@@ -209,11 +209,11 @@ drawmenuv(void) {
 	dc.h = dc.font.height + 2;
 	dc.y = dc.h;
 	for(i = curr; i != next; i = i->right) {
-		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
+		drawtext(&dc, i->text, (sel == i) ? selcol : normcol, False);
 		dc.y += dc.h;
 	}
 	dc.h = mh - dc.y;
-	drawtext(&dc, NULL, normcol);
+	drawtext(&dc, NULL, normcol, False);
 }
 
 Bool
@@ -456,7 +456,7 @@ run(void) {
 
 	/* main event loop */
 	while(running && !XNextEvent(dpy, &ev))
-		switch (ev.type) {
+		switch(ev.type) {
 		case KeyPress:
 			kpress(&ev.xkey);
 			break;

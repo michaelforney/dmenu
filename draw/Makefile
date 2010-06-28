@@ -3,8 +3,8 @@
 
 include ../config.mk
 
-SRC = cleanupdraw.c setupdraw.c drawtext.c eprint.c getcolor.c initfont.c \
-textnw.c textw.c
+SRC = cleanupdraw.c drawsquare.c drawtext.c eprint.c getcolor.c initfont.c \
+setupdraw.c textnw.c textw.c
 OBJ = ${SRC:.c=.o}
 
 all: libdraw.a
