@@ -76,11 +76,11 @@ drawinput(void)
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, selcol, False);
+		drawtext(&dc, prompt, normcol, False);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
-	drawtext(&dc, *text ? text : NULL, normcol, False);
+	drawtext(&dc, *text ? text : NULL, selcol, False);
 	drawcursor();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
@@ -329,11 +329,15 @@ main(int argc, char *argv[]) {
 	/* command line args */
 	progname = argv[0];
 	for(i = 1; i < argc; i++)
-		if(!strcmp(argv[i], "-b"))
+		if(!strcmp(argv[i], "-i"))
+			;  /* ignore flag */
+		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
 		else if(!strcmp(argv[i], "-e")) {
 			if(++i < argc) parent = atoi(argv[i]);
 		}
+		else if(!strcmp(argv[i], "-l"))
+			i++;  /* ignore flag */
 		else if(!strcmp(argv[i], "-fn")) {
 			if(++i < argc) font = argv[i];
 		}
@@ -352,13 +356,17 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-sf")) {
 			if(++i < argc) selfgcolor = argv[i];
 		}
-		else if(!strcmp(argv[i], "-v"))
-			eprint("dinput-"VERSION", © 2006-2010 dinput engineers, see LICENSE for details\n");
+		else if(!strcmp(argv[i], "-v")) {
+			printf("dinput-"VERSION", © 2006-2010 dinput engineers, see LICENSE for details\n");
+			exit(EXIT_SUCCESS);
+		}
 		else if(!*text)
 			strncpy(text, argv[i], sizeof text);
-		else
-			eprint("usage: dinput [-b] [-e <xid>] [-fn <font>] [-nb <color>] [-nf <color>]\n"
-			       "              [-p <prompt>] [-sb <color>] [-sf <color>] [-v] [<text>]\n");
+		else {
+			fputs("usage: dinput [-b] [-e <xid>] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+			      "              [-p <prompt>] [-sb <color>] [-sf <color>] [-v] [<text>]\n", stderr);
+			exit(EXIT_FAILURE);
+		}
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "dinput: warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))

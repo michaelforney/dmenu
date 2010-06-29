@@ -49,6 +49,7 @@ static void setup(Bool topbar);
 #include "draw.h"
 
 /* variables */
+static char **argp = NULL;
 static char *maxname = NULL;
 static char *prompt = NULL;
 static char text[4096];
@@ -151,7 +152,9 @@ cleanup(void) {
 void
 dinput(void) {
 	cleanup();
-	execlp("dinput", "dinput", text, NULL); /* todo: argv */
+	argp[0] = "dinput";
+	argp[1] = text;
+	execvp("dinput", argp);
 	eprint("cannot exec dinput\n");
 }
 
@@ -587,11 +590,15 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-sf")) {
 			if(++i < argc) selfgcolor = argv[i];
 		}
-		else if(!strcmp(argv[i], "-v"))
-			eprint("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n");
-		else
-			eprint("usage: dmenu [-i] [-b] [-e <xid>] [-l <lines>] [-fn <font>] [-nb <color>]\n"
-			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
+		else if(!strcmp(argv[i], "-v")) {
+			printf("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n");
+			exit(EXIT_SUCCESS);
+		}
+		else {
+			fputs("usage: dmenu [-i] [-b] [-e <xid>] [-l <lines>] [-fn <font>] [-nb <color>]\n"
+			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n", stderr);
+			exit(EXIT_FAILURE);
+		}
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "dmenu: warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))
@@ -599,6 +606,9 @@ main(int argc, char *argv[]) {
 	screen = DefaultScreen(dpy);
 	if(!parent)
 		parent = RootWindow(dpy, screen);
+	if(!(argp = malloc(sizeof *argp * (argc+2))))
+		eprint("cannot malloc %u bytes\n", sizeof *argp * (argc+2));
+	memcpy(argp + 2, argv + 1, sizeof *argp * argc);
 
 	readstdin();
 	running = grabkeyboard();
