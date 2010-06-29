@@ -43,7 +43,7 @@ static void kpress(XKeyEvent *e);
 static void match(char *pattern);
 static void readstdin(void);
 static void run(void);
-static void setup(Bool topbar);
+static void setup(void);
 
 #include "config.h"
 #include "draw.h"
@@ -63,6 +63,7 @@ static unsigned int mw, mh;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
 static Bool running = True;
+static Bool topbar = True;
 static DC dc;
 static Display *dpy;
 static Item *allitems = NULL;  /* first of all items */
@@ -475,7 +476,7 @@ run(void) {
 }
 
 void
-setup(Bool topbar) {
+setup(void) {
 	int i, j, x, y;
 #if XINERAMA
 	int n;
@@ -529,7 +530,8 @@ setup(Bool topbar) {
 	else
 #endif
 	{
-		XGetWindowAttributes(dpy, parent, &pwa);
+		if(!XGetWindowAttributes(dpy, parent, &pwa))
+			eprint("cannot get window attributes");
 		x = 0;
 		y = topbar ? 0 : pwa.height - mh;
 		mw = pwa.width;
@@ -553,7 +555,6 @@ setup(Bool topbar) {
 int
 main(int argc, char *argv[]) {
 	unsigned int i;
-	Bool topbar = True;
 
 	/* command line args */
 	progname = argv[0];
@@ -613,7 +614,7 @@ main(int argc, char *argv[]) {
 	readstdin();
 	running = grabkeyboard();
 
-	setup(topbar);
+	setup();
 	drawmenu();
 	XSync(dpy, False);
 	run();
