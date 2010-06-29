@@ -76,11 +76,11 @@ drawinput(void)
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, normcol, False);
+		drawtext(&dc, prompt, selcol, False);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
-	drawtext(&dc, *text ? text : NULL, selcol, False);
+	drawtext(&dc, *text ? text : NULL, normcol, False);
 	drawcursor();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
