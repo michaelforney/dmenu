@@ -109,6 +109,7 @@ calcoffsetsv(void) {
 	next = prev = curr;
 	for(i = 0; i < lines && next; i++)
 		next = next->right;
+	mh = (dc.font.height + 2) * (i + 1);
 	for(i = 0; i < lines && prev && prev->left; i++)
 		prev = prev->left;
 }
@@ -166,6 +167,8 @@ drawmenu(void) {
 	dc.w = mw;
 	dc.h = mh;
 	drawtext(&dc, NULL, normcol, False);
+	dc.h = dc.font.height + 2;
+	dc.y = topbar ? 0 : mh - dc.h;
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
@@ -177,12 +180,10 @@ drawmenu(void) {
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
 	drawtext(&dc, *text ? text : NULL, normcol, False);
-	if(curr) {
-		if(lines > 0)
-			drawmenuv();
-		else
-			drawmenuh();
-	}
+	if(lines > 0)
+		drawmenuv();
+	else
+		drawmenuh();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
 }
@@ -193,7 +194,7 @@ drawmenuh(void) {
 
 	dc.x += cmdw;
 	dc.w = spaceitem;
-	drawtext(&dc, curr->left ? "<" : NULL, normcol, False);
+	drawtext(&dc, curr && curr->left ? "<" : NULL, normcol, False);
 	dc.x += dc.w;
 	for(i = curr; i != next; i = i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
@@ -208,16 +209,17 @@ drawmenuh(void) {
 void
 drawmenuv(void) {
 	Item *i;
+	XWindowAttributes wa;
 
+	dc.y = topbar ? dc.h : 0;
 	dc.w = mw - dc.x;
-	dc.h = dc.font.height + 2;
-	dc.y = dc.h;
 	for(i = curr; i != next; i = i->right) {
 		drawtext(&dc, i->text, (sel == i) ? selcol : normcol, False);
 		dc.y += dc.h;
 	}
-	dc.h = mh - dc.y;
-	drawtext(&dc, NULL, normcol, False);
+	if(!XGetWindowAttributes(dpy, win, &wa))
+		eprint("cannot get window attributes");
+	XMoveResizeWindow(dpy, win, wa.x, wa.y + (topbar ? 0 : wa.height - mh), mw, mh);
 }
 
 Bool
@@ -299,9 +301,6 @@ kpress(XKeyEvent *e) {
 			text[++i] = '\0';
 			match(text);
 			break;
-		case XK_x:
-			dinput();
-			break;
 		}
 	}
 	switch(ksym) {
@@ -360,10 +359,9 @@ kpress(XKeyEvent *e) {
 		calcoffsets();
 		break;
 	case XK_Return:
-		if((e->state & ShiftMask) || !sel)
-			fprintf(stdout, "%s", text);
-		else
-			fprintf(stdout, "%s", sel->text);
+		if(e->state & ShiftMask)
+			dinput();
+		fprintf(stdout, "%s", sel ? sel->text : text);
 		fflush(stdout);
 		running = False;
 		return;
