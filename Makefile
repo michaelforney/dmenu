@@ -18,7 +18,7 @@ options:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${OBJ}: config.h config.mk draw/libdraw.a
+${OBJ}: config.h config.mk
 
 config.h:
 	@echo creating $@ from config.def.h
@@ -28,18 +28,14 @@ config.h:
 	@echo CC -o $@
 	@${CC} -o $@ $< ${LDFLAGS}
 
-draw/libdraw.a:
-	@cd draw && make
-
 clean:
 	@echo cleaning
 	@rm -f dinput dmenu ${OBJ} dmenu-${VERSION}.tar.gz
-	@cd draw && make clean
 
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp -R LICENSE Makefile README config.mk dmenu.1 config.def.h dmenu_path dmenu_run draw ${SRC} dmenu-${VERSION}
+	@cp -R LICENSE Makefile README config.mk dmenu.1 config.def.h dmenu_path dmenu_run ${SRC} dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}

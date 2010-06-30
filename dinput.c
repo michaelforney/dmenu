@@ -12,6 +12,7 @@
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif
+#include <draw.h>
 
 /* macros */
 #define CLEANMASK(mask)         (mask & ~(numlockmask | LockMask))
@@ -30,7 +31,6 @@ static void run(void);
 static void setup(Bool topbar);
 
 #include "config.h"
-#include "draw.h"
 
 /* variables */
 static char *prompt = NULL;

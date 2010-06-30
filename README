@@ -6,6 +6,8 @@ dmenu is a generic and efficient menu for X.
 Requirements
 ------------
 In order to build dmenu you need the Xlib header files.
+You also need libdraw, available from http://hg.suckless.org/libdraw
+
 Pasting the X selection to dmenu requires the sselp utility at runtime.
 
 
