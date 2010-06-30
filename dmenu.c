@@ -1,11 +1,9 @@
 /* See LICENSE file for copyright and license details. */
 #include <ctype.h>
 #include <locale.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <unistd.h>
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
@@ -16,7 +14,6 @@
 #include <draw.h>
 
 /* macros */
-#define CLEANMASK(mask)         (mask & ~(numlockmask | LockMask))
 #define INRECT(X,Y,RX,RY,RW,RH) ((X) >= (RX) && (X) < (RX) + (RW) && (Y) >= (RY) && (Y) < (RY) + (RH))
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
 #define MAX(a, b)               ((a) > (b) ? (a) : (b))
@@ -72,7 +69,7 @@ static Item *sel = NULL;
 static Item *next = NULL;
 static Item *prev = NULL;
 static Item *curr = NULL;
-static Window win, parent;
+static Window win, root;
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 static void (*calcoffsets)(void) = calcoffsetsh;
@@ -227,7 +224,7 @@ grabkeyboard(void) {
 	unsigned int len;
 
 	for(len = 1000; len; len--) {
-		if(XGrabKeyboard(dpy, parent, True, GrabModeAsync, GrabModeAsync, CurrentTime)
+		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
 		== GrabSuccess)
 			break;
 		usleep(1000);
@@ -482,7 +479,6 @@ setup(void) {
 #endif
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
-	XWindowAttributes pwa;
 
 	/* init modifier map */
 	modmap = XGetModifierMapping(dpy);
@@ -509,13 +505,13 @@ setup(void) {
 	/* menu window geometry */
 	mh = (dc.font.height + 2) * (lines + 1);
 #if XINERAMA
-	if(parent == RootWindow(dpy, screen) && XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
+	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
 		i = 0;
 		if(n > 1) {
 			int di;
 			unsigned int dui;
 			Window dummy;
-			if(XQueryPointer(dpy, parent, &dummy, &dummy, &x, &y, &di, &di, &dui))
+			if(XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui))
 				for(i = 0; i < n; i++)
 					if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
 						break;
@@ -528,14 +524,12 @@ setup(void) {
 	else
 #endif
 	{
-		if(!XGetWindowAttributes(dpy, parent, &pwa))
-			eprint("cannot get window attributes");
 		x = 0;
-		y = topbar ? 0 : pwa.height - mh;
-		mw = pwa.width;
+		y = topbar ? 0 : mh - DisplayHeight(dpy, screen);
+		mw = DisplayWidth(dpy, screen);
 	}
 
-	win = XCreateWindow(dpy, parent, x, y, mw, mh, 0,
+	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
@@ -555,7 +549,7 @@ main(int argc, char *argv[]) {
 	unsigned int i;
 
 	/* command line args */
-	progname = argv[0];
+	progname = "dmenu";
 	for(i = 1; i < argc; i++)
 		if(!strcmp(argv[i], "-i")) {
 			fstrncmp = strncasecmp;
@@ -563,9 +557,6 @@ main(int argc, char *argv[]) {
 		}
 		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
-		else if(!strcmp(argv[i], "-e")) {
-			if(++i < argc) parent = atoi(argv[i]);
-		}
 		else if(!strcmp(argv[i], "-l")) {
 			if(++i < argc) lines = atoi(argv[i]);
 			if(lines > 0)
@@ -594,7 +585,7 @@ main(int argc, char *argv[]) {
 			exit(EXIT_SUCCESS);
 		}
 		else {
-			fputs("usage: dmenu [-i] [-b] [-e <xid>] [-l <lines>] [-fn <font>] [-nb <color>]\n"
+			fputs("usage: dmenu [-i] [-b] [-l <lines>] [-fn <font>] [-nb <color>]\n"
 			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n", stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -603,8 +594,7 @@ main(int argc, char *argv[]) {
 	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("cannot open display\n");
 	screen = DefaultScreen(dpy);
-	if(!parent)
-		parent = RootWindow(dpy, screen);
+	root = RootWindow(dpy, screen);
 	if(!(argp = malloc(sizeof *argp * (argc+2))))
 		eprint("cannot malloc %u bytes\n", sizeof *argp * (argc+2));
 	memcpy(argp + 2, argv + 1, sizeof *argp * argc);

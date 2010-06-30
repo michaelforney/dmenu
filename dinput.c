@@ -1,7 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 #include <ctype.h>
 #include <locale.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +14,6 @@
 #include <draw.h>
 
 /* macros */
-#define CLEANMASK(mask)         (mask & ~(numlockmask | LockMask))
 #define INRECT(X,Y,RX,RY,RW,RH) ((X) >= (RX) && (X) < (RX) + (RW) && (Y) >= (RY) && (Y) < (RY) + (RH))
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
 #define MAX(a, b)               ((a) > (b) ? (a) : (b))
@@ -46,7 +44,7 @@ static unsigned long selcol[ColLast];
 static Bool running = True;
 static DC dc;
 static Display *dpy;
-static Window win, parent;
+static Window win, root;
 
 void
 cleanup(void) {
@@ -91,7 +89,7 @@ grabkeyboard(void) {
 	unsigned int len;
 
 	for(len = 1000; len; len--) {
-		if(XGrabKeyboard(dpy, parent, True, GrabModeAsync, GrabModeAsync, CurrentTime)
+		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
 		== GrabSuccess)
 			break;
 		usleep(1000);
@@ -257,7 +255,6 @@ setup(Bool topbar) {
 #endif
 	XModifierKeymap *modmap;
 	XSetWindowAttributes wa;
-	XWindowAttributes pwa;
 
 	/* init modifier map */
 	modmap = XGetModifierMapping(dpy);
@@ -284,13 +281,13 @@ setup(Bool topbar) {
 	/* input window geometry */
 	mh = dc.font.height + 2;
 #if XINERAMA
-	if(parent == RootWindow(dpy, screen) && XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
+	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
 		i = 0;
 		if(n > 1) {
 			int di;
 			unsigned int dui;
 			Window dummy;
-			if(XQueryPointer(dpy, parent, &dummy, &dummy, &x, &y, &di, &di, &dui))
+			if(XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui))
 				for(i = 0; i < n; i++)
 					if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
 						break;
@@ -303,13 +300,12 @@ setup(Bool topbar) {
 	else
 #endif
 	{
-		XGetWindowAttributes(dpy, parent, &pwa);
 		x = 0;
-		y = topbar ? 0 : pwa.height - mh;
-		mw = pwa.width;
+		y = topbar ? 0 : DisplayHeight(dpy, screen) - mh;
+		mw = DisplayWidth(dpy, screen);
 	}
 
-	win = XCreateWindow(dpy, parent, x, y, mw, mh, 0,
+	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
 			DefaultDepth(dpy, screen), CopyFromParent,
 			DefaultVisual(dpy, screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
@@ -327,15 +323,12 @@ main(int argc, char *argv[]) {
 	Bool topbar = True;
 
 	/* command line args */
-	progname = argv[0];
+	progname = "dinput";
 	for(i = 1; i < argc; i++)
 		if(!strcmp(argv[i], "-i"))
 			;  /* ignore flag */
 		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
-		else if(!strcmp(argv[i], "-e")) {
-			if(++i < argc) parent = atoi(argv[i]);
-		}
 		else if(!strcmp(argv[i], "-l"))
 			i++;  /* ignore flag */
 		else if(!strcmp(argv[i], "-fn")) {
@@ -363,7 +356,7 @@ main(int argc, char *argv[]) {
 		else if(!*text)
 			strncpy(text, argv[i], sizeof text);
 		else {
-			fputs("usage: dinput [-b] [-e <xid>] [-fn <font>] [-nb <color>] [-nf <color>]\n"
+			fputs("usage: dinput [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
 			      "              [-p <prompt>] [-sb <color>] [-sf <color>] [-v] [<text>]\n", stderr);
 			exit(EXIT_FAILURE);
 		}
@@ -372,8 +365,7 @@ main(int argc, char *argv[]) {
 	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("cannot open display\n");
 	screen = DefaultScreen(dpy);
-	if(!parent)
-		parent = RootWindow(dpy, screen);
+	root = RootWindow(dpy, screen);
 
 	running = grabkeyboard();
 	setup(topbar);
