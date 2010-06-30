@@ -182,7 +182,7 @@ drawmenu(void) {
 	drawtext(&dc, *text ? text : NULL, normcol, False);
 	if(lines > 0)
 		drawmenuv();
-	else
+	else if(curr)
 		drawmenuh();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
 	XFlush(dpy);
@@ -194,7 +194,7 @@ drawmenuh(void) {
 
 	dc.x += cmdw;
 	dc.w = spaceitem;
-	drawtext(&dc, curr && curr->left ? "<" : NULL, normcol, False);
+	drawtext(&dc, curr->left ? "<" : NULL, normcol, False);
 	dc.x += dc.w;
 	for(i = curr; i != next; i = i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
