@@ -4,45 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#ifdef XINERAMA
-#include <X11/extensions/Xinerama.h>
-#endif
-#include <draw.h>
-
-/* macros */
-#define INRECT(X,Y,RX,RY,RW,RH) ((X) >= (RX) && (X) < (RX) + (RW) && (Y) >= (RY) && (Y) < (RY) + (RH))
-#define MIN(a, b)               ((a) < (b) ? (a) : (b))
-#define MAX(a, b)               ((a) > (b) ? (a) : (b))
-#define IS_UTF8_1ST_CHAR(c)     ((((c) & 0xc0) == 0xc0) || !((c) & 0x80))
+#include "dmenu.h"
 
 /* forward declarations */
 static void cleanup(void);
-static void drawinput(void);
-static void grabkeyboard(void);
-static void kpress(XKeyEvent *e);
-static void run(void);
-static void setup(void);
-
-#include "config.h"
 
 /* variables */
-static char *prompt = NULL;
-static char text[4096];
-static int promptw = 0;
-static int screen;
 static size_t cursor = 0;
-static unsigned int numlockmask = 0;
-static unsigned int mw, mh;
-static unsigned long normcol[ColLast];
-static unsigned long selcol[ColLast];
-static Bool topbar = True;
-static DC dc;
-static Display *dpy;
-static Window win, root;
 
 void
 cleanup(void) {
@@ -53,7 +24,7 @@ cleanup(void) {
 }
 
 void
-drawinput(void)
+drawbar(void)
 {
 	dc.x = 0;
 	dc.y = 0;
@@ -70,19 +41,6 @@ drawinput(void)
 	drawtext(&dc, text, normcol);
 	drawcursor(&dc, text, cursor, normcol);
 	commitdraw(&dc, win);
-}
-
-void
-grabkeyboard(void) {
-	unsigned int len;
-
-	for(len = 1000; len; len--) {
-		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
-		== GrabSuccess)
-			return;
-		usleep(1000);
-	}
-	exit(EXIT_FAILURE);
 }
 
 void
@@ -207,101 +165,7 @@ kpress(XKeyEvent *e) {
 		while(cursor++ < len && !IS_UTF8_1ST_CHAR(text[cursor]));
 		break;
 	}
-	drawinput();
-}
-
-void
-run(void) {
-	XEvent ev;
-
-	/* main event loop */
-	XSync(dpy, False);
-	while(!XNextEvent(dpy, &ev))
-		switch(ev.type) {
-		case KeyPress:
-			kpress(&ev.xkey);
-			break;
-		case Expose:
-			if(ev.xexpose.count == 0)
-				drawinput();
-			break;
-		case VisibilityNotify:
-			if(ev.xvisibility.state != VisibilityUnobscured)
-				XRaiseWindow(dpy, win);
-			break;
-		}
-	exit(EXIT_FAILURE);
-}
-
-void
-setup(void) {
-	int i, j, x, y;
-#if XINERAMA
-	int n;
-	XineramaScreenInfo *info = NULL;
-#endif
-	XModifierKeymap *modmap;
-	XSetWindowAttributes wa;
-
-	/* init modifier map */
-	modmap = XGetModifierMapping(dpy);
-	for(i = 0; i < 8; i++)
-		for(j = 0; j < modmap->max_keypermod; j++) {
-			if(modmap->modifiermap[i * modmap->max_keypermod + j]
-			== XKeysymToKeycode(dpy, XK_Num_Lock))
-				numlockmask = (1 << i);
-		}
-	XFreeModifiermap(modmap);
-
-	dc.dpy = dpy;
-	normcol[ColBG] = getcolor(&dc, normbgcolor);
-	normcol[ColFG] = getcolor(&dc, normfgcolor);
-	selcol[ColBG] = getcolor(&dc, selbgcolor);
-	selcol[ColFG] = getcolor(&dc, selfgcolor);
-	initfont(&dc, font);
-
-	/* input window */
-	wa.override_redirect = True;
-	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
-
-	/* input window geometry */
-	mh = dc.font.height + 2;
-#if XINERAMA
-	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
-		i = 0;
-		if(n > 1) {
-			int di;
-			unsigned int dui;
-			Window dummy;
-			if(XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui))
-				for(i = 0; i < n; i++)
-					if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
-						break;
-		}
-		x = info[i].x_org;
-		y = topbar ? info[i].y_org : info[i].y_org + info[i].height - mh;
-		mw = info[i].width;
-		XFree(info);
-	}
-	else
-#endif
-	{
-		x = 0;
-		y = topbar ? 0 : DisplayHeight(dpy, screen) - mh;
-		mw = DisplayWidth(dpy, screen);
-	}
-
-	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
-			DefaultDepth(dpy, screen), CopyFromParent,
-			DefaultVisual(dpy, screen),
-			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
-
-	setupdraw(&dc, win);
-	if(prompt)
-		promptw = MIN(textw(&dc, prompt), mw / 5);
-	cursor = strlen(text);
-	XMapRaised(dpy, win);
+	drawbar();
 }
 
 int
@@ -336,11 +200,13 @@ main(int argc, char *argv[]) {
 			if(++i < argc) selfgcolor = argv[i];
 		}
 		else if(!strcmp(argv[i], "-v")) {
-			printf("dinput-"VERSION", © 2006-2010 dinput engineers, see LICENSE for details\n");
+			printf("dinput-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n");
 			exit(EXIT_SUCCESS);
 		}
-		else if(!*text)
+		else if(!*text) {
 			strncpy(text, argv[i], sizeof text);
+			cursor = strlen(text);
+		}
 		else {
 			fputs("usage: dinput [-b] [-fn <font>] [-nb <color>] [-nf <color>]\n"
 			      "              [-p <prompt>] [-sb <color>] [-sf <color>] [-v] [<text>]\n", stderr);
@@ -356,7 +222,7 @@ main(int argc, char *argv[]) {
 	root = RootWindow(dpy, screen);
 
 	grabkeyboard();
-	setup();
+	setup(0);
 	run();
 	return 0;
 }

@@ -3,7 +3,7 @@
 
 include config.mk
 
-SRC = dinput.c dmenu.c
+SRC = dinput.c dmenu.c common.c
 OBJ = ${SRC:.c=.o}
 
 all: options dinput dmenu
@@ -24,9 +24,13 @@ config.h:
 	@echo creating $@ from config.def.h
 	@cp config.def.h $@
 
-.o:
+dinput: dinput.o common.o
 	@echo CC -o $@
-	@${CC} -o $@ $< ${LDFLAGS}
+	@${CC} -o $@ $+ ${LDFLAGS}
+
+dmenu: dmenu.o common.o
+	@echo CC -o $@
+	@${CC} -o $@ $+ ${LDFLAGS}
 
 clean:
 	@echo cleaning

@@ -8,16 +8,7 @@
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#ifdef XINERAMA
-#include <X11/extensions/Xinerama.h>
-#endif
-#include <draw.h>
-
-/* macros */
-#define INRECT(X,Y,RX,RY,RW,RH) ((X) >= (RX) && (X) < (RX) + (RW) && (Y) >= (RY) && (Y) < (RY) + (RH))
-#define MIN(a, b)               ((a) < (b) ? (a) : (b))
-#define MAX(a, b)               ((a) > (b) ? (a) : (b))
-#define IS_UTF8_1ST_CHAR(c)     ((((c) & 0xc0) == 0xc0) || !((c) & 0x80))
+#include "dmenu.h"
 
 typedef struct Item Item;
 struct Item {
@@ -33,41 +24,22 @@ static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
 static void dinput(void);
-static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
-static void grabkeyboard(void);
-static void kpress(XKeyEvent *e);
-static void match(char *pattern);
+static void match(void);
 static void readstdin(void);
-static void run(void);
-static void setup(void);
-
-#include "config.h"
 
 /* variables */
 static char **argp = NULL;
 static char *maxname = NULL;
-static char *prompt = NULL;
-static char text[4096];
-static int cmdw = 0;
-static int promptw = 0;
-static int screen;
+static unsigned int cmdw = 0;
 static unsigned int lines = 0;
-static unsigned int numlockmask = 0;
-static unsigned int mw, mh;
-static unsigned long normcol[ColLast];
-static unsigned long selcol[ColLast];
-static Bool topbar = True;
-static DC dc;
-static Display *dpy;
 static Item *allitems = NULL;  /* first of all items */
 static Item *item = NULL;      /* first of pattern matching items */
 static Item *sel = NULL;
 static Item *next = NULL;
 static Item *prev = NULL;
 static Item *curr = NULL;
-static Window win, root;
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 static void (*calcoffsets)(void) = calcoffsetsh;
@@ -85,14 +57,13 @@ appenditem(Item *i, Item **list, Item **last) {
 
 void
 calcoffsetsh(void) {
-	unsigned int x;
+	unsigned int w, x;
 
-	x = promptw + cmdw + (2 * spaceitem);
-	for(next = curr; next; next = next->right)
+	w = promptw + cmdw + textw(&dc, "<") + textw(&dc, ">");
+	for(x = w, next = curr; next; next = next->right)
 		if((x += MIN(textw(&dc, next->text), mw / 3)) > mw)
 			break;
-	x = promptw + cmdw + (2 * spaceitem);
-	for(prev = curr; prev && prev->left; prev = prev->left)
+	for(x = w, prev = curr; prev && prev->left; prev = prev->left)
 		if((x += MIN(textw(&dc, prev->left->text), mw / 3)) > mw)
 			break;
 }
@@ -157,7 +128,7 @@ dinput(void) {
 }
 
 void
-drawmenu(void) {
+drawbar(void) {
 	dc.x = 0;
 	dc.y = 0;
 	dc.w = mw;
@@ -188,7 +159,7 @@ drawmenuh(void) {
 	Item *i;
 
 	dc.x += cmdw;
-	dc.w = spaceitem;
+	dc.w = textw(&dc, "<");
 	drawtext(&dc, curr->left ? "<" : NULL, normcol);
 	dc.x += dc.w;
 	for(i = curr; i != next; i = i->right) {
@@ -196,7 +167,7 @@ drawmenuh(void) {
 		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
 		dc.x += dc.w;
 	}
-	dc.w = spaceitem;
+	dc.w = textw(&dc, ">");
 	dc.x = mw - dc.w;
 	drawtext(&dc, next ? ">" : NULL, normcol);
 }
@@ -215,19 +186,6 @@ drawmenuv(void) {
 	if(!XGetWindowAttributes(dpy, win, &wa))
 		eprint("cannot get window attributes");
 	XMoveResizeWindow(dpy, win, wa.x, wa.y + (topbar ? 0 : wa.height - mh), mw, mh);
-}
-
-void
-grabkeyboard(void) {
-	unsigned int len;
-
-	for(len = 1000; len; len--) {
-		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
-		== GrabSuccess)
-			return;
-		usleep(1000);
-	}
-	exit(EXIT_FAILURE);
 }
 
 void
@@ -285,7 +243,7 @@ kpress(XKeyEvent *e) {
 			break;
 		case XK_u:
 			text[0] = '\0';
-			match(text);
+			match();
 			break;
 		case XK_w:
 			if(len == 0)
@@ -294,7 +252,7 @@ kpress(XKeyEvent *e) {
 			while(i-- > 0 && text[i] == ' ');
 			while(i-- > 0 && text[i] != ' ');
 			text[++i] = '\0';
-			match(text);
+			match();
 			break;
 		}
 	}
@@ -304,7 +262,7 @@ kpress(XKeyEvent *e) {
 		if(num && !iscntrl((int) buf[0])) {
 			memcpy(text + len, buf, num + 1);
 			len += num;
-			match(text);
+			match();
 		}
 		break;
 	case XK_BackSpace:
@@ -313,7 +271,7 @@ kpress(XKeyEvent *e) {
 		for(i = 1; len - i > 0 && !IS_UTF8_1ST_CHAR(text[len - i]); i++);
 		len -= i;
 		text[len] = '\0';
-		match(text);
+		match();
 		break;
 	case XK_End:
 		while(next) {
@@ -373,24 +331,22 @@ kpress(XKeyEvent *e) {
 		dinput();
 		break;
 	}
-	drawmenu();
+	drawbar();
 }
 
 void
-match(char *pattern) {
-	unsigned int plen;
+match(void) {
+	unsigned int len;
 	Item *i, *itemend, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
 
-	if(!pattern)
-		return;
-	plen = strlen(pattern);
+	len = strlen(text);
 	item = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
 	for(i = allitems; i; i = i->next)
-		if(!fstrncmp(pattern, i->text, plen + 1))
+		if(!fstrncmp(text, i->text, len + 1))
 			appenditem(i, &lexact, &exactend);
-		else if(!fstrncmp(pattern, i->text, plen))
+		else if(!fstrncmp(text, i->text, len))
 			appenditem(i, &lprefix, &prefixend);
-		else if(fstrstr(i->text, pattern))
+		else if(fstrstr(i->text, text))
 			appenditem(i, &lsubstr, &substrend);
 	if(lexact) {
 		item = lexact;
@@ -442,103 +398,6 @@ readstdin(void) {
 			i->next = new;
 		i = new;
 	}
-}
-
-void
-run(void) {
-	XEvent ev;
-
-	/* main event loop */
-	XSync(dpy, False);
-	while(!XNextEvent(dpy, &ev))
-		switch(ev.type) {
-		case KeyPress:
-			kpress(&ev.xkey);
-			break;
-		case Expose:
-			if(ev.xexpose.count == 0)
-				drawmenu();
-			break;
-		case VisibilityNotify:
-			if(ev.xvisibility.state != VisibilityUnobscured)
-				XRaiseWindow(dpy, win);
-			break;
-		}
-	exit(EXIT_FAILURE);
-}
-
-void
-setup(void) {
-	int i, j, x, y;
-#if XINERAMA
-	int n;
-	XineramaScreenInfo *info = NULL;
-#endif
-	XModifierKeymap *modmap;
-	XSetWindowAttributes wa;
-
-	/* init modifier map */
-	modmap = XGetModifierMapping(dpy);
-	for(i = 0; i < 8; i++)
-		for(j = 0; j < modmap->max_keypermod; j++) {
-			if(modmap->modifiermap[i * modmap->max_keypermod + j]
-			== XKeysymToKeycode(dpy, XK_Num_Lock))
-				numlockmask = (1 << i);
-		}
-	XFreeModifiermap(modmap);
-
-	dc.dpy = dpy;
-	normcol[ColBG] = getcolor(&dc, normbgcolor);
-	normcol[ColFG] = getcolor(&dc, normfgcolor);
-	selcol[ColBG] = getcolor(&dc, selbgcolor);
-	selcol[ColFG] = getcolor(&dc, selfgcolor);
-	initfont(&dc, font);
-
-	/* menu window */
-	wa.override_redirect = True;
-	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
-
-	/* menu window geometry */
-	mh = (dc.font.height + 2) * (lines + 1);
-#if XINERAMA
-	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
-		i = 0;
-		if(n > 1) {
-			int di;
-			unsigned int dui;
-			Window dummy;
-			if(XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui))
-				for(i = 0; i < n; i++)
-					if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
-						break;
-		}
-		x = info[i].x_org;
-		y = topbar ? info[i].y_org : info[i].y_org + info[i].height - mh;
-		mw = info[i].width;
-		XFree(info);
-	}
-	else
-#endif
-	{
-		x = 0;
-		y = topbar ? 0 : mh - DisplayHeight(dpy, screen);
-		mw = DisplayWidth(dpy, screen);
-	}
-
-	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
-			DefaultDepth(dpy, screen), CopyFromParent,
-			DefaultVisual(dpy, screen),
-			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
-
-	setupdraw(&dc, win);
-	if(maxname)
-		cmdw = MIN(textw(&dc, maxname), mw / 3);
-	if(prompt)
-		promptw = MIN(textw(&dc, prompt), mw / 5);
-	text[0] = '\0';
-	match(text);
-	XMapRaised(dpy, win);
 }
 
 int
@@ -600,7 +459,10 @@ main(int argc, char *argv[]) {
 
 	readstdin();
 	grabkeyboard();
-	setup();
+	setup(lines);
+	if(maxname)
+		cmdw = MIN(textw(&dc, maxname), mw / 3);
+	match();
 	run();
 	return 0;
 }
