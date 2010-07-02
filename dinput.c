@@ -26,7 +26,7 @@ static void drawinput(void);
 static Bool grabkeyboard(void);
 static void kpress(XKeyEvent *e);
 static void run(void);
-static void setup(Bool topbar);
+static void setup(void);
 
 #include "config.h"
 
@@ -34,14 +34,13 @@ static void setup(Bool topbar);
 static char *prompt = NULL;
 static char text[4096];
 static int promptw = 0;
-static int ret = 0;
 static int screen;
 static unsigned int cursor = 0;
 static unsigned int numlockmask = 0;
 static unsigned int mw, mh;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
-static Bool running = True;
+static Bool topbar = True;
 static DC dc;
 static Display *dpy;
 static Window win, root;
@@ -51,6 +50,7 @@ cleanup(void) {
 	cleanupdraw(&dc);
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
+	XCloseDisplay(dpy);
 }
 
 void
@@ -81,7 +81,6 @@ drawinput(void)
 	drawtext(&dc, *text ? text : NULL, normcol, False);
 	drawcursor();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
-	XFlush(dpy);
 }
 
 Bool
@@ -200,9 +199,7 @@ kpress(XKeyEvent *e) {
 		cursor = len;
 		break;
 	case XK_Escape:
-		ret = 1;
-		running = False;
-		return;
+		exit(EXIT_FAILURE);
 	case XK_Home:
 		cursor = 0;
 		break;
@@ -214,8 +211,7 @@ kpress(XKeyEvent *e) {
 	case XK_Return:
 		fprintf(stdout, "%s", text);
 		fflush(stdout);
-		running = False;
-		return;
+		exit(EXIT_SUCCESS);
 	case XK_Right:
 		if(cursor == len)
 			return;
@@ -230,7 +226,8 @@ run(void) {
 	XEvent ev;
 
 	/* main event loop */
-	while(running && !XNextEvent(dpy, &ev))
+	XSync(dpy, False);
+	while(!XNextEvent(dpy, &ev))
 		switch(ev.type) {
 		case KeyPress:
 			kpress(&ev.xkey);
@@ -240,14 +237,15 @@ run(void) {
 				drawinput();
 			break;
 		case VisibilityNotify:
-			if (ev.xvisibility.state != VisibilityUnobscured)
+			if(ev.xvisibility.state != VisibilityUnobscured)
 				XRaiseWindow(dpy, win);
 			break;
 		}
+	exit(EXIT_FAILURE);
 }
 
 void
-setup(Bool topbar) {
+setup(void) {
 	int i, j, x, y;
 #if XINERAMA
 	int n;
@@ -320,7 +318,6 @@ setup(Bool topbar) {
 int
 main(int argc, char *argv[]) {
 	unsigned int i;
-	Bool topbar = True;
 
 	/* command line args */
 	progname = "dinput";
@@ -364,15 +361,13 @@ main(int argc, char *argv[]) {
 		fprintf(stderr, "dinput: warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("cannot open display\n");
+	if(atexit(&cleanup) != 0)
+		eprint("cannot register cleanup\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
 
-	running = grabkeyboard();
-	setup(topbar);
-	drawinput();
-	XSync(dpy, False);
+	grabkeyboard();
+	setup();
 	run();
-	cleanup();
-	XCloseDisplay(dpy);
-	return ret;
+	return 0;
 }

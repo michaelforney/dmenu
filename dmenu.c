@@ -36,7 +36,7 @@ static void dinput(void);
 static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
-static Bool grabkeyboard(void);
+static void grabkeyboard(void);
 static void kpress(XKeyEvent *e);
 static void match(char *pattern);
 static void readstdin(void);
@@ -52,14 +52,12 @@ static char *prompt = NULL;
 static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
-static int ret = 0;
 static int screen;
 static unsigned int lines = 0;
 static unsigned int numlockmask = 0;
 static unsigned int mw, mh;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
-static Bool running = True;
 static Bool topbar = True;
 static DC dc;
 static Display *dpy;
@@ -87,15 +85,15 @@ appenditem(Item *i, Item **list, Item **last) {
 
 void
 calcoffsetsh(void) {
-	unsigned int w;
+	unsigned int x;
 
-	w = promptw + cmdw + (2 * spaceitem);
+	x = promptw + cmdw + (2 * spaceitem);
 	for(next = curr; next; next = next->right)
-		if((w += MIN(textw(&dc, next->text), mw / 3)) > mw)
+		if((x += MIN(textw(&dc, next->text), mw / 3)) > mw)
 			break;
-	w = promptw + cmdw + (2 * spaceitem);
+	x = promptw + cmdw + (2 * spaceitem);
 	for(prev = curr; prev && prev->left; prev = prev->left)
-		if((w += MIN(textw(&dc, prev->left->text), mw / 3)) > mw)
+		if((x += MIN(textw(&dc, prev->left->text), mw / 3)) > mw)
 			break;
 }
 
@@ -146,6 +144,7 @@ cleanup(void) {
 	cleanupdraw(&dc);
 	XDestroyWindow(dpy, win);
 	XUngrabKeyboard(dpy, CurrentTime);
+	XCloseDisplay(dpy);
 }
 
 void
@@ -182,7 +181,6 @@ drawmenu(void) {
 	else if(curr)
 		drawmenuh();
 	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
-	XFlush(dpy);
 }
 
 void
@@ -219,7 +217,7 @@ drawmenuv(void) {
 	XMoveResizeWindow(dpy, win, wa.x, wa.y + (topbar ? 0 : wa.height - mh), mw, mh);
 }
 
-Bool
+void
 grabkeyboard(void) {
 	unsigned int len;
 
@@ -229,7 +227,8 @@ grabkeyboard(void) {
 			break;
 		usleep(1000);
 	}
-	return len > 0;
+	if(!len)
+		exit(EXIT_FAILURE);
 }
 
 void
@@ -326,9 +325,7 @@ kpress(XKeyEvent *e) {
 			sel = sel->right;
 		break;
 	case XK_Escape:
-		ret = 1;
-		running = False;
-		return;
+		exit(EXIT_FAILURE);
 	case XK_Home:
 		sel = curr = item;
 		calcoffsets();
@@ -360,8 +357,7 @@ kpress(XKeyEvent *e) {
 			dinput();
 		fprintf(stdout, "%s", sel ? sel->text : text);
 		fflush(stdout);
-		running = False;
-		return;
+		exit(EXIT_SUCCESS);
 	case XK_Right:
 	case XK_Down:
 		if(!sel || !sel->right)
@@ -454,7 +450,8 @@ run(void) {
 	XEvent ev;
 
 	/* main event loop */
-	while(running && !XNextEvent(dpy, &ev))
+	XSync(dpy, False);
+	while(!XNextEvent(dpy, &ev))
 		switch(ev.type) {
 		case KeyPress:
 			kpress(&ev.xkey);
@@ -464,10 +461,11 @@ run(void) {
 				drawmenu();
 			break;
 		case VisibilityNotify:
-			if (ev.xvisibility.state != VisibilityUnobscured)
+			if(ev.xvisibility.state != VisibilityUnobscured)
 				XRaiseWindow(dpy, win);
 			break;
 		}
+	exit(EXIT_FAILURE);
 }
 
 void
@@ -586,13 +584,15 @@ main(int argc, char *argv[]) {
 		}
 		else {
 			fputs("usage: dmenu [-i] [-b] [-l <lines>] [-fn <font>] [-nb <color>]\n"
-			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n", stderr);
+			      "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n", stderr);
 			exit(EXIT_FAILURE);
 		}
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "dmenu: warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))
 		eprint("cannot open display\n");
+	if(atexit(&cleanup) != 0)
+		eprint("cannot register cleanup\n");
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
 	if(!(argp = malloc(sizeof *argp * (argc+2))))
@@ -600,13 +600,8 @@ main(int argc, char *argv[]) {
 	memcpy(argp + 2, argv + 1, sizeof *argp * argc);
 
 	readstdin();
-	running = grabkeyboard();
-
+	grabkeyboard();
 	setup();
-	drawmenu();
-	XSync(dpy, False);
 	run();
-	cleanup();
-	XCloseDisplay(dpy);
-	return ret;
+	return 0;
 }
