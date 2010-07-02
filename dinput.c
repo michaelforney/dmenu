@@ -21,9 +21,8 @@
 
 /* forward declarations */
 static void cleanup(void);
-static void drawcursor(void);
 static void drawinput(void);
-static Bool grabkeyboard(void);
+static void grabkeyboard(void);
 static void kpress(XKeyEvent *e);
 static void run(void);
 static void setup(void);
@@ -35,7 +34,7 @@ static char *prompt = NULL;
 static char text[4096];
 static int promptw = 0;
 static int screen;
-static unsigned int cursor = 0;
+static size_t cursor = 0;
 static unsigned int numlockmask = 0;
 static unsigned int mw, mh;
 static unsigned long normcol[ColLast];
@@ -54,46 +53,36 @@ cleanup(void) {
 }
 
 void
-drawcursor(void) {
-	XRectangle r = { dc.x, dc.y + 2, 1, dc.font.height - 2 };
-
-	r.x += textnw(&dc, text, cursor) + dc.font.height / 2;
-
-	XSetForeground(dpy, dc.gc, normcol[ColFG]);
-	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
-}
-
-void
 drawinput(void)
 {
 	dc.x = 0;
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, normcol, False);
+	drawtext(&dc, NULL, normcol);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, selcol, False);
+		drawtext(&dc, prompt, selcol);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
-	drawtext(&dc, *text ? text : NULL, normcol, False);
-	drawcursor();
-	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
+	drawtext(&dc, text, normcol);
+	drawcursor(&dc, text, cursor, normcol);
+	commitdraw(&dc, win);
 }
 
-Bool
+void
 grabkeyboard(void) {
 	unsigned int len;
 
 	for(len = 1000; len; len--) {
 		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
 		== GrabSuccess)
-			break;
+			return;
 		usleep(1000);
 	}
-	return len > 0;
+	exit(EXIT_FAILURE);
 }
 
 void

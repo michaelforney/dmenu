@@ -162,25 +162,25 @@ drawmenu(void) {
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, normcol, False);
+	drawtext(&dc, NULL, normcol);
 	dc.h = dc.font.height + 2;
 	dc.y = topbar ? 0 : mh - dc.h;
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
-		drawtext(&dc, prompt, selcol, False);
+		drawtext(&dc, prompt, selcol);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
 	/* print command */
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
-	drawtext(&dc, *text ? text : NULL, normcol, False);
+	drawtext(&dc, text, normcol);
 	if(lines > 0)
 		drawmenuv();
 	else if(curr)
 		drawmenuh();
-	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, mw, mh, 0, 0);
+	commitdraw(&dc, win);
 }
 
 void
@@ -189,16 +189,16 @@ drawmenuh(void) {
 
 	dc.x += cmdw;
 	dc.w = spaceitem;
-	drawtext(&dc, curr->left ? "<" : NULL, normcol, False);
+	drawtext(&dc, curr->left ? "<" : NULL, normcol);
 	dc.x += dc.w;
 	for(i = curr; i != next; i = i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
-		drawtext(&dc, i->text, (sel == i) ? selcol : normcol, False);
+		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
 		dc.x += dc.w;
 	}
 	dc.w = spaceitem;
 	dc.x = mw - dc.w;
-	drawtext(&dc, next ? ">" : NULL, normcol, False);
+	drawtext(&dc, next ? ">" : NULL, normcol);
 }
 
 void
@@ -209,7 +209,7 @@ drawmenuv(void) {
 	dc.y = topbar ? dc.h : 0;
 	dc.w = mw - dc.x;
 	for(i = curr; i != next; i = i->right) {
-		drawtext(&dc, i->text, (sel == i) ? selcol : normcol, False);
+		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
 		dc.y += dc.h;
 	}
 	if(!XGetWindowAttributes(dpy, win, &wa))
@@ -224,11 +224,10 @@ grabkeyboard(void) {
 	for(len = 1000; len; len--) {
 		if(XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime)
 		== GrabSuccess)
-			break;
+			return;
 		usleep(1000);
 	}
-	if(!len)
-		exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
 }
 
 void
