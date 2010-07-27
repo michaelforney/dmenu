@@ -30,7 +30,7 @@ drawbar(void)
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, normcol);
+	drawbox(&dc, normcol);
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;

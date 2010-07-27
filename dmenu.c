@@ -133,7 +133,7 @@ drawbar(void) {
 	dc.y = 0;
 	dc.w = mw;
 	dc.h = mh;
-	drawtext(&dc, NULL, normcol);
+	drawbox(&dc, normcol);
 	dc.h = dc.font.height + 2;
 	dc.y = topbar ? 0 : mh - dc.h;
 	/* print prompt? */
@@ -156,6 +156,7 @@ drawbar(void) {
 
 void
 drawmenuh(void) {
+	unsigned long *col;
 	Item *i;
 
 	dc.x += cmdw;
@@ -164,7 +165,9 @@ drawmenuh(void) {
 	dc.x += dc.w;
 	for(i = curr; i != next; i = i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
-		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
+		col = (sel == i) ? selcol : normcol;
+		drawbox(&dc, col);
+		drawtext(&dc, i->text, col);
 		dc.x += dc.w;
 	}
 	dc.w = textw(&dc, ">");
