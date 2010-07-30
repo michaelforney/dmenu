@@ -24,6 +24,7 @@ static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
 static void dinput(void);
+static void drawitem(char *s, unsigned long col[ColLast]);
 static void drawmenuh(void);
 static void drawmenuv(void);
 static void match(void);
@@ -155,8 +156,13 @@ drawbar(void) {
 }
 
 void
+drawitem(char *s, unsigned long col[ColLast]) {
+	drawbox(&dc, col);
+	drawtext(&dc, s, col);
+}
+
+void
 drawmenuh(void) {
-	unsigned long *col;
 	Item *i;
 
 	dc.x += cmdw;
@@ -165,9 +171,7 @@ drawmenuh(void) {
 	dc.x += dc.w;
 	for(i = curr; i != next; i = i->right) {
 		dc.w = MIN(textw(&dc, i->text), mw / 3);
-		col = (sel == i) ? selcol : normcol;
-		drawbox(&dc, col);
-		drawtext(&dc, i->text, col);
+		drawitem(i->text, (sel == i) ? selcol : normcol);
 		dc.x += dc.w;
 	}
 	dc.w = textw(&dc, ">");
@@ -183,7 +187,7 @@ drawmenuv(void) {
 	dc.y = topbar ? dc.h : 0;
 	dc.w = mw - dc.x;
 	for(i = curr; i != next; i = i->right) {
-		drawtext(&dc, i->text, (sel == i) ? selcol : normcol);
+		drawitem(i->text, (sel == i) ? selcol : normcol);
 		dc.y += dc.h;
 	}
 	if(!XGetWindowAttributes(dpy, win, &wa))
