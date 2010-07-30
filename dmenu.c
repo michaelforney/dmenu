@@ -8,7 +8,16 @@
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include "dmenu.h"
+#ifdef XINERAMA
+#include <X11/extensions/Xinerama.h>
+#endif
+#include <draw.h>
+#include "config.h"
+
+#define INRECT(x,y,rx,ry,rw,rh) ((rx) < (x) && (x) < (rx)+(rw) && (ry) < (y) && (y) < (ry)+(rh))
+#define MIN(a,b)                ((a) < (b) ? (a) : (b))
+#define MAX(a,b)                ((a) > (b) ? (a) : (b))
+#define IS_UTF8_1ST_CHAR(c)     (((c) & 0xc0) == 0xc0 || ((c) & 0x80) == 0x00)
 
 typedef struct Item Item;
 struct Item {
@@ -17,30 +26,46 @@ struct Item {
 	Item *left, *right; /* traverses items matching current search pattern */
 };
 
-/* forward declarations */
 static void appenditem(Item *i, Item **list, Item **last);
 static void calcoffsetsh(void);
 static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
-static void dinput(void);
 static void drawitem(const char *s, unsigned long col[ColLast]);
+static void drawmenu(void);
 static void drawmenuh(void);
 static void drawmenuv(void);
+static void grabkeyboard(void);
+static void keypress(XKeyEvent *e);
 static void match(void);
 static void readstdin(void);
+static void run(void);
+static void setup(void);
 
-/* variables */
 static char **argp = NULL;
 static char *maxname = NULL;
+static char *prompt;
+static char text[4096];
+static int promptw;
+static int screen;
+static size_t cur = 0;
 static unsigned int cmdw = 0;
 static unsigned int lines = 0;
+static unsigned int numlockmask;
+static unsigned int mw, mh;
+static unsigned long normcol[ColLast];
+static unsigned long selcol[ColLast];
+static Bool topbar = True;
+static DC dc;
+static Display *dpy;
 static Item *allitems = NULL;  /* first of all items */
 static Item *item = NULL;      /* first of pattern matching items */
 static Item *sel = NULL;
 static Item *next = NULL;
 static Item *prev = NULL;
 static Item *curr = NULL;
+static Window win, root;
+
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 static void (*calcoffsets)(void) = calcoffsetsh;
@@ -120,16 +145,18 @@ cleanup(void) {
 }
 
 void
-dinput(void) {
-	cleanup();
-	argp[0] = "dinput";
-	argp[1] = text;
-	execvp("dinput", argp);
-	eprint("cannot exec dinput\n");
+drawitem(const char *s, unsigned long col[ColLast]) {
+	const char *p;
+	unsigned int w = textnw(&dc, text, strlen(text));
+
+	drawbox(&dc, col);
+	drawtext(&dc, s, col);
+	for(p = fstrstr(s, text); *text && (p = fstrstr(p, text)); p++)
+		drawline(&dc, textnw(&dc, s, p-s) + dc.h/2 - 1, dc.h-2, w, 1, col);
 }
 
 void
-drawbar(void) {
+drawmenu(void) {
 	dc.x = 0;
 	dc.y = 0;
 	dc.w = mw;
@@ -149,22 +176,12 @@ drawbar(void) {
 	if(cmdw && item && lines == 0)
 		dc.w = cmdw;
 	drawtext(&dc, text, normcol);
+	drawline(&dc, textnw(&dc, text, cur) + dc.h/2 - 2, 2, 1, dc.h-4, normcol);
 	if(lines > 0)
 		drawmenuv();
 	else if(curr)
 		drawmenuh();
 	commitdraw(&dc, win);
-}
-
-void
-drawitem(const char *s, unsigned long col[ColLast]) {
-	const char *p;
-	unsigned int w = textnw(&dc, text, strlen(text));
-
-	drawbox(&dc, col);
-	drawtext(&dc, s, col);
-	for(p = fstrstr(s, text); *text && (p = fstrstr(p, text)); p++)
-		drawline(&dc, textnw(&dc, s, p-s) + dc.h/2 - 1, dc.h-2, w, 1, col);
 }
 
 void
@@ -202,7 +219,19 @@ drawmenuv(void) {
 }
 
 void
-kpress(XKeyEvent *e) {
+grabkeyboard(void) {
+	unsigned int n;
+
+	for(n = 0; n < 1000; n++) {
+		if(!XGrabKeyboard(dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime))
+			return;
+		usleep(1000);
+	}
+	exit(EXIT_FAILURE);
+}
+
+void
+keypress(XKeyEvent *e) {
 	char buf[sizeof text];
 	int num;
 	unsigned int i, len;
@@ -248,6 +277,9 @@ kpress(XKeyEvent *e) {
 		case XK_m:
 			ksym = XK_Return;
 			break;
+		case XK_k:
+			text[cur] = '\0';
+			break;
 		case XK_n:
 			ksym = XK_Down;
 			break;
@@ -255,17 +287,34 @@ kpress(XKeyEvent *e) {
 			ksym = XK_Up;
 			break;
 		case XK_u:
-			text[0] = '\0';
+			memmove(text, text + cur, sizeof text - cur + 1);
+			cur = 0;
 			match();
 			break;
 		case XK_w:
-			if(len == 0)
+			if(cur == 0)
 				return;
-			i = len;
+			i = cur;
 			while(i-- > 0 && text[i] == ' ');
 			while(i-- > 0 && text[i] != ' ');
-			text[++i] = '\0';
+			memmove(text + i + 1, text + cur, sizeof text - cur + 1);
+			cur = i + 1;
 			match();
+			break;
+		case XK_y:
+			{
+				FILE *fp;
+				char *s;
+				if(!(fp = fopen("sselp", "r")))
+					eprint("cannot popen sselp\n");
+				s = fgets(buf, sizeof buf, fp);
+				fclose(fp);
+				if(!s)
+					return;
+			}
+			num = strlen(buf);
+			if(num && buf[num-1] == '\n')
+				buf[--num] = '\0';
 			break;
 		}
 	}
@@ -273,20 +322,32 @@ kpress(XKeyEvent *e) {
 	default:
 		num = MIN(num, sizeof text);
 		if(num && !iscntrl((int) buf[0])) {
-			memcpy(text + len, buf, num + 1);
-			len += num;
+			memmove(text + cur + num, text + cur, sizeof text - cur - num);
+			memcpy(text + cur, buf, num);
+			cur += num;
 			match();
 		}
 		break;
 	case XK_BackSpace:
-		if(len == 0)
+		if(cur == 0)
 			return;
-		for(i = 1; len - i > 0 && !IS_UTF8_1ST_CHAR(text[len - i]); i++);
-		len -= i;
-		text[len] = '\0';
+		for(i = 1; len - i > 0 && !IS_UTF8_1ST_CHAR(text[cur - i]); i++);
+		memmove(text + cur - i, text + cur, sizeof text - cur + i);
+		cur -= i;
+		match();
+		break;
+	case XK_Delete:
+		if(cur == len)
+			return;
+		for(i = 1; cur + i < len && !IS_UTF8_1ST_CHAR(text[cur + i]); i++);
+		memmove(text + cur, text + cur + i, sizeof text - cur);
 		match();
 		break;
 	case XK_End:
+		if(cur < len) {
+			cur = len;
+			break;
+		}
 		while(next) {
 			sel = curr = next;
 			calcoffsets();
@@ -297,10 +358,20 @@ kpress(XKeyEvent *e) {
 	case XK_Escape:
 		exit(EXIT_FAILURE);
 	case XK_Home:
+		if(sel == item) {
+			cur = 0;
+			break;
+		}
 		sel = curr = item;
 		calcoffsets();
 		break;
 	case XK_Left:
+		if(cur > 0 && (!sel || !sel->left || lines > 0)) {
+			while(cur-- > 0 && !IS_UTF8_1ST_CHAR(text[cur]));
+			break;
+		}
+		if(lines > 0)
+			return;
 	case XK_Up:
 		if(!sel || !sel->left)
 			return;
@@ -323,12 +394,16 @@ kpress(XKeyEvent *e) {
 		calcoffsets();
 		break;
 	case XK_Return:
-		if(e->state & ShiftMask)
-			dinput();
-		fprintf(stdout, "%s", sel ? sel->text : text);
+		fprintf(stdout, "%s", ((e->state & ShiftMask) || sel) ? sel->text : text);
 		fflush(stdout);
 		exit(EXIT_SUCCESS);
 	case XK_Right:
+		if(cur < len) {
+			while(cur++ < len && !IS_UTF8_1ST_CHAR(text[cur]));
+			break;
+		}
+		if(lines > 0)
+			return;
 	case XK_Down:
 		if(!sel || !sel->right)
 			return;
@@ -339,12 +414,14 @@ kpress(XKeyEvent *e) {
 		}
 		break;
 	case XK_Tab:
-		if(sel)
-			strncpy(text, sel->text, sizeof text);
-		dinput();
+		if(!sel)
+			return;
+		strncpy(text, sel->text, sizeof text);
+		cur = strlen(text);
+		match();
 		break;
 	}
-	drawbar();
+	drawmenu();
 }
 
 void
@@ -413,6 +490,98 @@ readstdin(void) {
 	}
 }
 
+void
+run(void) {
+	XEvent ev;
+
+	XSync(dpy, False);
+	while(!XNextEvent(dpy, &ev))
+		switch(ev.type) {
+		case Expose:
+			if(ev.xexpose.count == 0)
+				drawmenu();
+			break;
+		case KeyPress:
+			keypress(&ev.xkey);
+			break;
+		case VisibilityNotify:
+			if(ev.xvisibility.state != VisibilityUnobscured)
+				XRaiseWindow(dpy, win);
+			break;
+		}
+	exit(EXIT_FAILURE);
+}
+
+void
+setup(void) {
+	int i, j, x, y;
+#if XINERAMA
+	int n;
+	XineramaScreenInfo *info = NULL;
+#endif
+	XModifierKeymap *modmap;
+	XSetWindowAttributes wa;
+
+	/* init modifier map */
+	modmap = XGetModifierMapping(dpy);
+	for(i = 0; i < 8; i++)
+		for(j = 0; j < modmap->max_keypermod; j++) {
+			if(modmap->modifiermap[i * modmap->max_keypermod + j]
+			== XKeysymToKeycode(dpy, XK_Num_Lock))
+				numlockmask = (1 << i);
+		}
+	XFreeModifiermap(modmap);
+
+	dc.dpy = dpy;
+	normcol[ColBG] = getcolor(&dc, normbgcolor);
+	normcol[ColFG] = getcolor(&dc, normfgcolor);
+	selcol[ColBG] = getcolor(&dc, selbgcolor);
+	selcol[ColFG] = getcolor(&dc, selfgcolor);
+	initfont(&dc, font);
+
+	/* input window */
+	wa.override_redirect = True;
+	wa.background_pixmap = ParentRelative;
+	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
+
+	/* input window geometry */
+	mh = (dc.font.height + 2) * (lines + 1);
+#if XINERAMA
+	if(XineramaIsActive(dpy) && (info = XineramaQueryScreens(dpy, &n))) {
+		i = 0;
+		if(n > 1) {
+			int di;
+			unsigned int dui;
+			Window dummy;
+			if(XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui))
+				for(i = 0; i < n; i++)
+					if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
+						break;
+		}
+		x = info[i].x_org;
+		y = topbar ? info[i].y_org : info[i].y_org + info[i].height - mh;
+		mw = info[i].width;
+		XFree(info);
+	}
+	else
+#endif
+	{
+		x = 0;
+		y = topbar ? 0 : DisplayHeight(dpy, screen) - mh;
+		mw = DisplayWidth(dpy, screen);
+	}
+
+	win = XCreateWindow(dpy, root, x, y, mw, mh, 0,
+			DefaultDepth(dpy, screen), CopyFromParent,
+			DefaultVisual(dpy, screen),
+			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
+
+	setupdraw(&dc, win);
+	if(prompt)
+		promptw = MIN(textw(&dc, prompt), mw / 5);
+	XMapRaised(dpy, win);
+}
+
 int
 main(int argc, char *argv[]) {
 	unsigned int i;
@@ -472,7 +641,7 @@ main(int argc, char *argv[]) {
 
 	readstdin();
 	grabkeyboard();
-	setup(lines);
+	setup();
 	if(maxname)
 		cmdw = MIN(textw(&dc, maxname), mw / 3);
 	match();
