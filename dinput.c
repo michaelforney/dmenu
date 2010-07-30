@@ -34,12 +34,14 @@ drawbar(void)
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
+		drawbox(&dc, selcol);
 		drawtext(&dc, prompt, selcol);
 		dc.x += dc.w;
 	}
 	dc.w = mw - dc.x;
 	drawtext(&dc, text, normcol);
-	drawcursor(&dc, text, cursor, normcol);
+	drawline(&dc, textnw(&dc, text, cursor) + dc.font.height/2, 2, 1,
+			dc.font.height-2, normcol);
 	commitdraw(&dc, win);
 }
 

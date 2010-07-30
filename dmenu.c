@@ -24,7 +24,7 @@ static void calcoffsetsv(void);
 static char *cistrstr(const char *s, const char *sub);
 static void cleanup(void);
 static void dinput(void);
-static void drawitem(char *s, unsigned long col[ColLast]);
+static void drawitem(const char *s, unsigned long col[ColLast]);
 static void drawmenuh(void);
 static void drawmenuv(void);
 static void match(void);
@@ -140,6 +140,7 @@ drawbar(void) {
 	/* print prompt? */
 	if(prompt) {
 		dc.w = promptw;
+		drawbox(&dc, selcol);
 		drawtext(&dc, prompt, selcol);
 		dc.x += dc.w;
 	}
@@ -156,7 +157,7 @@ drawbar(void) {
 }
 
 void
-drawitem(char *s, unsigned long col[ColLast]) {
+drawitem(const char *s, unsigned long col[ColLast]) {
 	drawbox(&dc, col);
 	drawtext(&dc, s, col);
 }
