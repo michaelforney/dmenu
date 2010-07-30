@@ -158,8 +158,13 @@ drawbar(void) {
 
 void
 drawitem(const char *s, unsigned long col[ColLast]) {
+	const char *p;
+	unsigned int w = textnw(&dc, text, strlen(text));
+
 	drawbox(&dc, col);
 	drawtext(&dc, s, col);
+	for(p = fstrstr(s, text); *text && (p = fstrstr(p, text)); p++)
+		drawline(&dc, textnw(&dc, s, p-s) + dc.h/2 - 1, dc.h-2, w, 1, col);
 }
 
 void
