@@ -8,13 +8,11 @@ Requirements
 In order to build dmenu you need the Xlib header files.
 You also need libdraw, available from http://hg.suckless.org/libdraw
 
-Pasting the X selection to dmenu requires the sselp utility at runtime.
-
 
 Installation
 ------------
-Edit config.mk to match your local setup (dmenu is installed into
-the /usr/local namespace by default).
+Edit config.mk to match your local setup (dmenu is installed into the
+/usr/local namespace by default).
 
 Afterwards enter the following command to build and install dmenu (if
 necessary as root):

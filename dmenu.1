@@ -3,99 +3,103 @@
 dmenu \- dynamic menu
 .SH SYNOPSIS
 .B dmenu
-.RB [ \-i ]
 .RB [ \-b ]
-.RB [ \-e " <xid>]"
+.RB [ \-i ]
 .RB [ \-l " <lines>]"
+.RB [ \-p " <prompt>]"
 .RB [ \-fn " <font>]"
 .RB [ \-nb " <color>]"
 .RB [ \-nf " <color>]"
-.RB [ \-p " <prompt>]"
 .RB [ \-sb " <color>]"
 .RB [ \-sf " <color>]"
 .RB [ \-v ]
 
 .B dmenu_run
-[<options...>]
+.RB [ \-b ]
+.RB [ \-i ]
+.RB [ \-l " <lines>]"
+.RB [ \-p " <prompt>]"
+.RB [ \-fn " <font>]"
+.RB [ \-nb " <color>]"
+.RB [ \-nf " <color>]"
+.RB [ \-sb " <color>]"
+.RB [ \-sf " <color>]"
+.RB [ \-v ]
 
 .B dmenu_path
 .SH DESCRIPTION
 .SS Overview
-dmenu is a generic menu for X, originally designed for
+.B dmenu
+is a generic menu for X, originally designed for
 .BR dwm (1).
-It manages huge amounts (up to 10.000 and more) of user defined menu items
-efficiently.
-
-dmenu_run is a dmenu script used by dwm which lists executables in the user's PATH
-and executes the selected item.
-
-dmenu_path is a script used by dmenu_run to find and cache a list of executables.
+It manages huge amounts (10000 and more) of user defined menu items efficiently.
+.P
+.B dmenu_run
+is a dmenu script which lists programs in the user's PATH and executes
+the selected item.
+.P
+.B dmenu_path
+is a script used by
+.I dmenu_run
+to find and cache a list of programs.
 .SS Options
 .TP
-.B \-i
-makes dmenu match menu entries case insensitively.
-.TP
 .B \-b
-defines that dmenu appears at the bottom.
+dmenu appears at the bottom of the screen.
 .TP
-.B \-e <xid>
-reparents dmenu to the window specified by xid.
+.B \-i
+dmenu matches menu entries case insensitively.
 .TP
 .B \-l <lines>
-activates vertical list mode.
-The given number of lines will be displayed. Window height will be adjusted.
-.TP
-.B \-fn <font>
-defines the font.
-.TP
-.B \-nb <color>
-defines the normal background color (#RGB, #RRGGBB, and color names are supported).
-.TP
-.B \-nf <color>
-defines the normal foreground color (#RGB, #RRGGBB, and color names are supported).
+dmenu lists items vertically, with the given number of lines.
 .TP
 .B \-p <prompt>
-defines a prompt to be displayed before the input area.
+sets the prompt to be displayed to the left of the input area.
+.TP
+.B \-fn <font>
+sets the font.
+.TP
+.B \-nb <color>
+sets the background color (#RGB, #RRGGBB, and color names are supported).
+.TP
+.B \-nf <color>
+sets the foreground color (#RGB, #RRGGBB, and color names are supported).
 .TP
 .B \-sb <color>
-defines the selected background color (#RGB, #RRGGBB, and color names are supported).
+sets the background color of selected items (#RGB, #RRGGBB, and color names are
+supported).
 .TP
 .B \-sf <color>
-defines the selected foreground color (#RGB, #RRGGBB, and color names are supported).
+sets the foreground color of selected items (#RGB, #RRGGBB, and color names are
+supported).
 .TP
 .B \-v
 prints version information to standard output, then exits.
 .SH USAGE
 dmenu reads a list of newline-separated items from standard input and creates a
-menu.  When the user selects an item or enters any text and presses Return, his/her
-choice is printed to standard output and dmenu terminates.
+menu.  When the user selects an item or enters any text and presses Return,
+their choice is printed to standard output and dmenu terminates.
 .P
-dmenu is completely controlled by the keyboard. Besides standard Unix line editing,
-and item selection (Up/Down or Left/Right, PageUp/PageDown, Home/End), the following
-keys are recognized:
+dmenu is completely controlled by the keyboard.  Besides standard Unix line
+editing and item selection (Up/Down/Left/Right, PageUp/PageDown, Home/End), the
+following keys are recognized:
 .TP
 .B Tab (Control\-i)
 Copy the selected item to the input field.
 .TP
 .B Return (Control\-j)
-Confirm selection and quit (print the selected item to standard output). Returns
-.B 0
-on termination.
+Confirm selection.  Prints the selected item to standard output and exits,
+returning success.
 .TP
 .B Shift\-Return (Control\-Shift\-j)
-Confirm input and quit (print the text in the input field to standard output).
-Returns
-.B 0
-on termination.
+Confirm input.  Prints the input text to standard output and exits, returning
+success.
 .TP
 .B Escape (Control\-c)
-Quit without selecting an item. Returns
-.B 1
-on termination.
+Quit without selecting an item, returning failure.
 .TP
 .B Control\-y
-Pastes the X selection into the input field. This requires
-.BR sselp (1).
+Paste the current X selection into the input field.
 .SH SEE ALSO
 .BR dwm (1),
 .BR wmii (1).
