@@ -42,6 +42,7 @@ static void setup(void);
 static void usage(void);
 
 static char text[4096];
+static int promptw;
 static size_t cursor = 0;
 static const char *prompt = NULL;
 static const char *normbgcolor = "#cccccc";
@@ -79,7 +80,7 @@ void
 calcoffsetsh(void) {
 	unsigned int w, x;
 
-	w = (prompt ? textw(dc, prompt) : 0) + inputw + textw(dc, "<") + textw(dc, ">");
+	w = promptw + inputw + textw(dc, "<") + textw(dc, ">");
 	for(x = w, next = curr; next; next = next->right)
 		if((x += MIN(textw(dc, next->text), mw / 3)) > mw)
 			break;
@@ -118,7 +119,7 @@ drawmenu(void) {
 	dc->y = topbar ? 0 : mh - dc->h;
 	/* print prompt? */
 	if(prompt) {
-		dc->w = textw(dc, prompt);
+		dc->w = promptw;
 		drawtext(dc, prompt, selcol);
 		dc->x = dc->w;
 	}
@@ -506,7 +507,9 @@ setup(void) {
 	grabkeyboard();
 	setcanvas(dc, win, mw, mh);
 	inputw = MIN(inputw, mw/3);
+	promptw = prompt ? MIN(textw(dc, prompt), mw/5) : 0;
 	XMapRaised(dc->dpy, win);
+	text[0] = '\0';
 	match();
 }
 
