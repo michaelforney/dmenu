@@ -42,7 +42,6 @@ static void setup(void);
 static void usage(void);
 
 static char text[4096];
-static int promptw;
 static size_t cursor = 0;
 static const char *prompt = NULL;
 static const char *normbgcolor = "#cccccc";
@@ -52,6 +51,7 @@ static const char *selfgcolor  = "#ffffff";
 static unsigned int inputw = 0;
 static unsigned int lines = 0;
 static unsigned int mw, mh;
+static unsigned int promptw;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
 static Atom utf8;
