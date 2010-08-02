@@ -19,7 +19,7 @@ then
 		do
 			test -x "$file" && echo "$file"
 		done
-	done | sort | uniq > "$CACHE".$$ &&
+	done | sort -u > "$CACHE".$$ &&
 	mv "$CACHE".$$ "$CACHE"
 fi
 

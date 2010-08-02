@@ -5,81 +5,76 @@ dmenu \- dynamic menu
 .B dmenu
 .RB [ \-b ]
 .RB [ \-i ]
-.RB [ \-l " <lines>]"
-.RB [ \-p " <prompt>]"
-.RB [ \-fn " <font>]"
-.RB [ \-nb " <color>]"
-.RB [ \-nf " <color>]"
-.RB [ \-sb " <color>]"
-.RB [ \-sf " <color>]"
+.RB [ \-l
+.IR lines ]
+.RB [ \-p
+.IR prompt ]
+.RB [ \-fn
+.IR font ]
+.RB [ \-nb
+.IR color ]
+.RB [ \-nf
+.IR color ]
+.RB [ \-sb
+.IR color ]
+.RB [ \-sf
+.IR color ]
 .RB [ \-v ]
-
-.B dmenu_run
-.RB [ \-b ]
-.RB [ \-i ]
-.RB [ \-l " <lines>]"
-.RB [ \-p " <prompt>]"
-.RB [ \-fn " <font>]"
-.RB [ \-nb " <color>]"
-.RB [ \-nf " <color>]"
-.RB [ \-sb " <color>]"
-.RB [ \-sf " <color>]"
-.RB [ \-v ]
-
+.P
+.BR dmenu_run " ..."
+.P
 .B dmenu_path
 .SH DESCRIPTION
-.SS Overview
 .B dmenu
-is a generic menu for X, originally designed for
+is a dynamic menu for X, originally designed for
 .BR dwm (1).
-It manages huge amounts (10000 and more) of user defined menu items efficiently.
+It manages huge numbers of user-defined menu items efficiently.
+.P
+dmenu reads a list of newline-separated items from standard input and creates a
+menu.  When the user selects an item or enters any text and presses Return,
+their choice is printed to standard output and dmenu terminates.
 .P
 .B dmenu_run
-is a dmenu script which lists programs in the user's PATH and executes
-the selected item.
+is a dmenu script used by dwm which lists programs in the user's PATH and
+executes the selected item.
 .P
 .B dmenu_path
-is a script used by
-.I dmenu_run
-to find and cache a list of programs.
-.SS Options
+is a script used by dmenu_run to find and cache a list of programs.
+.SH OPTIONS
 .TP
 .B \-b
 dmenu appears at the bottom of the screen.
 .TP
 .B \-i
-dmenu matches menu entries case insensitively.
+dmenu matches menu items case insensitively.
 .TP
-.B \-l <lines>
+.BI \-l " lines"
 dmenu lists items vertically, with the given number of lines.
 .TP
-.B \-p <prompt>
-sets the prompt to be displayed to the left of the input area.
+.BI \-p " prompt"
+defines the prompt to be displayed to the left of the input area.
 .TP
-.B \-fn <font>
-sets the font.
+.BI \-fn " font"
+defines the font set used.
 .TP
-.B \-nb <color>
-sets the background color (#RGB, #RRGGBB, and color names are supported).
+.BI \-nb " color"
+defines the normal background color.
+.IR #RGB ,
+.IR #RRGGBB ,
+and color names are supported.
 .TP
-.B \-nf <color>
-sets the foreground color (#RGB, #RRGGBB, and color names are supported).
+.BI \-nf " color"
+defines the normal foreground color.
 .TP
-.B \-sb <color>
-sets the background color of selected items (#RGB, #RRGGBB, and color names are
-supported).
+.BI \-sb " color"
+defines the selected background color.
 .TP
-.B \-sf <color>
-sets the foreground color of selected items (#RGB, #RRGGBB, and color names are
-supported).
+.BI \-sf " color"
+defines the selected foreground color.
 .TP
 .B \-v
 prints version information to standard output, then exits.
 .SH USAGE
-dmenu reads a list of newline-separated items from standard input and creates a
-menu.  When the user selects an item or enters any text and presses Return,
-their choice is printed to standard output and dmenu terminates.
-.P
 dmenu is completely controlled by the keyboard.  Besides standard Unix line
 editing and item selection (Up/Down/Left/Right, PageUp/PageDown, Home/End), the
 following keys are recognized:
@@ -96,10 +91,9 @@ Confirm input.  Prints the input text to standard output and exits, returning
 success.
 .TP
 .B Escape (Control\-c)
-Quit without selecting an item, returning failure.
+Exit without selecting an item, returning failure.
 .TP
 .B Control\-y
 Paste the current X selection into the input field.
 .SH SEE ALSO
-.BR dwm (1),
-.BR wmii (1).
+.BR dwm (1)
