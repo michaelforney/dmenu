@@ -109,6 +109,7 @@ drawmenu(void) {
 	dc->x = 0;
 	dc->y = 0;
 	drawrect(dc, 0, 0, mw, mh, BG(dc, normcol));
+
 	dc->h = dc->font.height + 2;
 	dc->y = topbar ? 0 : mh - dc->h;
 	/* print prompt? */
@@ -524,9 +525,8 @@ main(int argc, char *argv[]) {
 		else if(i == argc-1)
 			usage();
 		/* double flags */
-		else if(!strcmp(argv[i], "-l")) {
+		else if(!strcmp(argv[i], "-l"))
 			lines = atoi(argv[++i]);
-		}
 		else if(!strcmp(argv[i], "-p"))
 			prompt = argv[++i];
 		else if(!strcmp(argv[i], "-fn"))
