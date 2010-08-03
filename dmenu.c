@@ -136,7 +136,7 @@ drawmenu(void) {
 	else if(curr && (dc->w == inputw || curr->next)) {
 		dc->x += inputw;
 		dc->w = textw(dc, "<");
-		if(prev)
+		if(curr->left)
 			drawtext(dc, "<", normcol);
 		for(item = curr; item != next; item = item->right) {
 			dc->x += dc->w;
