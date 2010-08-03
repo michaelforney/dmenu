@@ -25,12 +25,9 @@ struct Item {
 };
 
 static void appenditem(Item *item, Item **list, Item **last);
-static void calcoffsetsh(void);
-static void calcoffsetsv(void);
+static void calcoffsets(void);
 static char *cistrstr(const char *s, const char *sub);
 static void drawmenu(void);
-static void drawmenuh(void);
-static void drawmenuv(void);
 static void grabkeyboard(void);
 static void insert(const char *s, ssize_t n);
 static void keypress(XKeyEvent *e);
@@ -63,7 +60,6 @@ static Window root, win;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
-static void (*calcoffsets)(void) = calcoffsetsh;
 
 void
 appenditem(Item *item, Item **list, Item **last) {
@@ -77,27 +73,23 @@ appenditem(Item *item, Item **list, Item **last) {
 }
 
 void
-calcoffsetsh(void) {
-	unsigned int w, x;
+calcoffsets(void)
+{
+	unsigned int h, i, n;
 
-	w = promptw + inputw + textw(dc, "<") + textw(dc, ">");
-	for(x = w, next = curr; next; next = next->right)
-		if((x += MIN(textw(dc, next->text), mw / 3)) > mw)
+	h = dc->font.height+2;
+	if(lines > 0)
+		n = lines * h;
+	else
+		n = mw - (promptw + inputw + textw(dc, "<") + textw(dc, ">"));
+
+	prev = next = curr;
+	for(i = 0; next; next = next->right)
+		if((i += (lines > 0) ? h : MIN(textw(dc, next->text), mw/3)) > n)
 			break;
-	for(x = w, prev = curr; prev && prev->left; prev = prev->left)
-		if((x += MIN(textw(dc, prev->left->text), mw / 3)) > mw)
+	for(i = 0; prev && prev->left; prev = prev->left)
+		if((i += (lines > 0) ? h : MIN(textw(dc, prev->left->text), mw/3)) > n)
 			break;
-}
-
-void
-calcoffsetsv(void) {
-	unsigned int i;
-
-	next = prev = curr;
-	for(i = 0; i < lines && next; i++)
-		next = next->right;
-	for(i = 0; i < lines && prev && prev->left; i++)
-		prev = prev->left;
 }
 
 char *
@@ -112,6 +104,8 @@ cistrstr(const char *s, const char *sub) {
 
 void
 drawmenu(void) {
+	Item *item;
+
 	dc->x = 0;
 	dc->y = 0;
 	drawrect(dc, 0, 0, mw, mh, BG(dc, normcol));
@@ -129,42 +123,31 @@ drawmenu(void) {
 		dc->w = inputw;
 	drawtext(dc, text, normcol);
 	drawrect(dc, textnw(dc, text, cursor) + dc->h/2 - 2, 2, 1, dc->h - 4, FG(dc, normcol));
-	if(lines > 0)
-		drawmenuv();
-	else if(curr && (dc->w == inputw || curr->next))
-		drawmenuh();
+
+	if(lines > 0) {
+		dc->y = topbar ? dc->h : 0;
+		dc->w = mw - dc->x;
+		for(item = curr; item != next; item = item->right) {
+			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+			dc->y += dc->h;
+		}
+	}
+	else if(curr && (dc->w == inputw || curr->next)) {
+		dc->x += inputw;
+		dc->w = textw(dc, "<");
+		if(prev)
+			drawtext(dc, "<", normcol);
+		for(item = curr; item != next; item = item->right) {
+			dc->x += dc->w;
+			dc->w = MIN(textw(dc, item->text), mw/3);
+			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+		}
+		dc->w = textw(dc, ">");
+		dc->x = mw - dc->w;
+		if(next)
+			drawtext(dc, ">", normcol);
+	}
 	commitdraw(dc, win);
-}
-
-void
-drawmenuh(void) {
-	Item *item;
-
-	dc->x += inputw;
-	dc->w = textw(dc, "<");
-	if(curr->left)
-		drawtext(dc, "<", normcol);
-	for(item = curr; item != next; item = item->right) {
-		dc->x += dc->w;
-		dc->w = MIN(textw(dc, item->text), mw / 3);
-		drawtext(dc, item->text, (item == sel) ? selcol : normcol);
-	}
-	dc->w = textw(dc, ">");
-	dc->x = mw - dc->w;
-	if(next)
-		drawtext(dc, ">", normcol);
-}
-
-void
-drawmenuv(void) {
-	Item *item;
-
-	dc->y = topbar ? dc->h : 0;
-	dc->w = mw - dc->x;
-	for(item = curr; item != next; item = item->right) {
-		drawtext(dc, item->text, (item == sel) ? selcol : normcol);
-		dc->y += dc->h;
-	}
 }
 
 void
@@ -494,7 +477,6 @@ setup(void) {
 		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh;
 		mw = DisplayWidth(dc->dpy, screen);
 	}
-
 	/* input window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
@@ -543,8 +525,7 @@ main(int argc, char *argv[]) {
 			usage();
 		/* double flags */
 		else if(!strcmp(argv[i], "-l")) {
-			if((lines = atoi(argv[++i])) > 0)
-				calcoffsets = calcoffsetsv;
+			lines = atoi(argv[++i]);
 		}
 		else if(!strcmp(argv[i], "-p"))
 			prompt = argv[++i];
