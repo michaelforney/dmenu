@@ -530,7 +530,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-p"))
 			prompt = argv[++i];
 		else if(!strcmp(argv[i], "-fn"))
-			initfont(dc, argv[i++]);
+			initfont(dc, argv[++i]);
 		else if(!strcmp(argv[i], "-nb"))
 			normbgcolor = argv[++i];
 		else if(!strcmp(argv[i], "-nf"))
