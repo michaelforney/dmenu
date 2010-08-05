@@ -119,7 +119,7 @@ drawmenu(void) {
 		dc->x = dc->w;
 	}
 	dc->w = mw - dc->x;
-	/* print input area */
+	/* print input field */
 	if(matches && lines == 0 && textw(dc, text) <= inputw)
 		dc->w = inputw;
 	drawtext(dc, text, normcol);
@@ -339,7 +339,7 @@ keypress(XKeyEvent *e) {
 
 void
 match(void) {
-	unsigned int len;
+	size_t len;
 	Item *item, *itemend, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
 
 	len = strlen(text);
@@ -454,7 +454,7 @@ setup(void) {
 	selcol[ColBG] = getcolor(dc, selbgcolor);
 	selcol[ColFG] = getcolor(dc, selfgcolor);
 
-	/* input window geometry */
+	/* menu geometry */
 	mh = (dc->font.height + 2) * (lines + 1);
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
@@ -478,7 +478,7 @@ setup(void) {
 		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh;
 		mw = DisplayWidth(dc->dpy, screen);
 	}
-	/* input window */
+	/* menu window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
@@ -488,7 +488,7 @@ setup(void) {
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
 	grabkeyboard();
-	setcanvas(dc, win, mw, mh);
+	setcanvas(dc, mw, mh);
 	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? MIN(textw(dc, prompt), mw/5) : 0;
 	XMapRaised(dc->dpy, win);
