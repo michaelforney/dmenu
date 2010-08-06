@@ -194,6 +194,9 @@ keypress(XKeyEvent *e) {
 		case XK_c:
 			ksym = XK_Escape;
 			break;
+		case XK_d:
+			ksym = XK_Delete;
+			break;
 		case XK_e:
 			ksym = XK_End;
 			break;
@@ -207,7 +210,6 @@ keypress(XKeyEvent *e) {
 			ksym = XK_Tab;
 			break;
 		case XK_j:
-		case XK_m:
 			ksym = XK_Return;
 			break;
 		case XK_k:  /* delete right */
