@@ -30,7 +30,7 @@ static char *cistrstr(const char *s, const char *sub);
 static void drawmenu(void);
 static void grabkeyboard(void);
 static void insert(const char *s, ssize_t n);
-static void keypress(XKeyEvent *e);
+static void keypress(XKeyEvent *ev);
 static void match(void);
 static void paste(void);
 static void readstdin(void);
@@ -73,8 +73,7 @@ appenditem(Item *item, Item **list, Item **last) {
 }
 
 void
-calcoffsets(void)
-{
+calcoffsets(void) {
 	unsigned int h, i, n;
 
 	h = dc->font.height+2;
@@ -104,26 +103,24 @@ cistrstr(const char *s, const char *sub) {
 
 void
 drawmenu(void) {
+	int curpos;
 	Item *item;
 
 	dc->x = 0;
 	dc->y = 0;
 	drawrect(dc, 0, 0, mw, mh, BG(dc, normcol));
-
 	dc->h = dc->font.height + 2;
 	dc->y = topbar ? 0 : mh - dc->h;
-	/* print prompt? */
+
 	if(prompt) {
 		dc->w = promptw;
 		drawtext(dc, prompt, selcol);
 		dc->x = dc->w;
 	}
-	dc->w = mw - dc->x;
-	/* print input field */
-	if(matches && lines == 0 && textw(dc, text) <= inputw)
-		dc->w = inputw;
+	dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
 	drawtext(dc, text, normcol);
-	drawrect(dc, textnw(dc, text, cursor) + dc->h/2 - 2, 2, 1, dc->h - 4, FG(dc, normcol));
+	if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
+		drawrect(dc, curpos, 2, 1, dc->h - 4, FG(dc, normcol));
 
 	if(lines > 0) {
 		dc->y = topbar ? dc->h : 0;
@@ -133,7 +130,7 @@ drawmenu(void) {
 			dc->y += dc->h;
 		}
 	}
-	else if(curr && (dc->w == inputw || curr->next)) {
+	else if(matches) {
 		dc->x += inputw;
 		dc->w = textw(dc, "<");
 		if(curr->left)
@@ -173,15 +170,15 @@ insert(const char *s, ssize_t n) {
 }
 
 void
-keypress(XKeyEvent *e) {
-	char buf[sizeof text];
+keypress(XKeyEvent *ev) {
+	char buf[32];
 	int n;
 	size_t len;
 	KeySym ksym;
 
 	len = strlen(text);
-	XLookupString(e, buf, sizeof buf, &ksym, NULL);
-	if(e->state & ControlMask) {
+	XLookupString(ev, buf, sizeof buf, &ksym, NULL);
+	if(ev->state & ControlMask) {
 		switch(tolower(ksym)) {
 		default:
 			return;
@@ -235,7 +232,6 @@ keypress(XKeyEvent *e) {
 			break;
 		case XK_y:  /* paste selection */
 			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, None, win, CurrentTime);
-			/* causes SelectionNotify event */
 			return;
 		}
 	}
@@ -289,8 +285,7 @@ keypress(XKeyEvent *e) {
 	case XK_Up:
 		if(!sel || !sel->left)
 			return;
-		sel = sel->left;
-		if(sel->right == curr) {
+		if((sel = sel->left)->right == curr) {
 			curr = prev;
 			calcoffsets();
 		}
@@ -309,7 +304,7 @@ keypress(XKeyEvent *e) {
 		break;
 	case XK_Return:
 	case XK_KP_Enter:
-		fputs((sel && !(e->state & ShiftMask)) ? sel->text : text, stdout);
+		fputs((sel && !(ev->state & ShiftMask)) ? sel->text : text, stdout);
 		fflush(stdout);
 		exit(EXIT_SUCCESS);
 	case XK_Right:
@@ -322,8 +317,7 @@ keypress(XKeyEvent *e) {
 	case XK_Down:
 		if(!sel || !sel->right)
 			return;
-		sel = sel->right;
-		if(sel == next) {
+		if((sel = sel->right) == next) {
 			curr = next;
 			calcoffsets();
 		}
@@ -404,7 +398,7 @@ readstdin(void) {
 		if(!(new = malloc(sizeof *new)))
 			eprintf("cannot malloc %u bytes\n", sizeof *new);
 		if(!(new->text = strdup(buf)))
-			eprintf("cannot strdup %u bytes\n", strlen(buf));
+			eprintf("cannot strdup %u bytes\n", strlen(buf)+1);
 		inputw = MAX(inputw, textw(dc, new->text));
 		new->next = new->left = new->right = NULL;
 		if(item)
@@ -485,9 +479,9 @@ setup(void) {
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
 	win = XCreateWindow(dc->dpy, root, x, y, mw, mh, 0,
-			DefaultDepth(dc->dpy, screen), CopyFromParent,
-			DefaultVisual(dc->dpy, screen),
-			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
+	                    DefaultDepth(dc->dpy, screen), CopyFromParent,
+	                    DefaultVisual(dc->dpy, screen),
+	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
 	grabkeyboard();
 	setcanvas(dc, mw, mh);
