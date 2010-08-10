@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <X11/Xatom.h>
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
@@ -13,6 +13,7 @@
 #include <draw.h>
 
 #define INRECT(x,y,rx,ry,rw,rh) ((x) >= (rx) && (x) < (rx)+(rw) && (y) >= (ry) && (y) < (ry)+(rh))
+#define LINEH                   (dc->font.height + 2)
 #define MIN(a,b)                ((a) < (b) ? (a) : (b))
 #define MAX(a,b)                ((a) > (b) ? (a) : (b))
 #define UTF8_CODEPOINT(c)       (((c) & 0xc0) != 0x80)
@@ -38,7 +39,7 @@ static void run(void);
 static void setup(void);
 static void usage(void);
 
-static char text[4096];
+static char text[BUFSIZ];
 static size_t cursor = 0;
 static const char *prompt = NULL;
 static const char *normbgcolor = "#cccccc";
@@ -74,21 +75,18 @@ appenditem(Item *item, Item **list, Item **last) {
 
 void
 calcoffsets(void) {
-	unsigned int h, i, n;
+	unsigned int i, n;
 
-	h = dc->font.height+2;
 	if(lines > 0)
-		n = lines * h;
+		n = lines * LINEH;
 	else
 		n = mw - (promptw + inputw + textw(dc, "<") + textw(dc, ">"));
 
-	prev = next = curr;
-	for(i = 0; next; next = next->right)
-		if((i += (lines > 0) ? h : MIN(textw(dc, next->text), mw/3)) > n)
-			break;
-	for(i = 0; prev && prev->left; prev = prev->left)
-		if((i += (lines > 0) ? h : MIN(textw(dc, prev->left->text), mw/3)) > n)
-			break;
+	for(i = 0, next = curr; i <= n && next; next = next->right)
+		i += (lines > 0) ? LINEH : MIN(textw(dc, next->text), mw/3);
+
+	for(i = 0, prev = curr; i <= n && prev && prev->left; prev = prev->left)
+		i += (lines > 0) ? LINEH : MIN(textw(dc, prev->left->text), mw/3);
 }
 
 char *
@@ -108,9 +106,8 @@ drawmenu(void) {
 
 	dc->x = 0;
 	dc->y = 0;
+	dc->h = LINEH;
 	drawrect(dc, 0, 0, mw, mh, BG(dc, normcol));
-	dc->h = dc->font.height + 2;
-	dc->y = topbar ? 0 : mh - dc->h;
 
 	if(prompt) {
 		dc->w = promptw;
@@ -123,11 +120,10 @@ drawmenu(void) {
 		drawrect(dc, curpos, 2, 1, dc->h - 4, FG(dc, normcol));
 
 	if(lines > 0) {
-		dc->y = topbar ? dc->h : 0;
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
-			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
 			dc->y += dc->h;
+			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
 		}
 	}
 	else if(matches) {
@@ -237,7 +233,7 @@ keypress(XKeyEvent *ev) {
 	}
 	switch(ksym) {
 	default:
-		if(!iscntrl((int)*buf))
+		if(isprint(*buf))
 			insert(buf, MIN(strlen(buf), sizeof text - cursor));
 		break;
 	case XK_BackSpace:
@@ -451,7 +447,7 @@ setup(void) {
 	selcol[ColFG] = getcolor(dc, selfgcolor);
 
 	/* menu geometry */
-	mh = (dc->font.height + 2) * (lines + 1);
+	mh = (lines + 1) * LINEH;
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
 		int i, di;
