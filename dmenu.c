@@ -82,11 +82,12 @@ calcoffsets(void) {
 	else
 		n = mw - (promptw + inputw + textw(dc, "<") + textw(dc, ">"));
 
-	for(i = 0, next = curr; i <= n && next; next = next->right)
-		i += (lines > 0) ? LINEH : MIN(textw(dc, next->text), mw/3);
-
-	for(i = 0, prev = curr; i <= n && prev && prev->left; prev = prev->left)
-		i += (lines > 0) ? LINEH : MIN(textw(dc, prev->left->text), mw/3);
+	for(i = 0, next = curr; next; next = next->right)
+		if((i += (lines > 0) ? LINEH : MIN(textw(dc, next->text), mw/3)) > n)
+			break;
+	for(i = 0, prev = curr; prev && prev->left; prev = prev->left)
+		if((i += (lines > 0) ? LINEH : MIN(textw(dc, prev->left->text), mw/3)) > n)
+			break;
 }
 
 char *
