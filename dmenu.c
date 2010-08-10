@@ -41,6 +41,7 @@ static void usage(void);
 
 static char text[BUFSIZ];
 static size_t cursor = 0;
+static const char *font = NULL;
 static const char *prompt = NULL;
 static const char *normbgcolor = "#cccccc";
 static const char *normfgcolor = "#000000";
@@ -501,8 +502,6 @@ main(int argc, char *argv[]) {
 	int i;
 
 	progname = "dmenu";
-	dc = initdraw();
-
 	for(i = 1; i < argc; i++)
 		/* single flags */
 		if(!strcmp(argv[i], "-v")) {
@@ -523,7 +522,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-p"))
 			prompt = argv[++i];
 		else if(!strcmp(argv[i], "-fn"))
-			initfont(dc, argv[++i]);
+			font = argv[++i];
 		else if(!strcmp(argv[i], "-nb"))
 			normbgcolor = argv[++i];
 		else if(!strcmp(argv[i], "-nf"))
@@ -535,6 +534,8 @@ main(int argc, char *argv[]) {
 		else
 			usage();
 
+	dc = initdraw();
+	initfont(dc, font);
 	readstdin();
 	setup();
 	run();
