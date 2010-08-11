@@ -13,7 +13,6 @@
 #include <draw.h>
 
 #define INRECT(x,y,rx,ry,rw,rh) ((x) >= (rx) && (x) < (rx)+(rw) && (y) >= (ry) && (y) < (ry)+(rh))
-#define LINEH                   (dc->font.height + 2)
 #define MIN(a,b)                ((a) < (b) ? (a) : (b))
 #define MAX(a,b)                ((a) > (b) ? (a) : (b))
 #define UTF8_CODEPOINT(c)       (((c) & 0xc0) != 0x80)
@@ -27,8 +26,8 @@ struct Item {
 
 static void appenditem(Item *item, Item **list, Item **last);
 static void calcoffsets(void);
-static char *cistrstr(const char *s, const char *sub);
 static void drawmenu(void);
+static char *fstrstr(const char *s, const char *sub);
 static void grabkeyboard(void);
 static void insert(const char *s, ssize_t n);
 static void keypress(XKeyEvent *ev);
@@ -47,21 +46,21 @@ static const char *normbgcolor = "#cccccc";
 static const char *normfgcolor = "#000000";
 static const char *selbgcolor  = "#0066ff";
 static const char *selfgcolor  = "#ffffff";
+static unsigned int bh, mw, mh;
 static unsigned int inputw = 0;
 static unsigned int lines = 0;
-static unsigned int mw, mh;
 static unsigned int promptw;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
 static Atom utf8;
 static Bool topbar = True;
 static DC *dc;
-static Item *allitems, *matches;
-static Item *curr, *prev, *next, *sel;
+static Item *items = NULL;
+static Item *matches, *sel;
+static Item *prev, *curr, *next;
 static Window root, win;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
-static char *(*fstrstr)(const char *, const char *) = strstr;
 
 void
 appenditem(Item *item, Item **list, Item **last) {
@@ -79,26 +78,16 @@ calcoffsets(void) {
 	unsigned int i, n;
 
 	if(lines > 0)
-		n = lines * LINEH;
+		n = lines * bh;
 	else
 		n = mw - (promptw + inputw + textw(dc, "<") + textw(dc, ">"));
 
 	for(i = 0, next = curr; next; next = next->right)
-		if((i += (lines > 0) ? LINEH : MIN(textw(dc, next->text), mw/3)) > n)
+		if((i += (lines > 0) ? bh : MIN(textw(dc, next->text), mw/3)) > n)
 			break;
 	for(i = 0, prev = curr; prev && prev->left; prev = prev->left)
-		if((i += (lines > 0) ? LINEH : MIN(textw(dc, prev->left->text), mw/3)) > n)
+		if((i += (lines > 0) ? bh : MIN(textw(dc, prev->left->text), mw/3)) > n)
 			break;
-}
-
-char *
-cistrstr(const char *s, const char *sub) {
-	size_t len;
-
-	for(len = strlen(sub); *s; s++)
-		if(!strncasecmp(s, sub, len))
-			return (char *)s;
-	return NULL;
 }
 
 void
@@ -108,8 +97,8 @@ drawmenu(void) {
 
 	dc->x = 0;
 	dc->y = 0;
-	dc->h = LINEH;
-	drawrect(dc, 0, 0, mw, mh, BG(dc, normcol));
+	dc->h = bh;
+	drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
 
 	if(prompt) {
 		dc->w = promptw;
@@ -119,7 +108,7 @@ drawmenu(void) {
 	dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
 	drawtext(dc, text, normcol);
 	if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
-		drawrect(dc, curpos, 2, 1, dc->h - 4, FG(dc, normcol));
+		drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
 
 	if(lines > 0) {
 		dc->w = mw - dc->x;
@@ -143,7 +132,17 @@ drawmenu(void) {
 		if(next)
 			drawtext(dc, ">", normcol);
 	}
-	commitdraw(dc, win);
+	commitdraw(dc, win, mw, mh);
+}
+
+char *
+fstrstr(const char *s, const char *sub) {
+	size_t len;
+
+	for(len = strlen(sub); *s; s++)
+		if(!fstrncmp(s, sub, len))
+			return (char *)s;
+	return NULL;
 }
 
 void
@@ -338,13 +337,14 @@ match(void) {
 
 	len = strlen(text);
 	matches = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
-	for(item = allitems; item; item = item->next)
+	for(item = items; item; item = item->next)
 		if(!fstrncmp(text, item->text, len + 1))
 			appenditem(item, &lexact, &exactend);
 		else if(!fstrncmp(text, item->text, len))
 			appenditem(item, &lprefix, &prefixend);
 		else if(fstrstr(item->text, text))
 			appenditem(item, &lsubstr, &substrend);
+
 	if(lexact) {
 		matches = lexact;
 		itemend = exactend;
@@ -387,22 +387,17 @@ paste(void) {
 void
 readstdin(void) {
 	char buf[sizeof text], *p;
-	Item *item, *new;
+	Item *item, **end;
 
-	allitems = NULL;
-	for(item = NULL; fgets(buf, sizeof buf, stdin); item = new) {
+	for(end = &items; fgets(buf, sizeof buf, stdin); *end = item, end = &item->next) {
 		if((p = strchr(buf, '\n')))
 			*p = '\0';
-		if(!(new = malloc(sizeof *new)))
-			eprintf("cannot malloc %u bytes\n", sizeof *new);
-		if(!(new->text = strdup(buf)))
+		if(!(item = malloc(sizeof *item)))
+			eprintf("cannot malloc %u bytes\n", sizeof *item);
+		if(!(item->text = strdup(buf)))
 			eprintf("cannot strdup %u bytes\n", strlen(buf)+1);
-		inputw = MAX(inputw, textw(dc, new->text));
-		new->next = new->left = new->right = NULL;
-		if(item)
-			item->next = new;
-		else
-			allitems = new;
+		inputw = MAX(inputw, textw(dc, item->text));
+		item->next = item->left = item->right = NULL;
 	}
 }
 
@@ -449,7 +444,8 @@ setup(void) {
 	selcol[ColFG] = getcolor(dc, selfgcolor);
 
 	/* menu geometry */
-	mh = (lines + 1) * LINEH;
+	bh = dc->font.height + 2;
+	mh = (lines + 1) * bh;
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
 		int i, di;
@@ -510,10 +506,8 @@ main(int argc, char *argv[]) {
 		}
 		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
-		else if(!strcmp(argv[i], "-i")) {
+		else if(!strcmp(argv[i], "-i"))
 			fstrncmp = strncasecmp;
-			fstrstr = cistrstr;
-		}
 		else if(i == argc-1)
 			usage();
 		/* double flags */
