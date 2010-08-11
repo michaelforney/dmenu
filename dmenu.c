@@ -32,7 +32,7 @@ static void grabkeyboard(void);
 static void insert(const char *s, ssize_t n);
 static void keypress(XKeyEvent *ev);
 static void match(void);
-static void paste(void);
+static void paste(Atom atom);
 static void readstdin(void);
 static void run(void);
 static void setup(void);
@@ -52,7 +52,7 @@ static unsigned int lines = 0;
 static unsigned int promptw;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
-static Atom utf8;
+static Atom clip, utf8;
 static Bool topbar = True;
 static DC *dc;
 static Item *items = NULL;
@@ -228,7 +228,7 @@ keypress(XKeyEvent *ev) {
 			insert(NULL, 1-n);
 			break;
 		case XK_y:  /* paste selection */
-			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, None, win, CurrentTime);
+			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, clip, win, CurrentTime);
 			return;
 		}
 	}
@@ -371,13 +371,13 @@ match(void) {
 }
 
 void
-paste(void) {
+paste(Atom atom) {
 	char *p, *q;
 	int di;
 	unsigned long dl;
 	Atom da;
 
-	XGetWindowProperty(dc->dpy, win, utf8, 0, sizeof text - cursor, True,
+	XGetWindowProperty(dc->dpy, win, atom, 0, sizeof text - cursor, False,
 	                   utf8, &da, &di, &dl, &dl, (unsigned char **)&p);
 	insert(p, (q = strchr(p, '\n')) ? q-p : strlen(p));
 	XFree(p);
@@ -415,8 +415,8 @@ run(void) {
 			keypress(&ev.xkey);
 			break;
 		case SelectionNotify:
-			if(ev.xselection.property == utf8)
-				paste();
+			if(ev.xselection.property != None)
+				paste(ev.xselection.property);
 			break;
 		case VisibilityNotify:
 			if(ev.xvisibility.state != VisibilityUnobscured)
@@ -437,6 +437,7 @@ setup(void) {
 	screen = DefaultScreen(dc->dpy);
 	root = RootWindow(dc->dpy, screen);
 	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
+	clip = XInternAtom(dc->dpy, "_DMENU_STRING", False);
 
 	normcol[ColBG] = getcolor(dc, normbgcolor);
 	normcol[ColFG] = getcolor(dc, normfgcolor);
