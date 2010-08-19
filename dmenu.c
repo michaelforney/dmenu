@@ -80,13 +80,13 @@ calcoffsets(void) {
 	if(lines > 0)
 		n = lines * bh;
 	else
-		n = mw - (promptw + inputw + textw(dc, "<") + textw(dc, ">"));
+		n = mw - (promptw + inputw + dc_textw(dc, "<") + dc_textw(dc, ">"));
 
 	for(i = 0, next = curr; next; next = next->right)
-		if((i += (lines > 0) ? bh : MIN(textw(dc, next->text), mw/3)) > n)
+		if((i += (lines > 0) ? bh : MIN(dc_textw(dc, next->text), mw/3)) > n)
 			break;
 	for(i = 0, prev = curr; prev && prev->left; prev = prev->left)
-		if((i += (lines > 0) ? bh : MIN(textw(dc, prev->left->text), mw/3)) > n)
+		if((i += (lines > 0) ? bh : MIN(dc_textw(dc, prev->left->text), mw/3)) > n)
 			break;
 }
 
@@ -98,41 +98,41 @@ drawmenu(void) {
 	dc->x = 0;
 	dc->y = 0;
 	dc->h = bh;
-	drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
+	dc_drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
 
 	if(prompt) {
 		dc->w = promptw;
-		drawtext(dc, prompt, selcol);
+		dc_drawtext(dc, prompt, selcol);
 		dc->x = dc->w;
 	}
 	dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
-	drawtext(dc, text, normcol);
-	if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
-		drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
+	dc_drawtext(dc, text, normcol);
+	if((curpos = dc_textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
+		dc_drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
 
 	if(lines > 0) {
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
 			dc->y += dc->h;
-			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+			dc_drawtext(dc, item->text, (item == sel) ? selcol : normcol);
 		}
 	}
 	else if(matches) {
 		dc->x += inputw;
-		dc->w = textw(dc, "<");
+		dc->w = dc_textw(dc, "<");
 		if(curr->left)
-			drawtext(dc, "<", normcol);
+			dc_drawtext(dc, "<", normcol);
 		for(item = curr; item != next; item = item->right) {
 			dc->x += dc->w;
-			dc->w = MIN(textw(dc, item->text), mw/3);
-			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+			dc->w = MIN(dc_textw(dc, item->text), mw/3);
+			dc_drawtext(dc, item->text, (item == sel) ? selcol : normcol);
 		}
-		dc->w = textw(dc, ">");
+		dc->w = dc_textw(dc, ">");
 		dc->x = mw - dc->w;
 		if(next)
-			drawtext(dc, ">", normcol);
+			dc_drawtext(dc, ">", normcol);
 	}
-	mapdraw(dc, win, mw, mh);
+	dc_map(dc, win, mw, mh);
 }
 
 char *
@@ -396,7 +396,7 @@ readstdin(void) {
 		if(!(item->text = strdup(buf)))
 			eprintf("cannot strdup %u bytes\n", strlen(buf)+1);
 		item->next = item->left = item->right = NULL;
-		inputw = MAX(inputw, textw(dc, item->text));
+		inputw = MAX(inputw, dc_textw(dc, item->text));
 	}
 }
 
@@ -437,10 +437,10 @@ setup(void) {
 	root = RootWindow(dc->dpy, screen);
 	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
 
-	normcol[ColBG] = getcolor(dc, normbgcolor);
-	normcol[ColFG] = getcolor(dc, normfgcolor);
-	selcol[ColBG] = getcolor(dc, selbgcolor);
-	selcol[ColFG] = getcolor(dc, selfgcolor);
+	normcol[ColBG] = dc_color(dc, normbgcolor);
+	normcol[ColFG] = dc_color(dc, normfgcolor);
+	selcol[ColBG] = dc_color(dc, selbgcolor);
+	selcol[ColFG] = dc_color(dc, selfgcolor);
 
 	/* menu geometry */
 	bh = dc->font.height + 2;
@@ -478,9 +478,9 @@ setup(void) {
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
 	grabkeyboard();
-	resizedraw(dc, mw, mh);
+	dc_resize(dc, mw, mh);
 	inputw = MIN(inputw, mw/3);
-	promptw = prompt ? MIN(textw(dc, prompt), mw/5) : 0;
+	promptw = prompt ? MIN(dc_textw(dc, prompt), mw/5) : 0;
 	XMapRaised(dc->dpy, win);
 	text[0] = '\0';
 	match();
@@ -528,8 +528,8 @@ main(int argc, char *argv[]) {
 		else
 			usage();
 
-	dc = initdraw();
-	initfont(dc, font);
+	dc = dc_init();
+	dc_font(dc, font);
 	readstdin();
 	setup();
 	run();
