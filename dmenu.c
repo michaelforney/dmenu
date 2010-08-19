@@ -132,7 +132,7 @@ drawmenu(void) {
 		if(next)
 			drawtext(dc, ">", normcol);
 	}
-	commitdraw(dc, win, mw, mh);
+	mapdraw(dc, win, mw, mh);
 }
 
 char *
@@ -478,7 +478,7 @@ setup(void) {
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
 	grabkeyboard();
-	setcanvas(dc, mw, mh);
+	resizedraw(dc, mw, mh);
 	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? MIN(textw(dc, prompt), mw/5) : 0;
 	XMapRaised(dc->dpy, win);
