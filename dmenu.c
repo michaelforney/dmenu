@@ -124,7 +124,7 @@ drawmenu(void) {
 			dc_drawtext(dc, "<", normcol);
 		for(item = curr; item != next; item = item->right) {
 			dc->x += dc->w;
-			dc->w = MIN(dc_textw(dc, item->text), mw - dc->x);
+			dc->w = MIN(dc_textw(dc, item->text), mw - dc->x - dc_textw(dc, ">"));
 			dc_drawtext(dc, item->text, (item == sel) ? selcol : normcol);
 		}
 		dc->w = dc_textw(dc, ">");
