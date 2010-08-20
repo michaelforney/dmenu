@@ -83,10 +83,10 @@ calcoffsets(void) {
 		n = mw - (promptw + inputw + dc_textw(dc, "<") + dc_textw(dc, ">"));
 
 	for(i = 0, next = curr; next; next = next->right)
-		if((i += (lines > 0) ? bh : MIN(dc_textw(dc, next->text), mw/3)) > n)
+		if((i += (lines > 0) ? bh : dc_textw(dc, next->text)) > n)
 			break;
 	for(i = 0, prev = curr; prev && prev->left; prev = prev->left)
-		if((i += (lines > 0) ? bh : MIN(dc_textw(dc, prev->left->text), mw/3)) > n)
+		if((i += (lines > 0) ? bh : dc_textw(dc, prev->left->text)) > n)
 			break;
 }
 
@@ -124,7 +124,7 @@ drawmenu(void) {
 			dc_drawtext(dc, "<", normcol);
 		for(item = curr; item != next; item = item->right) {
 			dc->x += dc->w;
-			dc->w = MIN(dc_textw(dc, item->text), mw/3);
+			dc->w = dc_textw(dc, item->text);
 			dc_drawtext(dc, item->text, (item == sel) ? selcol : normcol);
 		}
 		dc->w = dc_textw(dc, ">");
@@ -226,9 +226,6 @@ keypress(XKeyEvent *ev) {
 			while(cursor > 0 && text[nextrune(-1)] != ' ')
 				insert(NULL, nextrune(-1) - cursor);
 			break;
-		case XK_y:  /* paste selection */
-			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
-			return;
 		}
 	}
 	switch(ksym) {
@@ -266,6 +263,10 @@ keypress(XKeyEvent *ev) {
 		sel = curr = matches;
 		calcoffsets();
 		break;
+	case XK_Insert:  /* paste selection */
+		if(ev->state & ShiftMask)
+			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
+		return;
 	case XK_Left:
 		if(cursor > 0 && (!sel || !sel->left || lines > 0)) {
 			cursor = nextrune(-1);
@@ -480,7 +481,7 @@ setup(void) {
 	grabkeyboard();
 	dc_resize(dc, mw, mh);
 	inputw = MIN(inputw, mw/3);
-	promptw = prompt ? MIN(dc_textw(dc, prompt), mw/5) : 0;
+	promptw = prompt ? dc_textw(dc, prompt) : 0;
 	XMapRaised(dc->dpy, win);
 	text[0] = '\0';
 	match();
