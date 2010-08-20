@@ -83,10 +83,10 @@ calcoffsets(void) {
 		n = mw - (promptw + inputw + dc_textw(dc, "<") + dc_textw(dc, ">"));
 
 	for(i = 0, next = curr; next; next = next->right)
-		if((i += (lines > 0) ? bh : dc_textw(dc, next->text)) > n)
+		if((i += (lines > 0) ? bh : MIN(dc_textw(dc, next->text), n)) > n)
 			break;
 	for(i = 0, prev = curr; prev && prev->left; prev = prev->left)
-		if((i += (lines > 0) ? bh : dc_textw(dc, prev->left->text)) > n)
+		if((i += (lines > 0) ? bh : MIN(dc_textw(dc, prev->left->text), n)) > n)
 			break;
 }
 
@@ -124,7 +124,7 @@ drawmenu(void) {
 			dc_drawtext(dc, "<", normcol);
 		for(item = curr; item != next; item = item->right) {
 			dc->x += dc->w;
-			dc->w = dc_textw(dc, item->text);
+			dc->w = MIN(dc_textw(dc, item->text), mw - dc->x);
 			dc_drawtext(dc, item->text, (item == sel) ? selcol : normcol);
 		}
 		dc->w = dc_textw(dc, ">");
