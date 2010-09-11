@@ -7,7 +7,7 @@ Requirements
 ------------
 In order to build dmenu you need the Xlib header files.
 
-You also need libdraw, available from http://hg.suckless.org/libdraw
+You also need libdc, available from http://hg.suckless.org/libdraw
 
 
 Installation

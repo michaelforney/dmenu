@@ -10,7 +10,7 @@
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif
-#include <draw.h>
+#include <dc.h>
 
 #define INRECT(x,y,rx,ry,rw,rh) ((x) >= (rx) && (x) < (rx)+(rw) && (y) >= (ry) && (y) < (ry)+(rh))
 #define MIN(a,b)                ((a) < (b) ? (a) : (b))
@@ -230,7 +230,7 @@ keypress(XKeyEvent *ev) {
 	}
 	switch(ksym) {
 	default:
-		if(isprint(*buf))
+		if(!iscntrl(*buf))
 			insert(buf, strlen(buf));
 		break;
 	case XK_Delete:
