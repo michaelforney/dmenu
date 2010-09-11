@@ -230,7 +230,7 @@ keypress(XKeyEvent *ev) {
 	}
 	switch(ksym) {
 	default:
-		if(!iscntrl(*buf))
+		if(*buf)
 			insert(buf, strlen(buf));
 		break;
 	case XK_Delete:
