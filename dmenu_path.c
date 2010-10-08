@@ -8,22 +8,21 @@
 
 #define CACHE ".dmenu_cache"
 
-static int qstrcmp(const void *a, const void *b);
 static void die(const char *s);
+static int qstrcmp(const void *a, const void *b);
 static void scan(void);
 static int uptodate(void);
 
 static char **items = NULL;
-static const char *Home, *Path;
-static size_t count = 0;
+static const char *home, *path;
 
 int
 main(void) {
-	if(!(Home = getenv("HOME")))
+	if(!(home = getenv("HOME")))
 		die("no $HOME");
-	if(!(Path = getenv("PATH")))
+	if(!(path = getenv("PATH")))
 		die("no $PATH");
-	if(chdir(Home) < 0)
+	if(chdir(home) < 0)
 		die("chdir failed");
 	if(uptodate()) {
 		execlp("cat", "cat", CACHE, NULL);
@@ -47,15 +46,16 @@ qstrcmp(const void *a, const void *b) {
 void
 scan(void) {
 	char buf[PATH_MAX];
-	char *dir, *path;
-	size_t i;
+	char *dir, *p;
+	size_t i, count;
 	struct dirent *ent;
 	DIR *dp;
 	FILE *cache;
 
-	if(!(path = strdup(Path)))
+	count = 0;
+	if(!(p = strdup(path)))
 		die("strdup failed");
-	for(dir = strtok(path, ":"); dir; dir = strtok(NULL, ":")) {
+	for(dir = strtok(p, ":"); dir; dir = strtok(NULL, ":")) {
 		if(!(dp = opendir(dir)))
 			continue;
 		while((ent = readdir(dp))) {
@@ -79,23 +79,23 @@ scan(void) {
 		fprintf(stdout, "%s\n", items[i]);
 	}
 	fclose(cache);
-	free(path);
+	free(p);
 }
 
 int
 uptodate(void) {
-	char *dir, *path;
+	char *dir, *p;
 	time_t mtime;
 	struct stat st;
 
 	if(stat(CACHE, &st) < 0)
 		return 0;
 	mtime = st.st_mtime;
-	if(!(path = strdup(Path)))
+	if(!(p = strdup(path)))
 		die("strdup failed");
-	for(dir = strtok(path, ":"); dir; dir = strtok(NULL, ":"))
+	for(dir = strtok(p, ":"); dir; dir = strtok(NULL, ":"))
 		if(!stat(dir, &st) && st.st_mtime > mtime)
 			return 0;
-	free(path);
+	free(p);
 	return 1;
 }
