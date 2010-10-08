@@ -3,7 +3,7 @@
 
 include config.mk
 
-all: options dmenu
+all: options dmenu dmenu_path
 
 options:
 	@echo dmenu build options:
@@ -11,22 +11,21 @@ options:
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
 
-dmenu.o: dmenu.c config.mk
-	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+dmenu: dmenu.c config.mk
+dmenu_path: dmenu_path.c
 
-dmenu: dmenu.o
+dmenu dmenu_path:
 	@echo CC -o $@
-	@${CC} -o $@ $+ ${LDFLAGS}
+	@${CC} -o $@ $< ${CFLAGS} ${LDFLAGS}
 
 clean:
 	@echo cleaning
-	@rm -f dmenu dmenu.o dmenu-${VERSION}.tar.gz
+	@rm -f dmenu dmenu_path dmenu-${VERSION}.tar.gz
 
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp LICENSE Makefile README config.mk dmenu.1 dmenu.c dmenu_path dmenu_run dmenu-${VERSION}
+	@cp LICENSE Makefile README config.mk dmenu.1 dmenu.c dmenu_path.c dmenu_run dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
