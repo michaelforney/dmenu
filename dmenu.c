@@ -42,6 +42,7 @@ static char text[BUFSIZ];
 static int bh, mw, mh;
 static int inputw = 0;
 static int lines = 0;
+static int monitor = -1;
 static int promptw;
 static size_t cursor = 0;
 static const char *font = NULL;
@@ -455,7 +456,8 @@ setup(void) {
 
 		XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
 		for(i = 0; i < n; i++)
-			if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
+			if((monitor == info[i].screen_number)
+			|| (monitor < 0 && INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height)))
 				break;
 		x = info[i].x_org;
 		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
@@ -514,6 +516,8 @@ main(int argc, char *argv[]) {
 		/* double flags */
 		else if(!strcmp(argv[i], "-l"))
 			lines = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-m"))
+			monitor = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-p"))
 			prompt = argv[++i];
 		else if(!strcmp(argv[i], "-fn"))
