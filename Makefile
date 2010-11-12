@@ -3,7 +3,7 @@
 
 include config.mk
 
-all: options dmenu dmenu_path config.mk
+all: options dmenu dmenu_path
 
 options:
 	@echo dmenu build options:
@@ -14,7 +14,7 @@ options:
 dmenu: dmenu.o draw.o
 dmenu_path: dmenu_path.o
 
-.c.o:
+.c.o: config.mk
 	@echo CC -c $<
 	@${CC} -c $< ${CFLAGS}
 
