@@ -227,6 +227,9 @@ keypress(XKeyEvent *ev) {
 			while(cursor > 0 && text[nextrune(-1)] != ' ')
 				insert(NULL, nextrune(-1) - cursor);
 			break;
+		case XK_y:  /* paste selection */
+			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
+			return;
 		}
 	}
 	switch(ksym) {
@@ -264,10 +267,6 @@ keypress(XKeyEvent *ev) {
 		sel = curr = matches;
 		calcoffsets();
 		break;
-	case XK_Insert:  /* paste selection */
-		if(ev->state & ShiftMask)
-			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
-		return;
 	case XK_Left:
 		if(cursor > 0 && (!sel || !sel->left || lines > 0)) {
 			cursor = nextrune(-1);
