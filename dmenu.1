@@ -7,6 +7,8 @@ dmenu \- dynamic menu
 .RB [ \-i ]
 .RB [ \-l
 .IR lines ]
+.RB [ \-m
+.IR monitor ]
 .RB [ \-p
 .IR prompt ]
 .RB [ \-fn
@@ -50,6 +52,9 @@ dmenu matches menu items case insensitively.
 .TP
 .BI \-l " lines"
 dmenu lists items vertically, with the given number of lines.
+.TP
+.BI \-m " monitor"
+dmenu appears on the given Xinerama screen.
 .TP
 .BI \-p " prompt"
 defines the prompt to be displayed to the left of the input field.

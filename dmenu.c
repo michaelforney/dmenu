@@ -63,6 +63,52 @@ static Window root, win;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 
+int
+main(int argc, char *argv[]) {
+	int i;
+
+	progname = "dmenu";
+	for(i = 1; i < argc; i++)
+		/* single flags */
+		if(!strcmp(argv[i], "-v")) {
+			fputs("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n", stdout);
+			exit(EXIT_SUCCESS);
+		}
+		else if(!strcmp(argv[i], "-b"))
+			topbar = False;
+		else if(!strcmp(argv[i], "-i"))
+			fstrncmp = strncasecmp;
+		else if(i == argc-1)
+			usage();
+		/* double flags */
+		else if(!strcmp(argv[i], "-l"))
+			lines = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-m"))
+			monitor = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-p"))
+			prompt = argv[++i];
+		else if(!strcmp(argv[i], "-fn"))
+			font = argv[++i];
+		else if(!strcmp(argv[i], "-nb"))
+			normbgcolor = argv[++i];
+		else if(!strcmp(argv[i], "-nf"))
+			normfgcolor = argv[++i];
+		else if(!strcmp(argv[i], "-sb"))
+			selbgcolor = argv[++i];
+		else if(!strcmp(argv[i], "-sf"))
+			selfgcolor = argv[++i];
+		else
+			usage();
+
+	dc = initdc();
+	initfont(dc, font);
+	readstdin();
+	setup();
+	run();
+
+	return EXIT_FAILURE;  /* should not reach */
+}
+
 void
 appenditem(Item *item, Item **list, Item **last) {
 	if(!*last)
@@ -490,53 +536,7 @@ setup(void) {
 
 void
 usage(void) {
-	fputs("usage: dmenu [-b] [-i] [-l lines] [-p prompt] [-fn font] [-nb color]\n"
-	      "             [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
+	fputs("usage: dmenu [-b] [-i] [-l lines] [-m monitor] [-p prompt] [-fn font]\n"
+	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
 	exit(EXIT_FAILURE);
-}
-
-int
-main(int argc, char *argv[]) {
-	int i;
-
-	progname = "dmenu";
-	for(i = 1; i < argc; i++)
-		/* single flags */
-		if(!strcmp(argv[i], "-v")) {
-			fputs("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n", stdout);
-			exit(EXIT_SUCCESS);
-		}
-		else if(!strcmp(argv[i], "-b"))
-			topbar = False;
-		else if(!strcmp(argv[i], "-i"))
-			fstrncmp = strncasecmp;
-		else if(i == argc-1)
-			usage();
-		/* double flags */
-		else if(!strcmp(argv[i], "-l"))
-			lines = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-m"))
-			monitor = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-p"))
-			prompt = argv[++i];
-		else if(!strcmp(argv[i], "-fn"))
-			font = argv[++i];
-		else if(!strcmp(argv[i], "-nb"))
-			normbgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-nf"))
-			normfgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-sb"))
-			selbgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-sf"))
-			selfgcolor = argv[++i];
-		else
-			usage();
-
-	dc = initdc();
-	initfont(dc, font);
-	readstdin();
-	setup();
-	run();
-
-	return EXIT_FAILURE;  /* should not reach */
 }
