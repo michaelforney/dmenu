@@ -9,8 +9,6 @@
 
 #define MAX(a, b)   ((a) > (b) ? (a) : (b))
 #define MIN(a, b)   ((a) < (b) ? (a) : (b))
-#define FG(dc, col) ((col)[(dc)->invert ? ColBG : ColFG])
-#define BG(dc, col) ((col)[(dc)->invert ? ColFG : ColBG])
 #define DEFFONT     "fixed"
 
 static Bool loadfont(DC *dc, const char *fontstr);
