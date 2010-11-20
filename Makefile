@@ -29,7 +29,7 @@ clean:
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp LICENSE Makefile README config.mk dmenu.1 dmenu.c dmenu_path.c dmenu_run dmenu-${VERSION}
+	@cp LICENSE Makefile README config.mk dmenu.1 dmenu.c draw.c draw.h dmenu_path.c dmenu_run dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
