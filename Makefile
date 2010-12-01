@@ -15,13 +15,13 @@ dmenu: dmenu.o draw.o
 	@echo CC -o $@
 	@${CC} -o $@ dmenu.o draw.o ${LDFLAGS}
 
+dmenu_path: dmenu_path.o
+	@echo CC -o $@
+	@${CC} -o $@ dmenu_path.o ${LDFLAGS}
+
 .c.o: config.mk
 	@echo CC -c $<
 	@${CC} -c $< ${CFLAGS}
-
-.o:
-	@echo CC -o $@
-	@${CC} -o $@ $< ${LDFLAGS}
 
 clean:
 	@echo cleaning
