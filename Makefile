@@ -12,15 +12,16 @@ options:
 	@echo "CC       = ${CC}"
 
 dmenu: dmenu.o draw.o
-dmenu_path: dmenu_path.o
+	@echo CC -o $@
+	@${CC} -o $@ dmenu.o draw.o ${LDFLAGS}
 
 .c.o: config.mk
 	@echo CC -c $<
 	@${CC} -c $< ${CFLAGS}
 
-dmenu dmenu_path:
+.o:
 	@echo CC -o $@
-	@${CC} -o $@ $+ ${LDFLAGS}
+	@${CC} -o $@ $< ${LDFLAGS}
 
 clean:
 	@echo cleaning
