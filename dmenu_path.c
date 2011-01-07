@@ -7,8 +7,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define CACHE ".dmenu_cache"
-
 static void die(const char *s);
 static int qstrcmp(const void *a, const void *b);
 static void scan(void);
@@ -26,7 +24,7 @@ main(void) {
 	if(chdir(home) < 0)
 		die("chdir failed");
 	if(uptodate()) {
-		execlp("cat", "cat", CACHE, NULL);
+		execl("/bin/cat", "cat", CACHE, NULL);
 		die("exec failed");
 	}
 	scan();

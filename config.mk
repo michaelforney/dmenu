@@ -1,7 +1,9 @@
 # dmenu version
 VERSION = 4.2.1
 
-# Customize below to fit your system
+# dmenu_path cache (absolute or relative to $HOME)
+CACHE = .dmenu_cache
+
 
 # paths
 PREFIX = /usr/local
@@ -19,7 +21,7 @@ INCS = -I${X11INC}
 LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS}
 
 # flags
-CPPFLAGS = -D_BSD_SOURCE -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
+CPPFLAGS = -D_BSD_SOURCE -DVERSION=\"${VERSION}\" -DCACHE=\"${CACHE}\" ${XINERAMAFLAGS}
 CFLAGS   = -std=c99 -pedantic -Wall -Os ${INCS} ${CPPFLAGS}
 LDFLAGS  = -s ${LIBS}
 
