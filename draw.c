@@ -100,16 +100,13 @@ initdc(void) {
 
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		weprintf("no locale support\n");
-	if(!(dc = malloc(sizeof *dc)))
+	if(!(dc = calloc(1, sizeof *dc)))
 		eprintf("cannot malloc %u bytes\n", sizeof *dc);
 	if(!(dc->dpy = XOpenDisplay(NULL)))
 		eprintf("cannot open display\n");
 
 	dc->gc = XCreateGC(dc->dpy, DefaultRootWindow(dc->dpy), 0, NULL);
 	XSetLineAttributes(dc->dpy, dc->gc, 1, LineSolid, CapButt, JoinMiter);
-	dc->font.xfont = NULL;
-	dc->font.set = NULL;
-	dc->canvas = None;
 	return dc;
 }
 
@@ -187,7 +184,7 @@ void
 weprintf(const char *fmt, ...) {
 	va_list ap;
 
-	fprintf(stderr, "%s: warning: ", progname);
+	fprintf(stderr, "%s: ", progname);
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);

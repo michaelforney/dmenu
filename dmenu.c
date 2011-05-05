@@ -36,9 +36,8 @@ static void paste(void);
 static void readstdin(void);
 static void run(void);
 static void setup(void);
-static void usage(void);
 
-static char text[BUFSIZ];
+static char text[BUFSIZ] = "";
 static int bh, mw, mh;
 static int inputw = 0;
 static int lines = 0;
@@ -79,7 +78,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-i"))
 			fstrncmp = strncasecmp;
 		else if(i == argc-1)
-			usage();
+			goto usage;
 		/* double flags */
 		else if(!strcmp(argv[i], "-l"))
 			lines = atoi(argv[++i]);
@@ -98,15 +97,19 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-sf"))
 			selfgcolor = argv[++i];
 		else
-			usage();
+			goto usage;
 
 	dc = initdc();
 	initfont(dc, font);
 	readstdin();
 	setup();
 	run();
+	return EXIT_FAILURE;
 
-	return EXIT_FAILURE;  /* should not reach */
+usage:
+	fputs("usage: dmenu [-b] [-i] [-l lines] [-m monitor] [-p prompt] [-fn font]\n"
+	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
+	return EXIT_FAILURE;
 }
 
 void
@@ -223,7 +226,7 @@ keypress(XKeyEvent *ev) {
 
 	len = strlen(text);
 	XLookupString(ev, buf, sizeof buf, &ksym, NULL);
-	if(ev->state & ControlMask) {
+	if(ev->state & ControlMask)
 		switch(tolower(ksym)) {
 		default:
 			return;
@@ -277,7 +280,6 @@ keypress(XKeyEvent *ev) {
 			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
 			return;
 		}
-	}
 	switch(ksym) {
 	default:
 		if(!iscntrl(*buf))
@@ -341,7 +343,6 @@ keypress(XKeyEvent *ev) {
 	case XK_Return:
 	case XK_KP_Enter:
 		fputs((sel && !(ev->state & ShiftMask)) ? sel->text : text, stdout);
-		fflush(stdout);
 		exit(EXIT_SUCCESS);
 	case XK_Right:
 		if(cursor < len) {
@@ -403,7 +404,7 @@ match(void) {
 		else
 			matches = lsubstr;
 	}
-	curr = prev = next = sel = matches;
+	curr = sel = matches;
 	calcoffsets();
 }
 
@@ -438,11 +439,10 @@ readstdin(void) {
 	for(end = &items; fgets(buf, sizeof buf, stdin); *end = item, end = &item->next) {
 		if((p = strchr(buf, '\n')))
 			*p = '\0';
-		if(!(item = malloc(sizeof *item)))
+		if(!(item = calloc(1, sizeof *item)))
 			eprintf("cannot malloc %u bytes\n", sizeof *item);
 		if(!(item->text = strdup(buf)))
 			eprintf("cannot strdup %u bytes\n", strlen(buf)+1);
-		item->next = item->left = item->right = NULL;
 		inputw = MAX(inputw, textw(dc, item->text));
 	}
 }
@@ -530,13 +530,5 @@ setup(void) {
 	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? textw(dc, prompt) : 0;
 	XMapRaised(dc->dpy, win);
-	text[0] = '\0';
 	match();
-}
-
-void
-usage(void) {
-	fputs("usage: dmenu [-b] [-i] [-l lines] [-m monitor] [-p prompt] [-fn font]\n"
-	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
-	exit(EXIT_FAILURE);
 }
