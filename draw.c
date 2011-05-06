@@ -68,6 +68,11 @@ eprintf(const char *fmt, ...) {
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
+
+	if(fmt[strlen(fmt)-1] == ':') {
+		fputc(' ', stderr);
+		perror(NULL);
+	}
 	exit(EXIT_FAILURE);
 }
 
@@ -101,7 +106,7 @@ initdc(void) {
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		weprintf("no locale support\n");
 	if(!(dc = calloc(1, sizeof *dc)))
-		eprintf("cannot malloc %u bytes\n", sizeof *dc);
+		eprintf("cannot malloc %u bytes:", sizeof *dc);
 	if(!(dc->dpy = XOpenDisplay(NULL)))
 		eprintf("cannot open display\n");
 

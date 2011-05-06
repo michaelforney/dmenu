@@ -440,9 +440,9 @@ readstdin(void) {
 		if((p = strchr(buf, '\n')))
 			*p = '\0';
 		if(!(item = calloc(1, sizeof *item)))
-			eprintf("cannot malloc %u bytes\n", sizeof *item);
+			eprintf("cannot malloc %u bytes:", sizeof *item);
 		if(!(item->text = strdup(buf)))
-			eprintf("cannot strdup %u bytes\n", strlen(buf)+1);
+			eprintf("cannot strdup %u bytes:", strlen(buf)+1);
 		inputw = MAX(inputw, textw(dc, item->text));
 	}
 }
