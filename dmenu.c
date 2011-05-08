@@ -64,6 +64,7 @@ static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 
 int
 main(int argc, char *argv[]) {
+	Bool fast = False;
 	int i;
 
 	progname = "dmenu";
@@ -77,6 +78,8 @@ main(int argc, char *argv[]) {
 			topbar = False;
 		else if(!strcmp(argv[i], "-i"))
 			fstrncmp = strncasecmp;
+		else if(!strcmp(argv[i], "-f"))
+			fast = True;
 		else if(i == argc-1)
 			goto usage;
 		/* double flags */
@@ -101,13 +104,21 @@ main(int argc, char *argv[]) {
 
 	dc = initdc();
 	initfont(dc, font);
-	readstdin();
-	setup();
+
+	if(fast) {
+		setup();
+		readstdin();
+	}
+	else {
+		readstdin();
+		setup();
+	}
+	match();
 	run();
 	return EXIT_FAILURE;
 
 usage:
-	fputs("usage: dmenu [-b] [-i] [-l lines] [-m monitor] [-p prompt] [-fn font]\n"
+	fputs("usage: dmenu [-b] [-f] [-i] [-l lines] [-m monitor] [-p prompt] [-fn font]\n"
 	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
 	return EXIT_FAILURE;
 }
@@ -530,5 +541,4 @@ setup(void) {
 	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? textw(dc, prompt) : 0;
 	XMapRaised(dc->dpy, win);
-	match();
 }

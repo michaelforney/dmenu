@@ -4,6 +4,7 @@ dmenu \- dynamic menu
 .SH SYNOPSIS
 .B dmenu
 .RB [ \-b ]
+.RB [ \-f ]
 .RB [ \-i ]
 .RB [ \-l
 .IR lines ]
@@ -32,9 +33,9 @@ is a dynamic menu for X, originally designed for
 .BR dwm (1).
 It manages huge numbers of user-defined menu items efficiently.
 .P
-dmenu reads a list of newline-separated items from standard input and creates a
-menu.  When the user selects an item or enters any text and presses Return,
-their choice is printed to standard output and dmenu terminates.
+dmenu reads a list of newline-separated items from stdin and creates a menu.
+When the user selects an item or enters any text and presses Return, their
+choice is printed to stdout and dmenu terminates.
 .P
 .B dmenu_run
 is a dmenu script used by dwm which lists programs in the user's PATH and
@@ -46,6 +47,10 @@ is a program used by dmenu_run to find and cache a list of executables.
 .TP
 .B \-b
 dmenu appears at the bottom of the screen.
+.TP
+.B \-f
+dmenu grabs the keyboard before reading stdin.  This is faster, but may lock up
+X if stdin is from a terminal.
 .TP
 .B \-i
 dmenu matches menu items case insensitively.
@@ -66,7 +71,7 @@ defines the font or font set used.
 defines the normal background color.
 .IR #RGB ,
 .IR #RRGGBB ,
-and color names are supported.
+and X color names are supported.
 .TP
 .BI \-nf " color"
 defines the normal foreground color.
@@ -78,7 +83,7 @@ defines the selected background color.
 defines the selected foreground color.
 .TP
 .B \-v
-prints version information to standard output, then exits.
+prints version information to stdout, then exits.
 .SH USAGE
 dmenu is completely controlled by the keyboard.  Besides standard Unix line
 editing and item selection (Up/Down/Left/Right, PageUp/PageDown, Home/End), the
@@ -88,12 +93,11 @@ following keys are recognized:
 Copy the selected item to the input field.
 .TP
 .B Return (Control\-j)
-Confirm selection.  Prints the selected item to standard output and exits,
-returning success.
+Confirm selection.  Prints the selected item to stdout and exits, returning
+success.
 .TP
 .B Shift\-Return (Control\-Shift\-j)
-Confirm input.  Prints the input text to standard output and exits, returning
-success.
+Confirm input.  Prints the input text to stdout and exits, returning success.
 .TP
 .B Escape (Control\-c)
 Exit without selecting an item, returning failure.
