@@ -506,18 +506,18 @@ setup(void) {
 	mh = (lines + 1) * bh;
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
-		int i, m, di;
+		int i, di;
 		unsigned int du;
 		Window dw;
 
 		XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
-		for(i = 0, m = -1; i < n; i++)
+		for(i = 0; i < n-1; i++)
 			if((monitor == info[i].screen_number)
-			|| (m < 0 && INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height)))
-				m = i;
-		x = info[m].x_org;
-		y = info[m].y_org + (topbar ? 0 : info[m].height - mh);
-		mw = info[m].width;
+			|| (monitor < 0 && INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height)))
+				break;
+		x = info[i].x_org;
+		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
+		mw = info[i].width;
 		XFree(info);
 	}
 	else
