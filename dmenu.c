@@ -55,8 +55,8 @@ static Atom utf8;
 static Bool topbar = True;
 static DC *dc;
 static Item *items = NULL;
-static Item *matches, *sel;
-static Item *prev, *curr, *next;
+static Item *matches, *matchend;
+static Item *prev, *curr, *next, *sel;
 static Window root, win;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
@@ -308,12 +308,15 @@ keypress(XKeyEvent *ev) {
 			cursor = len;
 			break;
 		}
-		while(next) {
-			sel = curr = next;
+		if(next) {
+			curr = matchend;
 			calcoffsets();
+			curr = prev;
+			calcoffsets();
+			while(next && (curr = curr->right))
+				calcoffsets();
 		}
-		while(sel && sel->right)
-			sel = sel->right;
+		sel = matchend;
 		break;
 	case XK_Escape:
 		exit(EXIT_FAILURE);
@@ -381,10 +384,10 @@ keypress(XKeyEvent *ev) {
 void
 match(void) {
 	size_t len;
-	Item *item, *itemend, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
+	Item *item, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
 
 	len = strlen(text);
-	matches = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
+	matches = lexact = lprefix = lsubstr = matchend = exactend = prefixend = substrend = NULL;
 	for(item = items; item && item->text; item++)
 		if(!fstrncmp(text, item->text, len + 1))
 			appenditem(item, &lexact, &exactend);
@@ -395,24 +398,25 @@ match(void) {
 
 	if(lexact) {
 		matches = lexact;
-		itemend = exactend;
+		matchend = exactend;
 	}
 	if(lprefix) {
-		if(itemend) {
-			itemend->right = lprefix;
-			lprefix->left = itemend;
+		if(matchend) {
+			matchend->right = lprefix;
+			lprefix->left = matchend;
 		}
 		else
 			matches = lprefix;
-		itemend = prefixend;
+		matchend = prefixend;
 	}
 	if(lsubstr) {
-		if(itemend) {
-			itemend->right = lsubstr;
-			lsubstr->left = itemend;
+		if(matchend) {
+			matchend->right = lsubstr;
+			lsubstr->left = matchend;
 		}
 		else
 			matches = lsubstr;
+		matchend = substrend;
 	}
 	curr = sel = matches;
 	calcoffsets();
