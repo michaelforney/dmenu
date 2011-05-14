@@ -1,4 +1,4 @@
-/* See LICENSE file for copyright and license details. */
+/* See LICENSE file for copynext and license details. */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,8 +19,7 @@
 typedef struct Item Item;
 struct Item {
 	char *text;
-	Item *next;          /* traverses all items */
-	Item *left, *right;  /* traverses matching items */
+	Item *left, *right;
 };
 
 static void appenditem(Item *item, Item **list, Item **last);
@@ -386,7 +385,7 @@ match(void) {
 
 	len = strlen(text);
 	matches = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
-	for(item = items; item; item = item->next)
+	for(item = items; item && item->text; item++)
 		if(!fstrncmp(text, item->text, len + 1))
 			appenditem(item, &lexact, &exactend);
 		else if(!fstrncmp(text, item->text, len))
@@ -445,16 +444,17 @@ paste(void) {
 void
 readstdin(void) {
 	char buf[sizeof text], *p;
-	Item *item, **end;
+	size_t i, size = 0;
 
-	for(end = &items; fgets(buf, sizeof buf, stdin); *end = item, end = &item->next) {
+	for(i = 0; fgets(buf, sizeof buf, stdin); items[++i].text = NULL) {
+		if(i+1 == size / sizeof *items || !items)
+			if(!(items = realloc(items, (size += BUFSIZ))))
+				eprintf("cannot realloc %u bytes:", size);
 		if((p = strchr(buf, '\n')))
 			*p = '\0';
-		if(!(item = calloc(1, sizeof *item)))
-			eprintf("cannot malloc %u bytes:", sizeof *item);
-		if(!(item->text = strdup(buf)))
+		if(!(items[i].text = strdup(buf)))
 			eprintf("cannot strdup %u bytes:", strlen(buf)+1);
-		inputw = MAX(inputw, textw(dc, item->text));
+		inputw = MAX(inputw, textw(dc, items[i].text));
 	}
 }
 
