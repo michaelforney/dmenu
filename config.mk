@@ -1,5 +1,5 @@
 # dmenu version
-VERSION = 4.2.1
+VERSION = 4.3
 
 # dmenu_path cache (absolute or relative to $HOME)
 CACHE = .dmenu_cache
