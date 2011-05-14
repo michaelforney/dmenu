@@ -3,7 +3,7 @@
 
 include config.mk
 
-all: options dmenu dmenu_path
+all: options dmenu
 
 options:
 	@echo dmenu build options:
@@ -15,22 +15,18 @@ dmenu: dmenu.o draw.o
 	@echo CC -o $@
 	@${CC} -o $@ dmenu.o draw.o ${LDFLAGS}
 
-dmenu_path: dmenu_path.o
-	@echo CC -o $@
-	@${CC} -o $@ dmenu_path.o ${LDFLAGS}
-
 .c.o: config.mk
 	@echo CC -c $<
 	@${CC} -c $< ${CFLAGS}
 
 clean:
 	@echo cleaning
-	@rm -f dmenu dmenu.o draw.o dmenu_path dmenu_path.o dmenu-${VERSION}.tar.gz
+	@rm -f dmenu dmenu.o draw.o dmenu-${VERSION}.tar.gz
 
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp LICENSE Makefile README config.mk dmenu.1 dmenu.c draw.c draw.h dmenu_path.c dmenu_run dmenu-${VERSION}
+	@cp LICENSE Makefile README config.mk dmenu.1 dmenu.c draw.c draw.h dmenu_path dmenu_run dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
