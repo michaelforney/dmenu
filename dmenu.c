@@ -1,4 +1,4 @@
-/* See LICENSE file for copynext and license details. */
+/* See LICENSE file for copyright and license details. */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
