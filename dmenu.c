@@ -66,7 +66,6 @@ main(int argc, char *argv[]) {
 	Bool fast = False;
 	int i;
 
-	progname = "dmenu";
 	for(i = 1; i < argc; i++)
 		/* single flags */
 		if(!strcmp(argv[i], "-v")) {
@@ -383,10 +382,9 @@ keypress(XKeyEvent *ev) {
 
 void
 match(void) {
-	size_t len;
+	size_t len = strlen(text);
 	Item *item, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
 
-	len = strlen(text);
 	matches = lexact = lprefix = lsubstr = matchend = exactend = prefixend = substrend = NULL;
 	for(item = items; item && item->text; item++)
 		if(!fstrncmp(text, item->text, len + 1))
@@ -424,9 +422,8 @@ match(void) {
 
 size_t
 nextrune(int incr) {
-	size_t n, len;
+	size_t n, len = strlen(text);
 
-	len = strlen(text);
 	for(n = cursor + incr; n >= 0 && n < len && (text[n] & 0xc0) == 0x80; n += incr);
 	return n;
 }

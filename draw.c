@@ -29,10 +29,9 @@ drawrect(DC *dc, int x, int y, unsigned int w, unsigned int h, Bool fill, unsign
 void
 drawtext(DC *dc, const char *text, unsigned long col[ColLast]) {
 	char buf[256];
-	size_t n, mn;
+	size_t mn, n = strlen(text);
 
 	/* shorten text if necessary */
-	n = strlen(text);
 	for(mn = MIN(n, sizeof buf); textnw(dc, text, mn) > dc->w - dc->font.height/2; mn--)
 		if(mn == 0)
 			return;
@@ -46,10 +45,8 @@ drawtext(DC *dc, const char *text, unsigned long col[ColLast]) {
 
 void
 drawtextn(DC *dc, const char *text, size_t n, unsigned long col[ColLast]) {
-	int x, y;
-
-	x = dc->x + dc->font.height/2;
-	y = dc->y + dc->font.ascent+1;
+	int x = dc->x + dc->font.height/2;
+	int y = dc->y + dc->font.ascent+1;
 
 	XSetForeground(dc->dpy, dc->gc, FG(dc, col));
 	if(dc->font.set)
@@ -64,7 +61,6 @@ void
 eprintf(const char *fmt, ...) {
 	va_list ap;
 
-	fprintf(stderr, "%s: ", progname);
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
@@ -104,7 +100,7 @@ initdc(void) {
 	DC *dc;
 
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
-		weprintf("no locale support\n");
+		fprintf(stderr, "no locale support\n");
 	if(!(dc = calloc(1, sizeof *dc)))
 		eprintf("cannot malloc %u bytes:", sizeof *dc);
 	if(!(dc->dpy = XOpenDisplay(NULL)))
@@ -119,7 +115,7 @@ void
 initfont(DC *dc, const char *fontstr) {
 	if(!loadfont(dc, fontstr ? fontstr : DEFFONT)) {
 		if(fontstr != NULL)
-			weprintf("cannot load font '%s'\n", fontstr);
+			fprintf(stderr, "cannot load font '%s'\n", fontstr);
 		if(fontstr == NULL || !loadfont(dc, DEFFONT))
 			eprintf("cannot load font '%s'\n", DEFFONT);
 	}
@@ -183,14 +179,4 @@ textnw(DC *dc, const char *text, size_t len) {
 int
 textw(DC *dc, const char *text) {
 	return textnw(dc, text, strlen(text)) + dc->font.height;
-}
-
-void
-weprintf(const char *fmt, ...) {
-	va_list ap;
-
-	fprintf(stderr, "%s: ", progname);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
 }

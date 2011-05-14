@@ -20,18 +20,15 @@ typedef struct {
 	} font;
 } DC;  /* draw context */
 
-unsigned long getcolor(DC *dc, const char *colstr);
 void drawrect(DC *dc, int x, int y, unsigned int w, unsigned int h, Bool fill, unsigned long color);
 void drawtext(DC *dc, const char *text, unsigned long col[ColLast]);
 void drawtextn(DC *dc, const char *text, size_t n, unsigned long col[ColLast]);
-void initfont(DC *dc, const char *fontstr);
+void eprintf(const char *fmt, ...);
 void freedc(DC *dc);
+unsigned long getcolor(DC *dc, const char *colstr);
 DC *initdc(void);
+void initfont(DC *dc, const char *fontstr);
 void mapdc(DC *dc, Window win, unsigned int w, unsigned int h);
 void resizedc(DC *dc, unsigned int w, unsigned int h);
 int textnw(DC *dc, const char *text, size_t len);
 int textw(DC *dc, const char *text);
-void eprintf(const char *fmt, ...);
-void weprintf(const char *fmt, ...);
-
-const char *progname;
