@@ -27,9 +27,9 @@ static void calcoffsets(void);
 static void drawmenu(void);
 static char *fstrstr(const char *s, const char *sub);
 static void grabkeyboard(void);
-static void insert(const char *s, ssize_t n);
+static void insert(const char *str, ssize_t n);
 static void keypress(XKeyEvent *ev);
-static void match(void);
+static void match(Bool sub);
 static size_t nextrune(int incr);
 static void paste(void);
 static void readstdin(void);
@@ -218,14 +218,14 @@ grabkeyboard(void) {
 }
 
 void
-insert(const char *s, ssize_t n) {
+insert(const char *str, ssize_t n) {
 	if(strlen(text) + n > sizeof text - 1)
 		return;
 	memmove(&text[cursor + n], &text[cursor], sizeof text - cursor - MAX(n, 0));
 	if(n > 0)
-		memcpy(&text[cursor], s, n);
+		memcpy(&text[cursor], str, n);
 	cursor += n;
-	match();
+	match(n > 0);
 }
 
 void
@@ -269,7 +269,7 @@ keypress(XKeyEvent *ev) {
 			break;
 		case XK_k:  /* delete right */
 			text[cursor] = '\0';
-			match();
+			match(False);
 			break;
 		case XK_n:
 			ksym = XK_Down;
@@ -375,30 +375,31 @@ keypress(XKeyEvent *ev) {
 			return;
 		strncpy(text, sel->text, sizeof text);
 		cursor = strlen(text);
-		match();
+		match(True);
 		break;
 	}
 	drawmenu();
 }
 
 void
-match(void) {
+match(Bool sub) {
 	size_t len = strlen(text);
-	Item *item, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
+	Item *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
+	Item *item, *next = NULL;
 
-	matches = lexact = lprefix = lsubstr = matchend = exactend = prefixend = substrend = NULL;
-	for(item = items; item && item->text; item++)
+	lexact = lprefix = lsubstr = exactend = prefixend = substrend = NULL;
+	for(item = sub ? matches : items; item && item->text; item = next) {
+		next = sub ? item->right : item + 1;
 		if(!fstrncmp(text, item->text, len + 1))
 			appenditem(item, &lexact, &exactend);
 		else if(!fstrncmp(text, item->text, len))
 			appenditem(item, &lprefix, &prefixend);
 		else if(fstrstr(item->text, text))
 			appenditem(item, &lsubstr, &substrend);
-
-	if(lexact) {
-		matches = lexact;
-		matchend = exactend;
 	}
+	matches = lexact;
+	matchend = exactend;
+
 	if(lprefix) {
 		if(matchend) {
 			matchend->right = lprefix;
@@ -498,8 +499,8 @@ setup(void) {
 
 	normcol[ColBG] = getcolor(dc, normbgcolor);
 	normcol[ColFG] = getcolor(dc, normfgcolor);
-	selcol[ColBG] = getcolor(dc, selbgcolor);
-	selcol[ColFG] = getcolor(dc, selfgcolor);
+	selcol[ColBG]  = getcolor(dc, selbgcolor);
+	selcol[ColFG]  = getcolor(dc, selfgcolor);
 
 	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
 
@@ -532,7 +533,7 @@ setup(void) {
 	}
 	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? textw(dc, prompt) : 0;
-	match();
+	match(False);
 
 	/* menu window */
 	wa.override_redirect = True;
