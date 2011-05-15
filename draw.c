@@ -25,14 +25,13 @@ drawrect(DC *dc, int x, int y, unsigned int w, unsigned int h, Bool fill, unsign
 	(fill ? XFillRectangles : XDrawRectangles)(dc->dpy, dc->canvas, dc->gc, &r, 1);
 }
 
-
 void
 drawtext(DC *dc, const char *text, unsigned long col[ColLast]) {
-	char buf[256];
+	char buf[BUFSIZ];
 	size_t mn, n = strlen(text);
 
 	/* shorten text if necessary */
-	for(mn = MIN(n, sizeof buf); textnw(dc, text, mn) > dc->w - dc->font.height/2; mn--)
+	for(mn = MIN(n, sizeof buf); textnw(dc, text, mn) + dc->font.height/2 > dc->w; mn--)
 		if(mn == 0)
 			return;
 	memcpy(buf, text, mn);
@@ -157,12 +156,11 @@ void
 resizedc(DC *dc, unsigned int w, unsigned int h) {
 	if(dc->canvas)
 		XFreePixmap(dc->dpy, dc->canvas);
+
 	dc->canvas = XCreatePixmap(dc->dpy, DefaultRootWindow(dc->dpy), w, h,
 	                           DefaultDepth(dc->dpy, DefaultScreen(dc->dpy)));
-	dc->x = dc->y = 0;
 	dc->w = w;
 	dc->h = h;
-	dc->invert = False;
 }
 
 int

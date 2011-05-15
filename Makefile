@@ -3,6 +3,9 @@
 
 include config.mk
 
+SRC = dmenu.c draw.c
+OBJ = ${SRC:.c=.o}
+
 all: options dmenu
 
 options:
@@ -11,22 +14,24 @@ options:
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
 
-dmenu: dmenu.o draw.o
-	@echo CC -o $@
-	@${CC} -o $@ dmenu.o draw.o ${LDFLAGS}
-
-.c.o: config.mk
+.c.o:
 	@echo CC -c $<
 	@${CC} -c $< ${CFLAGS}
 
+${OBJ}: config.mk
+
+dmenu: ${OBJ}
+	@echo CC -o $@
+	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+
 clean:
 	@echo cleaning
-	@rm -f dmenu dmenu.o draw.o dmenu-${VERSION}.tar.gz
+	@rm -f dmenu ${OBJ} dmenu-${VERSION}.tar.gz
 
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp LICENSE Makefile README config.mk dmenu.1 dmenu.c draw.c draw.h dmenu_path dmenu_run dmenu-${VERSION}
+	@cp LICENSE Makefile README config.mk dmenu.1 draw.h dmenu_path dmenu_run ${SRC} dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
