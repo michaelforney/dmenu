@@ -38,7 +38,7 @@ static void setup(void);
 
 static char text[BUFSIZ] = "";
 static int bh, mw, mh;
-static int inputw = 0;
+static int inputw;
 static int lines = 0;
 static int monitor = -1;
 static int promptw;
@@ -78,7 +78,7 @@ main(int argc, char *argv[]) {
 			fast = True;
 		else if(!strcmp(argv[i], "-i"))
 			fstrncmp = strncasecmp;
-		else if(i == argc-1)
+		else if(i+1 == argc)
 			goto usage;
 		/* double flags */
 		else if(!strcmp(argv[i], "-l"))
@@ -220,9 +220,9 @@ void
 insert(const char *s, ssize_t n) {
 	if(strlen(text) + n > sizeof text - 1)
 		return;
-	memmove(text + cursor + n, text + cursor, sizeof text - cursor - MAX(n, 0));
+	memmove(&text[cursor + n], &text[cursor], sizeof text - cursor - MAX(n, 0));
 	if(n > 0)
-		memcpy(text + cursor, s, n);
+		memcpy(&text[cursor], s, n);
 	cursor += n;
 	match();
 }
@@ -458,8 +458,7 @@ readstdin(void) {
 		if(strlen(items[i].text) > max)
 			max = strlen(maxstr = items[i].text);
 	}
-	if(maxstr)
-		inputw = textw(dc, maxstr);
+	inputw = maxstr ? textw(dc, maxstr) : 0;
 }
 
 void
