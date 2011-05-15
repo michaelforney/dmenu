@@ -444,19 +444,22 @@ paste(void) {
 
 void
 readstdin(void) {
-	char buf[sizeof text], *p;
-	size_t i, size = 0;
+	char buf[sizeof text], *p, *maxstr = NULL;
+	size_t i, max = 0, size = 0;
 
 	for(i = 0; fgets(buf, sizeof buf, stdin); items[++i].text = NULL) {
-		if(i+1 == size / sizeof *items || !items)
+		if(i+1 >= size / sizeof *items)
 			if(!(items = realloc(items, (size += BUFSIZ))))
 				eprintf("cannot realloc %u bytes:", size);
 		if((p = strchr(buf, '\n')))
 			*p = '\0';
 		if(!(items[i].text = strdup(buf)))
 			eprintf("cannot strdup %u bytes:", strlen(buf)+1);
-		inputw = MAX(inputw, textw(dc, items[i].text));
+		if(strlen(items[i].text) > max)
+			max = strlen(maxstr = items[i].text);
 	}
+	if(maxstr)
+		inputw = textw(dc, maxstr);
 }
 
 void
