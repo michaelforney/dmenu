@@ -57,7 +57,7 @@ static DC *dc;
 static Item *items = NULL;
 static Item *matches, *matchend;
 static Item *prev, *curr, *next, *sel;
-static Window root, win;
+static Window win;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 
@@ -104,14 +104,14 @@ main(int argc, char *argv[]) {
 	initfont(dc, font);
 
 	if(fast) {
-		setup();
+		grabkeyboard();
 		readstdin();
 	}
 	else {
 		readstdin();
-		setup();
+		grabkeyboard();
 	}
-	match();
+	setup();
 	run();
 	return EXIT_FAILURE;
 
@@ -209,7 +209,8 @@ grabkeyboard(void) {
 	int i;
 
 	for(i = 0; i < 1000; i++) {
-		if(!XGrabKeyboard(dc->dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime))
+		if(XGrabKeyboard(dc->dpy, DefaultRootWindow(dc->dpy), True,
+		                 GrabModeAsync, GrabModeAsync, CurrentTime) == GrabSuccess)
 			return;
 		usleep(1000);
 	}
@@ -487,21 +488,20 @@ run(void) {
 
 void
 setup(void) {
-	int x, y, screen;
+	int x, y, screen = DefaultScreen(dc->dpy);
+	Window root = RootWindow(dc->dpy, screen);
 	XSetWindowAttributes wa;
 #ifdef XINERAMA
 	int n;
 	XineramaScreenInfo *info;
 #endif
 
-	screen = DefaultScreen(dc->dpy);
-	root = RootWindow(dc->dpy, screen);
-	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
-
 	normcol[ColBG] = getcolor(dc, normbgcolor);
 	normcol[ColFG] = getcolor(dc, normfgcolor);
 	selcol[ColBG] = getcolor(dc, selbgcolor);
 	selcol[ColFG] = getcolor(dc, selfgcolor);
+
+	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
 
 	/* menu geometry */
 	bh = dc->font.height + 2;
@@ -539,9 +539,10 @@ setup(void) {
 	                    DefaultVisual(dc->dpy, screen),
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
-	grabkeyboard();
 	resizedc(dc, mw, mh);
 	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? textw(dc, prompt) : 0;
 	XMapRaised(dc->dpy, win);
+	drawmenu();
+	match();
 }
