@@ -530,6 +530,10 @@ setup(void) {
 		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh;
 		mw = DisplayWidth(dc->dpy, screen);
 	}
+	inputw = MIN(inputw, mw/3);
+	promptw = prompt ? textw(dc, prompt) : 0;
+	match();
+
 	/* menu window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
@@ -539,10 +543,7 @@ setup(void) {
 	                    DefaultVisual(dc->dpy, screen),
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
-	resizedc(dc, mw, mh);
-	inputw = MIN(inputw, mw/3);
-	promptw = prompt ? textw(dc, prompt) : 0;
 	XMapRaised(dc->dpy, win);
+	resizedc(dc, mw, mh);
 	drawmenu();
-	match();
 }
