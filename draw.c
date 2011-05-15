@@ -15,12 +15,13 @@ static Bool loadfont(DC *dc, const char *fontstr);
 
 void
 drawrect(DC *dc, int x, int y, unsigned int w, unsigned int h, Bool fill, unsigned long color) {
-	XRectangle r = { dc->x + x, dc->y + y, w, h };
+	XRectangle r;
 
-	if(!fill) {
-		r.width -= 1;
-		r.height -= 1;
-	}
+	r.x = dc->x + x;
+	r.y = dc->y + y;
+	r.width  = fill ? w : w-1;
+	r.height = fill ? h : h-1;
+
 	XSetForeground(dc->dpy, dc->gc, color);
 	(fill ? XFillRectangles : XDrawRectangles)(dc->dpy, dc->canvas, dc->gc, &r, 1);
 }

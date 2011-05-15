@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -231,13 +232,14 @@ insert(const char *str, ssize_t n) {
 void
 keypress(XKeyEvent *ev) {
 	char buf[32];
-	size_t len;
 	KeySym ksym;
 
-	len = strlen(text);
 	XLookupString(ev, buf, sizeof buf, &ksym, NULL);
-	if(ev->state & ControlMask)
-		switch(tolower(ksym)) {
+	if(ev->state & ControlMask) {
+		KeySym lower, upper;
+
+		XConvertCase(ksym, &lower, &upper);
+		switch(lower) {
 		default:
 			return;
 		case XK_a:
@@ -290,13 +292,14 @@ keypress(XKeyEvent *ev) {
 			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
 			return;
 		}
+	}
 	switch(ksym) {
 	default:
 		if(!iscntrl(*buf))
 			insert(buf, strlen(buf));
 		break;
 	case XK_Delete:
-		if(cursor == len)
+		if(text[cursor] == '\0')
 			return;
 		cursor = nextrune(+1);
 	case XK_BackSpace:
@@ -304,8 +307,8 @@ keypress(XKeyEvent *ev) {
 			insert(NULL, nextrune(-1) - cursor);
 		break;
 	case XK_End:
-		if(cursor < len) {
-			cursor = len;
+		if(text[cursor] != '\0') {
+			cursor = strlen(text);
 			break;
 		}
 		if(next) {
@@ -358,7 +361,7 @@ keypress(XKeyEvent *ev) {
 		fputs((sel && !(ev->state & ShiftMask)) ? sel->text : text, stdout);
 		exit(EXIT_SUCCESS);
 	case XK_Right:
-		if(cursor < len) {
+		if(text[cursor] != '\0') {
 			cursor = nextrune(+1);
 			break;
 		}
@@ -385,7 +388,7 @@ void
 match(Bool sub) {
 	size_t len = strlen(text);
 	Item *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
-	Item *item, *next = NULL;
+	Item *item, *next;
 
 	lexact = lprefix = lsubstr = exactend = prefixend = substrend = NULL;
 	for(item = sub ? matches : items; item && item->text; item = next) {
