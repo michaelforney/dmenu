@@ -135,7 +135,7 @@ appenditem(Item *item, Item **list, Item **last) {
 
 void
 calcoffsets(void) {
-	unsigned int i, n;
+	int i, n;
 
 	if(lines > 0)
 		n = lines * bh;
@@ -388,11 +388,11 @@ void
 match(Bool sub) {
 	size_t len = strlen(text);
 	Item *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
-	Item *item, *next;
+	Item *item, *lnext;
 
 	lexact = lprefix = lsubstr = exactend = prefixend = substrend = NULL;
-	for(item = sub ? matches : items; item && item->text; item = next) {
-		next = sub ? item->right : item + 1;
+	for(item = sub ? matches : items; item && item->text; item = lnext) {
+		lnext = sub ? item->right : item + 1;
 		if(!fstrncmp(text, item->text, len + 1))
 			appenditem(item, &lexact, &exactend);
 		else if(!fstrncmp(text, item->text, len))
@@ -429,7 +429,7 @@ size_t
 nextrune(int incr) {
 	size_t n, len = strlen(text);
 
-	for(n = cursor + incr; n >= 0 && n < len && (text[n] & 0xc0) == 0x80; n += incr);
+	for(n = cursor + incr; n < len && (text[n] & 0xc0) == 0x80; n += incr);
 	return n;
 }
 
@@ -442,7 +442,7 @@ paste(void) {
 
 	XGetWindowProperty(dc->dpy, win, utf8, 0, (sizeof text / 4) + 1, False,
 	                   utf8, &da, &di, &dl, &dl, (unsigned char **)&p);
-	insert(p, (q = strchr(p, '\n')) ? q-p : strlen(p));
+	insert(p, (q = strchr(p, '\n')) ? q-p : (ssize_t)strlen(p));
 	XFree(p);
 	drawmenu();
 }
