@@ -31,7 +31,7 @@ static void grabkeyboard(void);
 static void insert(const char *str, ssize_t n);
 static void keypress(XKeyEvent *ev);
 static void match(Bool sub);
-static size_t nextrune(int incr);
+static size_t nextrune(int inc);
 static void paste(void);
 static void readstdin(void);
 static void run(void);
@@ -426,10 +426,10 @@ match(Bool sub) {
 }
 
 size_t
-nextrune(int incr) {
-	size_t n, len = strlen(text);
+nextrune(int inc) {
+	ssize_t n;
 
-	for(n = cursor + incr; n < len && (text[n] & 0xc0) == 0x80; n += incr);
+	for(n = cursor + inc; n + inc >= 0 && (text[n] & 0xc0) == 0x80; n += inc);
 	return n;
 }
 
