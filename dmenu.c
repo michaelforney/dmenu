@@ -219,7 +219,7 @@ insert(const char *str, ssize_t n) {
 	if(n > 0)
 		memcpy(&text[cursor], str, n);
 	cursor += n;
-	match(n > 0);
+	match(n > 0 && text[cursor] == '\0');
 }
 
 void
