@@ -9,21 +9,17 @@
 
 #define MAX(a, b)  ((a) > (b) ? (a) : (b))
 #define MIN(a, b)  ((a) < (b) ? (a) : (b))
-#define DEFFONT    "fixed"
+#define DEFAULTFN  "fixed"
 
 static Bool loadfont(DC *dc, const char *fontstr);
 
 void
 drawrect(DC *dc, int x, int y, unsigned int w, unsigned int h, Bool fill, unsigned long color) {
-	XRectangle r;
-
-	r.x = dc->x + x;
-	r.y = dc->y + y;
-	r.width  = fill ? w : w-1;
-	r.height = fill ? h : h-1;
-
 	XSetForeground(dc->dpy, dc->gc, color);
-	(fill ? XFillRectangles : XDrawRectangles)(dc->dpy, dc->canvas, dc->gc, &r, 1);
+	if(fill)
+		XFillRectangle(dc->dpy, dc->canvas, dc->gc, dc->x + x, dc->y + y, w, h);
+	else
+		XDrawRectangle(dc->dpy, dc->canvas, dc->gc, dc->x + x, dc->y + y, w-1, h-1);
 }
 
 void
@@ -65,7 +61,7 @@ eprintf(const char *fmt, ...) {
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 
-	if(fmt[strlen(fmt)-1] == ':') {
+	if(fmt[0] != '\0' && fmt[strlen(fmt)-1] == ':') {
 		fputc(' ', stderr);
 		perror(NULL);
 	}
@@ -113,11 +109,11 @@ initdc(void) {
 
 void
 initfont(DC *dc, const char *fontstr) {
-	if(!loadfont(dc, fontstr ? fontstr : DEFFONT)) {
+	if(!loadfont(dc, fontstr ? fontstr : DEFAULTFN)) {
 		if(fontstr != NULL)
 			fprintf(stderr, "cannot load font '%s'\n", fontstr);
-		if(fontstr == NULL || !loadfont(dc, DEFFONT))
-			eprintf("cannot load font '%s'\n", DEFFONT);
+		if(fontstr == NULL || !loadfont(dc, DEFAULTFN))
+			eprintf("cannot load font '%s'\n", DEFAULTFN);
 	}
 	dc->font.height = dc->font.ascent + dc->font.descent;
 }

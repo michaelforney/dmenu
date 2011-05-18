@@ -36,13 +36,12 @@ static void paste(void);
 static void readstdin(void);
 static void run(void);
 static void setup(void);
+static void usage(void);
 
 static char text[BUFSIZ] = "";
 static int bh, mw, mh;
-static int inputw;
+static int inputw, promptw;
 static int lines = 0;
-static int monitor = -1;
-static int promptw;
 static size_t cursor = 0;
 static const char *font = NULL;
 static const char *prompt = NULL;
@@ -70,7 +69,7 @@ main(int argc, char *argv[]) {
 	for(i = 1; i < argc; i++)
 		/* single flags */
 		if(!strcmp(argv[i], "-v")) {
-			fputs("dmenu-"VERSION", © 2006-2011 dmenu engineers, see LICENSE for details\n", stdout);
+			puts("dmenu-"VERSION", © 2006-2011 dmenu engineers, see LICENSE for details");
 			exit(EXIT_SUCCESS);
 		}
 		else if(!strcmp(argv[i], "-b"))
@@ -80,12 +79,10 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-i"))
 			fstrncmp = strncasecmp;
 		else if(i+1 == argc)
-			goto usage;
+			usage();
 		/* double flags */
 		else if(!strcmp(argv[i], "-l"))
 			lines = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-m"))
-			monitor = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-p"))
 			prompt = argv[++i];
 		else if(!strcmp(argv[i], "-fn"))
@@ -99,7 +96,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-sf"))
 			selfgcolor = argv[++i];
 		else
-			goto usage;
+			usage();
 
 	dc = initdc();
 	initfont(dc, font);
@@ -114,12 +111,8 @@ main(int argc, char *argv[]) {
 	}
 	setup();
 	run();
-	return EXIT_FAILURE;
 
-usage:
-	fputs("usage: dmenu [-b] [-f] [-i] [-l lines] [-m monitor] [-p prompt] [-fn font]\n"
-	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
-	return EXIT_FAILURE;
+	return EXIT_FAILURE;  /* should not reach */
 }
 
 void
@@ -452,7 +445,7 @@ readstdin(void) {
 	char buf[sizeof text], *p, *maxstr = NULL;
 	size_t i, max = 0, size = 0;
 
-	for(i = 0; fgets(buf, sizeof buf, stdin); items[++i].text = NULL) {
+	for(i = 0; fgets(buf, sizeof buf, stdin); i++) {
 		if(i+1 >= size / sizeof *items)
 			if(!(items = realloc(items, (size += BUFSIZ))))
 				eprintf("cannot realloc %u bytes:", size);
@@ -463,6 +456,8 @@ readstdin(void) {
 		if(strlen(items[i].text) > max)
 			max = strlen(maxstr = items[i].text);
 	}
+	if(items)
+		items[i].text = NULL;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
 }
 
@@ -519,8 +514,7 @@ setup(void) {
 
 		XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
 		for(i = 0; i < n-1; i++)
-			if((monitor == info[i].screen_number)
-			|| (monitor < 0 && INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height)))
+			if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
 				break;
 		x = info[i].x_org;
 		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
@@ -534,8 +528,8 @@ setup(void) {
 		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh;
 		mw = DisplayWidth(dc->dpy, screen);
 	}
-	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? textw(dc, prompt) : 0;
+	inputw = MIN(inputw, mw/3);
 	match(False);
 
 	/* menu window */
@@ -550,4 +544,11 @@ setup(void) {
 	XMapRaised(dc->dpy, win);
 	resizedc(dc, mw, mh);
 	drawmenu();
+}
+
+void
+usage(void) {
+	fputs("usage: dmenu [-b] [-f] [-i] [-l lines] [-p prompt] [-fn font]\n"
+	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
+	exit(EXIT_FAILURE);
 }

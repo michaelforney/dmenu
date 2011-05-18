@@ -8,8 +8,6 @@ dmenu \- dynamic menu
 .RB [ \-i ]
 .RB [ \-l
 .IR lines ]
-.RB [ \-m
-.IR monitor ]
 .RB [ \-p
 .IR prompt ]
 .RB [ \-fn
@@ -58,9 +56,6 @@ dmenu matches menu items case insensitively.
 .BI \-l " lines"
 dmenu lists items vertically, with the given number of lines.
 .TP
-.BI \-m " monitor"
-dmenu appears on the given Xinerama screen.
-.TP
 .BI \-p " prompt"
 defines the prompt to be displayed to the left of the input field.
 .TP
@@ -86,23 +81,23 @@ defines the selected foreground color.
 prints version information to stdout, then exits.
 .SH USAGE
 dmenu is completely controlled by the keyboard.  Besides standard Unix line
-editing and item selection (Up/Down/Left/Right, PageUp/PageDown, Home/End), the
+editing and item selection (arrow keys, page up/down, home and end), the
 following keys are recognized:
 .TP
-.B Tab (Control\-i)
+.B Tab (Ctrl\-i)
 Copy the selected item to the input field.
 .TP
-.B Return (Control\-j)
+.B Return (Ctrl\-j)
 Confirm selection.  Prints the selected item to stdout and exits, returning
 success.
 .TP
-.B Shift\-Return (Control\-Shift\-j)
+.B Shift\-Return (Ctrl\-Shift\-j)
 Confirm input.  Prints the input text to stdout and exits, returning success.
 .TP
-.B Escape (Control\-c)
+.B Escape (Ctrl\-c)
 Exit without selecting an item, returning failure.
 .TP
-.B Control\-y
+.B Ctrl\-y
 Paste the current X selection into the input field.
 .SH SEE ALSO
 .BR dwm (1)
