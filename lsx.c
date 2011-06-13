@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-static void lsx(const char *s);
+static void lsx(const char *dir);
 
 int
 main(int argc, char *argv[]) {
@@ -34,9 +34,7 @@ lsx(const char *dir) {
 	}
 	while((d = readdir(dp))) {
 		snprintf(buf, sizeof buf, "%s/%s", dir, d->d_name);
-		if(stat(buf, &st) == -1)
-			perror(buf);
-		else if(S_ISREG(st.st_mode) && access(buf, X_OK) == 0)
+		if(stat(buf, &st) == 0 && S_ISREG(st.st_mode) && access(buf, X_OK) == 0)
 			puts(d->d_name);
 	}
 	closedir(dp);

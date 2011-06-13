@@ -1,9 +1,0 @@
-#!/bin/sh
-CACHE=$HOME/.dmenu_cache
-IFS=:
-
-if ! test -f "$CACHE" || find $PATH -type d -newer "$CACHE" | grep -q .; then
-	lsx $PATH | sort -u > "$CACHE"
-fi
-
-cat "$CACHE"
