@@ -260,6 +260,7 @@ keypress(XKeyEvent *ev) {
 			ksym = XK_Tab;
 			break;
 		case XK_j:
+		case XK_m:
 			ksym = XK_Return;
 			break;
 		case XK_k:  /* delete right */
