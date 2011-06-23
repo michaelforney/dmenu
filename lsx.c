@@ -30,10 +30,9 @@ lsx(const char *dir) {
 		perror(dir);
 		return;
 	}
-	while((d = readdir(dp))) {
-		snprintf(buf, sizeof buf, "%s/%s", dir, d->d_name);
-		if(!stat(buf, &st) && S_ISREG(st.st_mode) && access(buf, X_OK) == 0)
+	while((d = readdir(dp)))
+		if(snprintf(buf, sizeof buf, "%s/%s", dir, d->d_name) < sizeof buf
+		&& !stat(buf, &st) && S_ISREG(st.st_mode) && access(buf, X_OK) == 0)
 			puts(d->d_name);
-	}
 	closedir(dp);
 }
