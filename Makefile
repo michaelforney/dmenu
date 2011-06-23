@@ -30,7 +30,7 @@ lsx: lsx.o
 
 clean:
 	@echo cleaning
-	@rm -f dmenu ${OBJ} dmenu-${VERSION}.tar.gz
+	@rm -f dmenu lsx ${OBJ} dmenu-${VERSION}.tar.gz
 
 dist: clean
 	@echo creating dist tarball
