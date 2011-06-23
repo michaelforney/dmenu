@@ -3,10 +3,10 @@
 
 include config.mk
 
-SRC = dmenu.c draw.c
+SRC = dmenu.c draw.c lsx.c
 OBJ = ${SRC:.c=.o}
 
-all: options dmenu
+all: options dmenu lsx
 
 options:
 	@echo dmenu build options:
@@ -20,9 +20,13 @@ options:
 
 ${OBJ}: config.mk
 
-dmenu: ${OBJ}
+dmenu: dmenu.o draw.o
 	@echo CC -o $@
-	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+	@${CC} -o $@ dmenu.o draw.o ${LDFLAGS}
+
+lsx: lsx.o
+	@echo CC -o $@
+	@${CC} -o $@ lsx.o ${LDFLAGS}
 
 clean:
 	@echo cleaning
@@ -31,7 +35,7 @@ clean:
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp LICENSE Makefile README config.mk dmenu.1 draw.h dmenu_path dmenu_run ${SRC} dmenu-${VERSION}
+	@cp LICENSE Makefile README config.mk dmenu.1 draw.h dmenu_run ${SRC} dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
@@ -39,21 +43,24 @@ dist: clean
 install: all
 	@echo installing executables to ${DESTDIR}${PREFIX}/bin
 	@mkdir -p ${DESTDIR}${PREFIX}/bin
-	@cp -f dmenu dmenu_path dmenu_run ${DESTDIR}${PREFIX}/bin
+	@cp -f dmenu dmenu_run lsx ${DESTDIR}${PREFIX}/bin
 	@chmod 755 ${DESTDIR}${PREFIX}/bin/dmenu
-	@chmod 755 ${DESTDIR}${PREFIX}/bin/dmenu_path
 	@chmod 755 ${DESTDIR}${PREFIX}/bin/dmenu_run
-	@echo installing manual page to ${DESTDIR}${MANPREFIX}/man1
+	@chmod 755 ${DESTDIR}${PREFIX}/bin/lsx
+	@echo installing manual pages to ${DESTDIR}${MANPREFIX}/man1
 	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	@sed "s/VERSION/${VERSION}/g" < dmenu.1 > ${DESTDIR}${MANPREFIX}/man1/dmenu.1
+	@sed "s/VERSION/${VERSION}/g" < lsx.1 > ${DESTDIR}${MANPREFIX}/man1/lsx.1
 	@chmod 644 ${DESTDIR}${MANPREFIX}/man1/dmenu.1
+	@chmod 644 ${DESTDIR}${MANPREFIX}/man1/lsx.1
 
 uninstall:
 	@echo removing executables from ${DESTDIR}${PREFIX}/bin
 	@rm -f ${DESTDIR}${PREFIX}/bin/dmenu
-	@rm -f ${DESTDIR}${PREFIX}/bin/dmenu_path
 	@rm -f ${DESTDIR}${PREFIX}/bin/dmenu_run
+	@rm -f ${DESTDIR}${PREFIX}/bin/lsx
 	@echo removing manual page from ${DESTDIR}${MANPREFIX}/man1
 	@rm -f ${DESTDIR}${MANPREFIX}/man1/dmenu.1
+	@rm -f ${DESTDIR}${MANPREFIX}/man1/lsx.1
 
 .PHONY: all options clean dist install uninstall
