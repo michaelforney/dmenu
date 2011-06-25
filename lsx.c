@@ -1,5 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 #include <dirent.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
