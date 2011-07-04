@@ -268,10 +268,10 @@ keypress(XKeyEvent *ev) {
 			match(False);
 			break;
 		case XK_n:
-			ksym = XK_Down;
+			ksym = XK_Next;
 			break;
 		case XK_p:
-			ksym = XK_Up;
+			ksym = XK_Prior;
 			break;
 		case XK_u:  /* delete left */
 			insert(NULL, 0 - cursor);
