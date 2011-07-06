@@ -330,8 +330,7 @@ keypress(XKeyEvent *ev) {
 			cursor = nextrune(-1);
 			break;
 		}
-		else if(lines > 0)
-			return;
+		/* fallthrough */
 	case XK_Up:
 		if(sel && sel->left && (sel = sel->left)->right == curr) {
 			curr = prev;
@@ -359,8 +358,7 @@ keypress(XKeyEvent *ev) {
 			cursor = nextrune(+1);
 			break;
 		}
-		else if(lines > 0)
-			return;
+		/* fallthrough */
 	case XK_Down:
 		if(sel && sel->right && (sel = sel->right) == next) {
 			curr = next;
