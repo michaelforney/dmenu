@@ -96,7 +96,7 @@ initdc(void) {
 	DC *dc;
 
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
-		fprintf(stderr, "no locale support\n");
+		fputs("no locale support\n", stderr);
 	if(!(dc = calloc(1, sizeof *dc)))
 		eprintf("cannot malloc %u bytes:", sizeof *dc);
 	if(!(dc->dpy = XOpenDisplay(NULL)))
@@ -153,10 +153,10 @@ resizedc(DC *dc, unsigned int w, unsigned int h) {
 	if(dc->canvas)
 		XFreePixmap(dc->dpy, dc->canvas);
 
-	dc->canvas = XCreatePixmap(dc->dpy, DefaultRootWindow(dc->dpy), w, h,
-	                           DefaultDepth(dc->dpy, DefaultScreen(dc->dpy)));
 	dc->w = w;
 	dc->h = h;
+	dc->canvas = XCreatePixmap(dc->dpy, DefaultRootWindow(dc->dpy), w, h,
+	                           DefaultDepth(dc->dpy, DefaultScreen(dc->dpy)));
 }
 
 int
