@@ -32,7 +32,7 @@ lsx(const char *dir) {
 		return;
 	}
 	while((d = readdir(dp)))
-		if(snprintf(buf, sizeof buf, "%s/%s", dir, d->d_name) < sizeof buf
+		if(snprintf(buf, sizeof buf, "%s/%s", dir, d->d_name) < (ssize_t)sizeof buf
 		&& !stat(buf, &st) && S_ISREG(st.st_mode) && access(buf, X_OK) == 0)
 			puts(d->d_name);
 	closedir(dp);
