@@ -279,6 +279,7 @@ keypress(XKeyEvent *ev) {
 		if(text[cursor] == '\0')
 			return;
 		cursor = nextrune(+1);
+		/* fallthrough */
 	case XK_BackSpace:
 		if(cursor == 0)
 			return;
