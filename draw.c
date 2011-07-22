@@ -121,26 +121,27 @@ initfont(DC *dc, const char *fontstr) {
 Bool
 loadfont(DC *dc, const char *fontstr) {
 	char *def, **missing, **names;
-	int i, n = 1;
+	int i, n;
 	XFontStruct **xfonts;
 
 	if(!*fontstr)
 		return False;
-	if((dc->font.set = XCreateFontSet(dc->dpy, fontstr, &missing, &n, &def)))
+	if((dc->font.set = XCreateFontSet(dc->dpy, fontstr, &missing, &n, &def))) {
 		n = XFontsOfFontSet(dc->font.set, &xfonts, &names);
-	else if((dc->font.xfont = XLoadQueryFont(dc->dpy, fontstr)))
-		xfonts = &dc->font.xfont;
-	else
-		n = 0;
-
-	for(i = 0; i < n; i++) {
-		dc->font.ascent  = MAX(dc->font.ascent,  xfonts[i]->ascent);
-		dc->font.descent = MAX(dc->font.descent, xfonts[i]->descent);
-		dc->font.width   = MAX(dc->font.width,   xfonts[i]->max_bounds.width);
+		for(i = 0; i < n; i++) {
+			dc->font.ascent  = MAX(dc->font.ascent,  xfonts[i]->ascent);
+			dc->font.descent = MAX(dc->font.descent, xfonts[i]->descent);
+			dc->font.width   = MAX(dc->font.width,   xfonts[i]->max_bounds.width);
+		}
+	}
+	else if((dc->font.xfont = XLoadQueryFont(dc->dpy, fontstr))) {
+		dc->font.ascent  = dc->font.xfont->ascent;
+		dc->font.descent = dc->font.xfont->descent;
+		dc->font.width   = dc->font.xfont->max_bounds.width;
 	}
 	if(missing)
 		XFreeStringList(missing);
-	return (dc->font.set || dc->font.xfont);
+	return dc->font.set || dc->font.xfont;
 }
 
 void
