@@ -6,4 +6,4 @@ CACHE=${XDG_CACHE_HOME:-"$HOME/.cache"}/dmenu_run
 		mkdir -p "`dirname "$CACHE"`" && lsx $PATH | sort -u > "$CACHE"
 	fi
 )
-cmd=`dmenu "$@" < "$CACHE"` && exec $cmd
+cmd=`dmenu "$@" < "$CACHE"` && exec sh -c "$cmd"
