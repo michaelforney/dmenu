@@ -392,7 +392,7 @@ match(void) {
 			appenditem(item, &lsubstr, &substrend);
 	}
 	if(lprefix) {
-		if(matchend) {
+		if(matches) {
 			matchend->right = lprefix;
 			lprefix->left = matchend;
 		}
@@ -401,7 +401,7 @@ match(void) {
 		matchend = prefixend;
 	}
 	if(lsubstr) {
-		if(matchend) {
+		if(matches) {
 			matchend->right = lsubstr;
 			lsubstr->left = matchend;
 		}
