@@ -473,7 +473,7 @@ void
 setup(void) {
 	int x, y, screen = DefaultScreen(dc->dpy);
 	Window root = RootWindow(dc->dpy, screen);
-	XSetWindowAttributes wa;
+	XSetWindowAttributes swa;
 #ifdef XINERAMA
 	int n;
 	XineramaScreenInfo *info;
@@ -494,9 +494,14 @@ setup(void) {
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
 		int i, di;
 		unsigned int du;
-		Window dw;
+		Window w, dw;
+		XWindowAttributes wa;
 
-		XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
+		XGetInputFocus(dc->dpy, &w, &di);
+		if(w != root && XGetWindowAttributes(dc->dpy, w, &wa))
+			XTranslateCoordinates(dc->dpy, root, root, wa.x, wa.y, &x, &y, &dw);
+		else
+			XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
 		for(i = 0; i < n-1; i++)
 			if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
 				break;
@@ -517,13 +522,13 @@ setup(void) {
 	match(False);
 
 	/* menu window */
-	wa.override_redirect = True;
-	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
+	swa.override_redirect = True;
+	swa.background_pixmap = ParentRelative;
+	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
 	win = XCreateWindow(dc->dpy, root, x, y, mw, mh, 0,
 	                    DefaultDepth(dc->dpy, screen), CopyFromParent,
 	                    DefaultVisual(dc->dpy, screen),
-	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
+	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &swa);
 
 	XMapRaised(dc->dpy, win);
 	resizedc(dc, mw, mh);
