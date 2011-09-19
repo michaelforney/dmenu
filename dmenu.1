@@ -25,13 +25,10 @@ dmenu \- dynamic menu
 .BR dmenu_run " ..."
 .SH DESCRIPTION
 .B dmenu
-is a dynamic menu for X, originally designed for
-.IR dwm (1).
-It manages huge numbers of user\-defined menu items efficiently.
-.P
-dmenu reads a list of newline\-separated items from stdin and creates a menu.
-When the user selects an item or enters any text and presses Return, their
-choice is printed to stdout and dmenu terminates.
+is a dynamic menu for X, which reads a list of newline\-separated items from
+stdin.  When the user selects an item and presses Return, their choice is printed
+to stdout and dmenu terminates.  Entering text will narrow the items to those
+matching the tokens in the input.
 .P
 .B dmenu_run
 is a dmenu script used by dwm which lists programs in the user's $PATH and
@@ -42,8 +39,8 @@ executes the selected item.
 dmenu appears at the bottom of the screen.
 .TP
 .B \-f
-dmenu grabs the keyboard before reading stdin.  This is faster, but may lock up
-X if stdin is from a terminal.
+dmenu grabs the keyboard before reading stdin.  This is faster, but will lock up
+X until stdin reaches end\-of\-file.
 .TP
 .B \-i
 dmenu matches menu items case insensitively.

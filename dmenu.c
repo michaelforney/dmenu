@@ -30,7 +30,7 @@ static void drawmenu(void);
 static void grabkeyboard(void);
 static void insert(const char *str, ssize_t n);
 static void keypress(XKeyEvent *ev);
-static void match(Bool sub);
+static void match(void);
 static size_t nextrune(int inc);
 static void paste(void);
 static void readstdin(void);
@@ -120,10 +120,10 @@ main(int argc, char *argv[]) {
 
 void
 appenditem(Item *item, Item **list, Item **last) {
-	if(!*last)
-		*list = item;
-	else
+	if(*last)
 		(*last)->right = item;
+	else
+		*list = item;
 
 	item->left = *last;
 	item->right = NULL;
@@ -223,7 +223,7 @@ insert(const char *str, ssize_t n) {
 	if(n > 0)
 		memcpy(&text[cursor], str, n);
 	cursor += n;
-	match(n > 0 && text[cursor] == '\0');
+	match();
 }
 
 void
@@ -252,7 +252,7 @@ keypress(XKeyEvent *ev) {
 
 		case XK_k: /* delete right */
 			text[cursor] = '\0';
-			match(False);
+			match();
 			break;
 		case XK_u: /* delete left */
 			insert(NULL, 0 - cursor);
@@ -355,33 +355,44 @@ keypress(XKeyEvent *ev) {
 			return;
 		strncpy(text, sel->text, sizeof text);
 		cursor = strlen(text);
-		match(True);
+		match();
 		break;
 	}
 	drawmenu();
 }
 
 void
-match(Bool sub) {
-	size_t len = strlen(text);
-	Item *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
-	Item *item, *lnext;
+match(void) {
+	static char **tokv = NULL;
+	static int tokn = 0;
 
-	lexact = lprefix = lsubstr = exactend = prefixend = substrend = NULL;
-	for(item = sub ? matches : items; item && item->text; item = lnext) {
-		lnext = sub ? item->right : item + 1;
-		if(!fstrncmp(text, item->text, len + 1))
-			appenditem(item, &lexact, &exactend);
-		else if(!fstrncmp(text, item->text, len))
+	char buf[sizeof text], *s;
+	int i, tokc = 0;
+	size_t len;
+	Item *item, *lprefix, *lsubstr, *prefixend, *substrend;
+
+	strcpy(buf, text);
+	for(s = strtok(buf, " "); s; tokv[tokc-1] = s, s = strtok(NULL, " "))
+		if(++tokc > tokn && !(tokv = realloc(tokv, ++tokn * sizeof *tokv)))
+			eprintf("cannot realloc %u bytes\n", tokn * sizeof *tokv);
+	len = tokc ? strlen(tokv[0]) : 0;
+
+	matches = lprefix = lsubstr = matchend = prefixend = substrend = NULL;
+	for(item = items; item && item->text; item++) {
+		for(i = 0; i < tokc; i++)
+			if(!fstrstr(item->text, tokv[i]))
+				break;
+		if(i != tokc)
+			continue;
+		if(!tokc || !fstrncmp(tokv[0], item->text, len+1))
+			appenditem(item, &matches, &matchend);
+		else if(!fstrncmp(tokv[0], item->text, len))
 			appenditem(item, &lprefix, &prefixend);
-		else if(fstrstr(item->text, text))
+		else
 			appenditem(item, &lsubstr, &substrend);
 	}
-	matches = lexact;
-	matchend = exactend;
-
 	if(lprefix) {
-		if(matchend) {
+		if(matches) {
 			matchend->right = lprefix;
 			lprefix->left = matchend;
 		}
@@ -390,7 +401,7 @@ match(Bool sub) {
 		matchend = prefixend;
 	}
 	if(lsubstr) {
-		if(matchend) {
+		if(matches) {
 			matchend->right = lsubstr;
 			lsubstr->left = matchend;
 		}
@@ -519,7 +530,7 @@ setup(void) {
 	}
 	promptw = prompt ? textw(dc, prompt) : 0;
 	inputw = MIN(inputw, mw/3);
-	match(False);
+	match();
 
 	/* menu window */
 	swa.override_redirect = True;
