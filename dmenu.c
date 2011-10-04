@@ -510,7 +510,7 @@ setup(void) {
 
 		XGetInputFocus(dc->dpy, &w, &di);
 		if(w != root && w != PointerRoot && w != None && XGetWindowAttributes(dc->dpy, w, &wa))
-			XTranslateCoordinates(dc->dpy, root, root, wa.x, wa.y, &x, &y, &dw);
+			XTranslateCoordinates(dc->dpy, w, root, wa.x, wa.y, &x, &y, &dw);
 		else
 			XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
 		for(i = 0; i < n-1; i++)
