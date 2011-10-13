@@ -454,6 +454,7 @@ readstdin(void) {
 	if(items)
 		items[i].text = NULL;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
+	lines = MIN(lines, i);
 }
 
 void
