@@ -15,6 +15,7 @@ typedef struct {
 		int ascent;
 		int descent;
 		int height;
+		int width;
 		XFontSet set;
 		XFontStruct *xfont;
 	} font;

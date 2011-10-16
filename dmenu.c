@@ -25,12 +25,12 @@ struct Item {
 
 static void appenditem(Item *item, Item **list, Item **last);
 static void calcoffsets(void);
+static char *cistrstr(const char *s, const char *sub);
 static void drawmenu(void);
-static char *fstrstr(const char *s, const char *sub);
 static void grabkeyboard(void);
 static void insert(const char *str, ssize_t n);
 static void keypress(XKeyEvent *ev);
-static void match(Bool sub);
+static void match(void);
 static size_t nextrune(int inc);
 static void paste(void);
 static void readstdin(void);
@@ -60,6 +60,7 @@ static Item *prev, *curr, *next, *sel;
 static Window win;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
+static char *(*fstrstr)(const char *, const char *) = strstr;
 
 int
 main(int argc, char *argv[]) {
@@ -76,8 +77,10 @@ main(int argc, char *argv[]) {
 			topbar = False;
 		else if(!strcmp(argv[i], "-f"))
 			fast = True;
-		else if(!strcmp(argv[i], "-i"))
+		else if(!strcmp(argv[i], "-i")) {
 			fstrncmp = strncasecmp;
+			fstrstr = cistrstr;
+		}
 		else if(i+1 == argc)
 			usage();
 		/* double flags */
@@ -112,15 +115,16 @@ main(int argc, char *argv[]) {
 	setup();
 	run();
 
-	return EXIT_FAILURE;  /* should not reach */
+	return EXIT_FAILURE; /* unreachable */
 }
 
 void
 appenditem(Item *item, Item **list, Item **last) {
-	if(!*last)
-		*list = item;
-	else
+	if(*last)
 		(*last)->right = item;
+	else
+		*list = item;
+
 	item->left = *last;
 	item->right = NULL;
 	*last = item;
@@ -141,6 +145,16 @@ calcoffsets(void) {
 	for(i = 0, prev = curr; prev && prev->left; prev = prev->left)
 		if((i += (lines > 0) ? bh : MIN(textw(dc, prev->left->text), n)) > n)
 			break;
+}
+
+char *
+cistrstr(const char *s, const char *sub) {
+	size_t len;
+
+	for(len = strlen(sub); *s; s++)
+		if(!strncasecmp(s, sub, len))
+			return (char *)s;
+	return NULL;
 }
 
 void
@@ -188,16 +202,6 @@ drawmenu(void) {
 	mapdc(dc, win, mw, mh);
 }
 
-char *
-fstrstr(const char *s, const char *sub) {
-	size_t len;
-
-	for(len = strlen(sub); *s; s++)
-		if(!fstrncmp(s, sub, len))
-			return (char *)s;
-	return NULL;
-}
-
 void
 grabkeyboard(void) {
 	int i;
@@ -219,7 +223,7 @@ insert(const char *str, ssize_t n) {
 	if(n > 0)
 		memcpy(&text[cursor], str, n);
 	cursor += n;
-	match(n > 0 && text[cursor] == '\0');
+	match();
 }
 
 void
@@ -233,57 +237,36 @@ keypress(XKeyEvent *ev) {
 
 		XConvertCase(ksym, &lower, &upper);
 		switch(lower) {
-		default:
-			return;
-		case XK_a:
-			ksym = XK_Home;
-			break;
-		case XK_b:
-			ksym = XK_Left;
-			break;
-		case XK_c:
-			ksym = XK_Escape;
-			break;
-		case XK_d:
-			ksym = XK_Delete;
-			break;
-		case XK_e:
-			ksym = XK_End;
-			break;
-		case XK_f:
-			ksym = XK_Right;
-			break;
-		case XK_h:
-			ksym = XK_BackSpace;
-			break;
-		case XK_i:
-			ksym = XK_Tab;
-			break;
-		case XK_j:
-		case XK_m:
-			ksym = XK_Return;
-			break;
-		case XK_k:  /* delete right */
+		case XK_a: ksym = XK_Home;      break;
+		case XK_b: ksym = XK_Left;      break;
+		case XK_c: ksym = XK_Escape;    break;
+		case XK_d: ksym = XK_Delete;    break;
+		case XK_e: ksym = XK_End;       break;
+		case XK_f: ksym = XK_Right;     break;
+		case XK_h: ksym = XK_BackSpace; break;
+		case XK_i: ksym = XK_Tab;       break;
+		case XK_j: ksym = XK_Return;    break;
+		case XK_m: ksym = XK_Return;    break;
+		case XK_n: ksym = XK_Up;        break;
+		case XK_p: ksym = XK_Down;      break;
+
+		case XK_k: /* delete right */
 			text[cursor] = '\0';
-			match(False);
+			match();
 			break;
-		case XK_n:
-			ksym = XK_Down;
-			break;
-		case XK_p:
-			ksym = XK_Up;
-			break;
-		case XK_u:  /* delete left */
+		case XK_u: /* delete left */
 			insert(NULL, 0 - cursor);
 			break;
-		case XK_w:  /* delete word */
+		case XK_w: /* delete word */
 			while(cursor > 0 && text[nextrune(-1)] == ' ')
 				insert(NULL, nextrune(-1) - cursor);
 			while(cursor > 0 && text[nextrune(-1)] != ' ')
 				insert(NULL, nextrune(-1) - cursor);
 			break;
-		case XK_y:  /* paste selection */
+		case XK_y: /* paste selection */
 			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
+			return;
+		default:
 			return;
 		}
 	}
@@ -296,9 +279,11 @@ keypress(XKeyEvent *ev) {
 		if(text[cursor] == '\0')
 			return;
 		cursor = nextrune(+1);
+		/* fallthrough */
 	case XK_BackSpace:
-		if(cursor > 0)
-			insert(NULL, nextrune(-1) - cursor);
+		if(cursor == 0)
+			return;
+		insert(NULL, nextrune(-1) - cursor);
 		break;
 	case XK_End:
 		if(text[cursor] != '\0') {
@@ -330,8 +315,7 @@ keypress(XKeyEvent *ev) {
 			cursor = nextrune(-1);
 			break;
 		}
-		else if(lines > 0)
-			return;
+		/* fallthrough */
 	case XK_Up:
 		if(sel && sel->left && (sel = sel->left)->right == curr) {
 			curr = prev;
@@ -352,15 +336,14 @@ keypress(XKeyEvent *ev) {
 		break;
 	case XK_Return:
 	case XK_KP_Enter:
-		fputs((sel && !(ev->state & ShiftMask)) ? sel->text : text, stdout);
+		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
 		exit(EXIT_SUCCESS);
 	case XK_Right:
 		if(text[cursor] != '\0') {
 			cursor = nextrune(+1);
 			break;
 		}
-		else if(lines > 0)
-			return;
+		/* fallthrough */
 	case XK_Down:
 		if(sel && sel->right && (sel = sel->right) == next) {
 			curr = next;
@@ -372,33 +355,44 @@ keypress(XKeyEvent *ev) {
 			return;
 		strncpy(text, sel->text, sizeof text);
 		cursor = strlen(text);
-		match(True);
+		match();
 		break;
 	}
 	drawmenu();
 }
 
 void
-match(Bool sub) {
-	size_t len = strlen(text);
-	Item *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
-	Item *item, *lnext;
+match(void) {
+	static char **tokv = NULL;
+	static int tokn = 0;
 
-	lexact = lprefix = lsubstr = exactend = prefixend = substrend = NULL;
-	for(item = sub ? matches : items; item && item->text; item = lnext) {
-		lnext = sub ? item->right : item + 1;
-		if(!fstrncmp(text, item->text, len + 1))
-			appenditem(item, &lexact, &exactend);
-		else if(!fstrncmp(text, item->text, len))
+	char buf[sizeof text], *s;
+	int i, tokc = 0;
+	size_t len;
+	Item *item, *lprefix, *lsubstr, *prefixend, *substrend;
+
+	strcpy(buf, text);
+	for(s = strtok(buf, " "); s; tokv[tokc-1] = s, s = strtok(NULL, " "))
+		if(++tokc > tokn && !(tokv = realloc(tokv, ++tokn * sizeof *tokv)))
+			eprintf("cannot realloc %u bytes\n", tokn * sizeof *tokv);
+	len = tokc ? strlen(tokv[0]) : 0;
+
+	matches = lprefix = lsubstr = matchend = prefixend = substrend = NULL;
+	for(item = items; item && item->text; item++) {
+		for(i = 0; i < tokc; i++)
+			if(!fstrstr(item->text, tokv[i]))
+				break;
+		if(i != tokc)
+			continue;
+		if(!tokc || !fstrncmp(tokv[0], item->text, len+1))
+			appenditem(item, &matches, &matchend);
+		else if(!fstrncmp(tokv[0], item->text, len))
 			appenditem(item, &lprefix, &prefixend);
-		else if(fstrstr(item->text, text))
+		else
 			appenditem(item, &lsubstr, &substrend);
 	}
-	matches = lexact;
-	matchend = exactend;
-
 	if(lprefix) {
-		if(matchend) {
+		if(matches) {
 			matchend->right = lprefix;
 			lprefix->left = matchend;
 		}
@@ -407,7 +401,7 @@ match(Bool sub) {
 		matchend = prefixend;
 	}
 	if(lsubstr) {
-		if(matchend) {
+		if(matches) {
 			matchend->right = lsubstr;
 			lsubstr->left = matchend;
 		}
@@ -460,6 +454,7 @@ readstdin(void) {
 	if(items)
 		items[i].text = NULL;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
+	lines = MIN(lines, i);
 }
 
 void
@@ -470,7 +465,7 @@ run(void) {
 		switch(ev.type) {
 		case Expose:
 			if(ev.xexpose.count == 0)
-				drawmenu();
+				mapdc(dc, win, mw, mh);
 			break;
 		case KeyPress:
 			keypress(&ev.xkey);
@@ -490,7 +485,7 @@ void
 setup(void) {
 	int x, y, screen = DefaultScreen(dc->dpy);
 	Window root = RootWindow(dc->dpy, screen);
-	XSetWindowAttributes wa;
+	XSetWindowAttributes swa;
 #ifdef XINERAMA
 	int n;
 	XineramaScreenInfo *info;
@@ -511,9 +506,14 @@ setup(void) {
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
 		int i, di;
 		unsigned int du;
-		Window dw;
+		Window w, dw;
+		XWindowAttributes wa;
 
-		XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
+		XGetInputFocus(dc->dpy, &w, &di);
+		if(w != root && w != PointerRoot && w != None && XGetWindowAttributes(dc->dpy, w, &wa))
+			XTranslateCoordinates(dc->dpy, w, root, wa.x, wa.y, &x, &y, &dw);
+		else
+			XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
 		for(i = 0; i < n-1; i++)
 			if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
 				break;
@@ -531,16 +531,16 @@ setup(void) {
 	}
 	promptw = prompt ? textw(dc, prompt) : 0;
 	inputw = MIN(inputw, mw/3);
-	match(False);
+	match();
 
 	/* menu window */
-	wa.override_redirect = True;
-	wa.background_pixmap = ParentRelative;
-	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
+	swa.override_redirect = True;
+	swa.background_pixmap = ParentRelative;
+	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
 	win = XCreateWindow(dc->dpy, root, x, y, mw, mh, 0,
 	                    DefaultDepth(dc->dpy, screen), CopyFromParent,
 	                    DefaultVisual(dc->dpy, screen),
-	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
+	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &swa);
 
 	XMapRaised(dc->dpy, win);
 	resizedc(dc, mw, mh);

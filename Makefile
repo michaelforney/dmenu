@@ -30,12 +30,12 @@ lsx: lsx.o
 
 clean:
 	@echo cleaning
-	@rm -f dmenu ${OBJ} dmenu-${VERSION}.tar.gz
+	@rm -f dmenu lsx ${OBJ} dmenu-${VERSION}.tar.gz
 
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp LICENSE Makefile README config.mk dmenu.1 draw.h dmenu_run ${SRC} dmenu-${VERSION}
+	@cp LICENSE Makefile README config.mk dmenu.1 draw.h dmenu_run lsx.1 ${SRC} dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
