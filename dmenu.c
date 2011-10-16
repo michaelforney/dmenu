@@ -58,6 +58,7 @@ static Item *items = NULL;
 static Item *matches, *matchend;
 static Item *prev, *curr, *next, *sel;
 static Window win;
+static XIC xic;
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
@@ -230,8 +231,10 @@ void
 keypress(XKeyEvent *ev) {
 	char buf[32];
 	KeySym ksym;
+	int len;
+	Status status;
 
-	XLookupString(ev, buf, sizeof buf, &ksym, NULL);
+	len = XmbLookupString(xic, ev, buf, sizeof(buf), &ksym, &status);
 	if(ev->state & ControlMask) {
 		KeySym lower, upper;
 
@@ -273,7 +276,7 @@ keypress(XKeyEvent *ev) {
 	switch(ksym) {
 	default:
 		if(!iscntrl(*buf))
-			insert(buf, strlen(buf));
+			insert(buf, len);
 		break;
 	case XK_Delete:
 		if(text[cursor] == '\0')
@@ -461,7 +464,9 @@ void
 run(void) {
 	XEvent ev;
 
-	while(!XNextEvent(dc->dpy, &ev))
+	while(!XNextEvent(dc->dpy, &ev)) {
+		if(XFilterEvent(&ev, win))
+			continue;
 		switch(ev.type) {
 		case Expose:
 			if(ev.xexpose.count == 0)
@@ -479,6 +484,7 @@ run(void) {
 				XRaiseWindow(dc->dpy, win);
 			break;
 		}
+	}
 }
 
 void
@@ -486,6 +492,7 @@ setup(void) {
 	int x, y, screen = DefaultScreen(dc->dpy);
 	Window root = RootWindow(dc->dpy, screen);
 	XSetWindowAttributes swa;
+	XIM xim;
 #ifdef XINERAMA
 	int n;
 	XineramaScreenInfo *info;
@@ -541,6 +548,11 @@ setup(void) {
 	                    DefaultDepth(dc->dpy, screen), CopyFromParent,
 	                    DefaultVisual(dc->dpy, screen),
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &swa);
+
+        /* input methods */
+	xim = XOpenIM(dc->dpy, NULL, NULL, NULL);
+	xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
+					XNClientWindow, win, XNFocusWindow, win, NULL);
 
 	XMapRaised(dc->dpy, win);
 	resizedc(dc, mw, mh);
