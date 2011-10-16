@@ -8,6 +8,8 @@
 
 static void lsx(const char *dir);
 
+static int status = EXIT_SUCCESS;
+
 int
 main(int argc, char *argv[]) {
 	int i;
@@ -16,7 +18,7 @@ main(int argc, char *argv[]) {
 		lsx(".");
 	else for(i = 1; i < argc; i++)
 		lsx(argv[i]);
-	return EXIT_SUCCESS;
+	return status;
 }
 
 void
@@ -27,12 +29,13 @@ lsx(const char *dir) {
 	DIR *dp;
 
 	if(!(dp = opendir(dir))) {
+		status = EXIT_FAILURE;
 		perror(dir);
 		return;
 	}
 	while((d = readdir(dp)))
 		if(snprintf(buf, sizeof buf, "%s/%s", dir, d->d_name) < (int)sizeof buf
-		&& !stat(buf, &st) && S_ISREG(st.st_mode) && access(buf, X_OK) == 0)
+		&& stat(buf, &st) == 0 && S_ISREG(st.st_mode) && access(buf, X_OK) == 0)
 			puts(d->d_name);
 	closedir(dp);
 }
