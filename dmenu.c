@@ -230,11 +230,13 @@ insert(const char *str, ssize_t n) {
 void
 keypress(XKeyEvent *ev) {
 	char buf[32];
-	KeySym ksym;
 	int len;
+	KeySym ksym = NoSymbol;
 	Status status;
 
-	len = XmbLookupString(xic, ev, buf, sizeof(buf), &ksym, &status);
+	len = XmbLookupString(xic, ev, buf, sizeof buf, &ksym, &status);
+	if(status == XBufferOverflow)
+		return;
 	if(ev->state & ControlMask) {
 		KeySym lower, upper;
 
@@ -549,10 +551,10 @@ setup(void) {
 	                    DefaultVisual(dc->dpy, screen),
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &swa);
 
-        /* input methods */
+	/* input methods */
 	xim = XOpenIM(dc->dpy, NULL, NULL, NULL);
 	xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-					XNClientWindow, win, XNFocusWindow, win, NULL);
+	                XNClientWindow, win, XNFocusWindow, win, NULL);
 
 	XMapRaised(dc->dpy, win);
 	resizedc(dc, mw, mh);
