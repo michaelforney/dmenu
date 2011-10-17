@@ -5,7 +5,7 @@ if [ ! -d "`dirname "$CACHE"`" ]; then
 fi
 (
 	IFS=:
-	if test "`ls -dt $PATH "$CACHE" 2> /dev/null | sed 1q`" != "$CACHE"; then
+	if [ "`ls -dt $PATH "$CACHE" | head -n 1`" != "$CACHE" ]; then
 		lsx $PATH | sort -u > "$CACHE"
 	fi
 )
