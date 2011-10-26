@@ -18,7 +18,7 @@ options:
 	@echo CC -c $<
 	@${CC} -c $< ${CFLAGS}
 
-${OBJ}: config.mk
+${OBJ}: config.mk draw.h
 
 dmenu: dmenu.o draw.o
 	@echo CC -o $@
