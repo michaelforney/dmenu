@@ -52,7 +52,7 @@ static const char *selfgcolor  = "#ffffff";
 static unsigned int lines = 0;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
-static Atom utf8;
+static Atom clip, utf8;
 static Bool topbar = True;
 static DC *dc;
 static Item *items = NULL;
@@ -275,7 +275,8 @@ keypress(XKeyEvent *ev) {
 				insert(NULL, nextrune(-1) - cursor);
 			break;
 		case XK_y: /* paste selection */
-			XConvertSelection(dc->dpy, XA_PRIMARY, utf8, utf8, win, CurrentTime);
+			XConvertSelection(dc->dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
+			                  utf8, utf8, win, CurrentTime);
 			return;
 		default:
 			return;
@@ -517,6 +518,7 @@ setup(void) {
 	selcol[ColBG]  = getcolor(dc, selbgcolor);
 	selcol[ColFG]  = getcolor(dc, selfgcolor);
 
+	clip = XInternAtom(dc->dpy, "CLIPBOARD",   False);
 	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
 
 	/* calculate menu geometry */
