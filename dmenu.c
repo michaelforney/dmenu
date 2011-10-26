@@ -13,9 +13,10 @@
 #endif
 #include "draw.h"
 
-#define INRECT(x,y,rx,ry,rw,rh) ((x) >= (rx) && (x) < (rx)+(rw) && (y) >= (ry) && (y) < (ry)+(rh))
-#define MIN(a,b)                ((a) < (b) ? (a) : (b))
-#define MAX(a,b)                ((a) > (b) ? (a) : (b))
+#define INTERSECT(x,y,w,h,r)  (MAX(0, MIN((x)+(w),(r).x_org+(r).width)  - MAX((x),(r).x_org)) \
+                             * MAX(0, MIN((y)+(h),(r).y_org+(r).height) - MAX((y),(r).y_org)))
+#define MIN(a,b)              ((a) < (b) ? (a) : (b))
+#define MAX(a,b)              ((a) > (b) ? (a) : (b))
 
 typedef struct Item Item;
 struct Item {
@@ -513,19 +514,28 @@ setup(void) {
 	mh = (lines + 1) * bh;
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
-		int i, di;
+		int a, j, di, i = 0, area = 0;
 		unsigned int du;
-		Window w, dw;
+		Window w, pw, dw, *dws;
 		XWindowAttributes wa;
 
 		XGetInputFocus(dc->dpy, &w, &di);
-		if(w != root && w != PointerRoot && w != None && XGetWindowAttributes(dc->dpy, w, &wa))
-			XTranslateCoordinates(dc->dpy, w, root, wa.x, wa.y, &x, &y, &dw);
-		else
-			XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du);
-		for(i = 0; i < n-1; i++)
-			if(INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height))
-				break;
+		if(w != root && w != PointerRoot && w != None) {
+			do {
+				if(XQueryTree(dc->dpy, (pw = w), &dw, &w, &dws, &du) && dws)
+					XFree(dws);
+			} while(w != root && w != pw);
+			if(XGetWindowAttributes(dc->dpy, pw, &wa))
+				for(j = 0; j < n; j++)
+					if((a = INTERSECT(wa.x, wa.y, wa.width, wa.height, info[j])) > area) {
+						area = a;
+						i = j;
+					}
+		}
+		if(!area && XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
+			for(i = 0; i < n; i++)
+				if(INTERSECT(x, y, 1, 1, info[i]))
+					break;
 		x = info[i].x_org;
 		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
 		mw = info[i].width;
