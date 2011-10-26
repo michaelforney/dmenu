@@ -70,35 +70,35 @@ main(int argc, char *argv[]) {
 	int i;
 
 	for(i = 1; i < argc; i++)
-		/* single flags */
-		if(!strcmp(argv[i], "-v")) {
+		/* these options take no arguments */
+		if(!strcmp(argv[i], "-v")) {      /* prints version information */
 			puts("dmenu-"VERSION", © 2006-2011 dmenu engineers, see LICENSE for details");
 			exit(EXIT_SUCCESS);
 		}
-		else if(!strcmp(argv[i], "-b"))
+		else if(!strcmp(argv[i], "-b"))   /* appears at the bottom of the screen */
 			topbar = False;
-		else if(!strcmp(argv[i], "-f"))
+		else if(!strcmp(argv[i], "-f"))   /* grabs keyboard before reading stdin */
 			fast = True;
-		else if(!strcmp(argv[i], "-i")) {
+		else if(!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
 		}
 		else if(i+1 == argc)
 			usage();
-		/* double flags */
-		else if(!strcmp(argv[i], "-l"))
+		/* these options take one argument */
+		else if(!strcmp(argv[i], "-l"))   /* number of lines in vertical list */
 			lines = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-p"))
+		else if(!strcmp(argv[i], "-p"))   /* adds prompt to left of input field */
 			prompt = argv[++i];
-		else if(!strcmp(argv[i], "-fn"))
+		else if(!strcmp(argv[i], "-fn"))  /* font or font set */
 			font = argv[++i];
-		else if(!strcmp(argv[i], "-nb"))
+		else if(!strcmp(argv[i], "-nb"))  /* normal background color */
 			normbgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-nf"))
+		else if(!strcmp(argv[i], "-nf"))  /* normal foreground color */
 			normfgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-sb"))
+		else if(!strcmp(argv[i], "-sb"))  /* selected background color */
 			selbgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-sf"))
+		else if(!strcmp(argv[i], "-sf"))  /* selected foreground color */
 			selfgcolor = argv[++i];
 		else
 			usage();
@@ -140,7 +140,7 @@ calcoffsets(void) {
 		n = lines * bh;
 	else
 		n = mw - (promptw + inputw + textw(dc, "<") + textw(dc, ">"));
-
+	/* calculate which items will begin the next page and previous page */
 	for(i = 0, next = curr; next; next = next->right)
 		if((i += (lines > 0) ? bh : MIN(textw(dc, next->text), n)) > n)
 			break;
@@ -174,12 +174,14 @@ drawmenu(void) {
 		drawtext(dc, prompt, selcol);
 		dc->x = dc->w;
 	}
+	/* draw input field */
 	dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
 	drawtext(dc, text, normcol);
 	if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
 		drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
 
 	if(lines > 0) {
+		/* draw vertical list */
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
 			dc->y += dc->h;
@@ -187,6 +189,7 @@ drawmenu(void) {
 		}
 	}
 	else if(matches) {
+		/* draw horizontal list */
 		dc->x += inputw;
 		dc->w = textw(dc, "<");
 		if(curr->left)
@@ -208,6 +211,7 @@ void
 grabkeyboard(void) {
 	int i;
 
+	/* try to grab keyboard, we may have to wait for another process to ungrab */
 	for(i = 0; i < 1000; i++) {
 		if(XGrabKeyboard(dc->dpy, DefaultRootWindow(dc->dpy), True,
 		                 GrabModeAsync, GrabModeAsync, CurrentTime) == GrabSuccess)
@@ -221,6 +225,7 @@ void
 insert(const char *str, ssize_t n) {
 	if(strlen(text) + n > sizeof text - 1)
 		return;
+	/* move existing text out of the way, insert new text, and update cursor */
 	memmove(&text[cursor + n], &text[cursor], sizeof text - cursor - MAX(n, 0));
 	if(n > 0)
 		memcpy(&text[cursor], str, n);
@@ -297,6 +302,7 @@ keypress(XKeyEvent *ev) {
 			break;
 		}
 		if(next) {
+			/* jump to end of list and position items in reverse */
 			curr = matchend;
 			calcoffsets();
 			curr = prev;
@@ -378,6 +384,7 @@ match(void) {
 	Item *item, *lprefix, *lsubstr, *prefixend, *substrend;
 
 	strcpy(buf, text);
+	/* separate input text into tokens to be matched individually */
 	for(s = strtok(buf, " "); s; tokv[tokc-1] = s, s = strtok(NULL, " "))
 		if(++tokc > tokn && !(tokv = realloc(tokv, ++tokn * sizeof *tokv)))
 			eprintf("cannot realloc %u bytes\n", tokn * sizeof *tokv);
@@ -388,8 +395,9 @@ match(void) {
 		for(i = 0; i < tokc; i++)
 			if(!fstrstr(item->text, tokv[i]))
 				break;
-		if(i != tokc)
+		if(i != tokc) /* not all tokens match */
 			continue;
+		/* exact matches go first, then prefixes, then substrings */
 		if(!tokc || !fstrncmp(tokv[0], item->text, len+1))
 			appenditem(item, &matches, &matchend);
 		else if(!fstrncmp(tokv[0], item->text, len))
@@ -423,6 +431,7 @@ size_t
 nextrune(int inc) {
 	ssize_t n;
 
+	/* return location of next utf8 rune in the given direction (+1 or -1) */
 	for(n = cursor + inc; n + inc >= 0 && (text[n] & 0xc0) == 0x80; n += inc);
 	return n;
 }
@@ -434,6 +443,7 @@ paste(void) {
 	unsigned long dl;
 	Atom da;
 
+	/* we have been given the current selection, now insert it into input */
 	XGetWindowProperty(dc->dpy, win, utf8, 0, (sizeof text / 4) + 1, False,
 	                   utf8, &da, &di, &dl, &dl, (unsigned char **)&p);
 	insert(p, (q = strchr(p, '\n')) ? q-p : (ssize_t)strlen(p));
@@ -446,6 +456,7 @@ readstdin(void) {
 	char buf[sizeof text], *p, *maxstr = NULL;
 	size_t i, max = 0, size = 0;
 
+	/* read each line from stdin and add it to the item list */
 	for(i = 0; fgets(buf, sizeof buf, stdin); i++) {
 		if(i+1 >= size / sizeof *items)
 			if(!(items = realloc(items, (size += BUFSIZ))))
@@ -508,7 +519,7 @@ setup(void) {
 
 	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
 
-	/* menu geometry */
+	/* calculate menu geometry */
 	bh = dc->font.height + 2;
 	lines = MAX(lines, 0);
 	mh = (lines + 1) * bh;
@@ -521,10 +532,12 @@ setup(void) {
 
 		XGetInputFocus(dc->dpy, &w, &di);
 		if(w != root && w != PointerRoot && w != None) {
+			/* find top-level window containing current input focus */
 			do {
 				if(XQueryTree(dc->dpy, (pw = w), &dw, &w, &dws, &du) && dws)
 					XFree(dws);
 			} while(w != root && w != pw);
+			/* find xinerama screen with which the window intersects most */
 			if(XGetWindowAttributes(dc->dpy, pw, &wa))
 				for(j = 0; j < n; j++)
 					if((a = INTERSECT(wa.x, wa.y, wa.width, wa.height, info[j])) > area) {
@@ -532,10 +545,12 @@ setup(void) {
 						i = j;
 					}
 		}
+		/* no focused window is on screen, so use pointer location instead */
 		if(!area && XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
 			for(i = 0; i < n; i++)
 				if(INTERSECT(x, y, 1, 1, info[i]))
 					break;
+
 		x = info[i].x_org;
 		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
 		mw = info[i].width;
@@ -552,7 +567,7 @@ setup(void) {
 	inputw = MIN(inputw, mw/3);
 	match();
 
-	/* menu window */
+	/* create menu window */
 	swa.override_redirect = True;
 	swa.background_pixmap = ParentRelative;
 	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
@@ -561,7 +576,7 @@ setup(void) {
 	                    DefaultVisual(dc->dpy, screen),
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &swa);
 
-	/* input methods */
+	/* open input methods */
 	xim = XOpenIM(dc->dpy, NULL, NULL, NULL);
 	xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
 	                XNClientWindow, win, XNFocusWindow, win, NULL);
