@@ -258,8 +258,8 @@ keypress(XKeyEvent *ev) {
 		case XK_i: ksym = XK_Tab;       break;
 		case XK_j: ksym = XK_Return;    break;
 		case XK_m: ksym = XK_Return;    break;
-		case XK_n: ksym = XK_Up;        break;
-		case XK_p: ksym = XK_Down;      break;
+		case XK_n: ksym = XK_Down;      break;
+		case XK_p: ksym = XK_Up;        break;
 
 		case XK_k: /* delete right */
 			text[cursor] = '\0';
