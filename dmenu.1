@@ -31,8 +31,9 @@ to stdout and dmenu terminates.  Entering text will narrow the items to those
 matching the tokens in the input.
 .P
 .B dmenu_run
-is a dmenu script used by dwm which lists programs in the user's $PATH and
-executes the selected item.
+is a script used by
+.IR dwm (1)
+which lists programs in the user's $PATH and executes the selected item.
 .SH OPTIONS
 .TP
 .B \-b
@@ -90,7 +91,10 @@ Confirm input.  Prints the input text to stdout and exits, returning success.
 Exit without selecting an item, returning failure.
 .TP
 .B Ctrl\-y
-Paste the current X selection into the input field.
+Paste the primary X selection into the input field.
+.TP
+.B Ctrl-Shift-y
+Paste the X clipboard into the input field.
 .SH SEE ALSO
 .IR dwm (1),
 .IR lsx (1)
