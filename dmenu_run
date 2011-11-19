@@ -5,8 +5,10 @@ if [ ! -d "`dirname "$CACHE"`" ]; then
 fi
 (
 	IFS=:
-	if [ "`ls -dt $PATH "$CACHE" | head -n 1`" != "$CACHE" ]; then
-		lsx $PATH | sort -u > "$CACHE"
+	if ls -d $PATH | stest -q -n "$CACHE"; then
+		for dir in $PATH; do
+			ls $dir | stest -C $dir -fx
+		done | sort -u > "$CACHE"
 	fi
 )
 cmd=`dmenu "$@" < "$CACHE"` && exec sh -c "$cmd"
