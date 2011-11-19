@@ -12,4 +12,4 @@ fi
 	else
 		dmenu "$@" < "$cache"
 	fi
-) | read cmd && exec sh -c "$cmd"
+) | exec sh
