@@ -117,7 +117,7 @@ main(int argc, char *argv[]) {
 	setup();
 	run();
 
-	return EXIT_FAILURE; /* unreachable */
+	return 1; /* unreachable */
 }
 
 void

@@ -1,12 +1,15 @@
 #!/bin/sh
-CACHE=${XDG_CACHE_HOME:-"$HOME/.cache"}/dmenu_run
-if [ ! -d "`dirname "$CACHE"`" ]; then
-	CACHE=$HOME/.dmenu_cache
+cachedir=${XDG_CACHE_HOME:-"$HOME/.cache"}
+if [ -d "$cachedir" ]; then
+	cache=$cachedir/dmenu_run
+else
+	cache=$HOME/.dmenu_cache
 fi
 (
 	IFS=:
-	if [ "`ls -dt $PATH "$CACHE" | head -n 1`" != "$CACHE" ]; then
-		lsx $PATH | sort -u > "$CACHE"
+	if [ "`ls -dt $PATH "$cache" | head -n 1`" != "$cache" ]; then
+		lsx $PATH | sort -u | tee "$cache" | dmenu "$@"
+	else
+		dmenu "$@" < "$cache"
 	fi
-)
-cmd=`dmenu "$@" < "$CACHE"` && exec sh -c "$cmd"
+) | read cmd && exec sh -c "$cmd"
