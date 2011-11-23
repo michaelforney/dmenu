@@ -575,12 +575,12 @@ setup(void) {
 
 	/* create menu window */
 	swa.override_redirect = True;
-	swa.background_pixmap = ParentRelative;
+	swa.background_pixel = normcol[ColBG];
 	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
 	win = XCreateWindow(dc->dpy, root, x, y, mw, mh, 0,
 	                    DefaultDepth(dc->dpy, screen), CopyFromParent,
 	                    DefaultVisual(dc->dpy, screen),
-	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &swa);
+	                    CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
 
 	/* open input methods */
 	xim = XOpenIM(dc->dpy, NULL, NULL, NULL);
