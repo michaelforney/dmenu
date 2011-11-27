@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -54,7 +53,7 @@ void
 test(const char *path, const char *name) {
 	struct stat st, ln;
 
-	if(!stat(path, &st) && ( FLAG('a') || name[0] != '.')         /* hidden files      */
+	if(!stat(path, &st) && (FLAG('a') || name[0] != '.')          /* hidden files      */
 	&& (!FLAG('b') || S_ISBLK(st.st_mode))                        /* block special     */
 	&& (!FLAG('c') || S_ISCHR(st.st_mode))                        /* character special */
 	&& (!FLAG('d') || S_ISDIR(st.st_mode))                        /* directory         */
