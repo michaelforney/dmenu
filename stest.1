@@ -3,9 +3,7 @@
 stest \- filter a list of files by properties
 .SH SYNOPSIS
 .B stest
-.RB [ -bcdefghpqrsuwx ]
-.RB [ -C
-.IR dir ]
+.RB [ -abcdefghlpqrsuwx ]
 .RB [ -n
 .IR file ]
 .RB [ -o
@@ -15,13 +13,11 @@ stest \- filter a list of files by properties
 .B stest
 takes a list of files and filters by the files' properties, analogous to
 .IR test (1).
-Files which pass all tests are printed to stdout. If no files are given as
-arguments, stest will read a list of files from stdin, one path per line.
+Files which pass all tests are printed to stdout.
 .SH OPTIONS
 .TP
-.BI \-C " dir"
-Tests files relative to directory
-.IR dir .
+.B \-a
+Test hidden files.
 .TP
 .B \-b
 Test that files are block specials.
@@ -43,6 +39,9 @@ Test that files have their set-group-ID flag set.
 .TP
 .B \-h
 Test that files are symbolic links.
+.TP
+.B \-l
+Test the contents of a directory given as an argument.
 .TP
 .BI \-n " file"
 Test that files are newer than
