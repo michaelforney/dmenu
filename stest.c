@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -17,7 +18,7 @@ static struct stat old, new;
 int
 main(int argc, char *argv[]) {
 	struct dirent *d;
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], *p;
 	DIR *dir;
 	int opt;
 
@@ -34,6 +35,12 @@ main(int argc, char *argv[]) {
 		case '?': /* error: unknown flag */
 			fprintf(stderr, "usage: %s [-abcdefghlpqrsuwx] [-n file] [-o file] [file...]\n", argv[0]);
 			exit(2);
+		}
+	if(optind == argc)
+		while(fgets(buf, sizeof buf, stdin)) {
+			if((p = strchr(buf, '\n')))
+				*p = '\0';
+			test(buf, buf);
 		}
 	for(; optind < argc; optind++)
 		if(FLAG('l') && (dir = opendir(argv[optind]))) {
