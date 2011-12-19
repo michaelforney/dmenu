@@ -7,8 +7,8 @@ else
 fi
 (
 	IFS=:
-	if [ "`ls -dt $PATH "$cache" | head -n 1`" != "$cache" ]; then
-		lsx $PATH | sort -u | tee "$cache" | dmenu "$@"
+	if stest -dqr -n "$cache" $PATH; then
+		stest -flx $PATH | sort -u | tee "$cache" | dmenu "$@"
 	else
 		dmenu "$@" < "$cache"
 	fi
