@@ -72,7 +72,7 @@ main(int argc, char *argv[]) {
 	for(i = 1; i < argc; i++)
 		/* these options take no arguments */
 		if(!strcmp(argv[i], "-v")) {      /* prints version information */
-			puts("dmenu-"VERSION", © 2006-2011 dmenu engineers, see LICENSE for details");
+			puts("dmenu-"VERSION", © 2006-2012 dmenu engineers, see LICENSE for details");
 			exit(EXIT_SUCCESS);
 		}
 		else if(!strcmp(argv[i], "-b"))   /* appears at the bottom of the screen */
