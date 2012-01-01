@@ -243,11 +243,8 @@ keypress(XKeyEvent *ev) {
 	len = XmbLookupString(xic, ev, buf, sizeof buf, &ksym, &status);
 	if(status == XBufferOverflow)
 		return;
-	if(ev->state & ControlMask) {
-		KeySym lower, upper;
-
-		XConvertCase(ksym, &lower, &upper);
-		switch(lower) {
+	if(ev->state & ControlMask)
+		switch(ksym) {
 		case XK_a: ksym = XK_Home;      break;
 		case XK_b: ksym = XK_Left;      break;
 		case XK_c: ksym = XK_Escape;    break;
@@ -281,7 +278,17 @@ keypress(XKeyEvent *ev) {
 		default:
 			return;
 		}
-	}
+	else if(ev->state & Mod1Mask)
+		switch(ksym) {
+		case XK_g: ksym = XK_Home;  break;
+		case XK_G: ksym = XK_End;   break;
+		case XK_h: ksym = XK_Prior; break;
+		case XK_j: ksym = XK_Up;    break;
+		case XK_k: ksym = XK_Down;  break;
+		case XK_l: ksym = XK_Next;  break;
+		default:
+			return;
+		}
 	switch(ksym) {
 	default:
 		if(!iscntrl(*buf))

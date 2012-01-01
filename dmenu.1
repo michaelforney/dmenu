@@ -33,7 +33,7 @@ matching the tokens in the input.
 .B dmenu_run
 is a script used by
 .IR dwm (1)
-which lists programs in the user's $PATH and executes the selected item.
+which lists programs in the user's $PATH and runs the result in their $SHELL.
 .SH OPTIONS
 .TP
 .B \-b
@@ -73,28 +73,90 @@ defines the selected foreground color.
 .B \-v
 prints version information to stdout, then exits.
 .SH USAGE
-dmenu is completely controlled by the keyboard.  Besides standard Unix line
-editing and item selection (arrow keys, page up/down, home and end), the
-following keys are recognized:
+dmenu is completely controlled by the keyboard.  Items are selected using the
+arrow keys, page up, page down, home, and end.
 .TP
-.B Tab (Ctrl\-i)
+.B Tab
 Copy the selected item to the input field.
 .TP
-.B Return (Ctrl\-j)
+.B Return
 Confirm selection.  Prints the selected item to stdout and exits, returning
 success.
 .TP
-.B Shift\-Return (Ctrl\-Shift\-j)
+.B Shift\-Return
 Confirm input.  Prints the input text to stdout and exits, returning success.
 .TP
-.B Escape (Ctrl\-c)
+.B Escape
 Exit without selecting an item, returning failure.
 .TP
-.B Ctrl\-y
-Paste the primary X selection into the input field.
+C\-a
+Home
 .TP
-.B Ctrl-Shift-y
-Paste the X clipboard into the input field.
+C\-b
+Left
+.TP
+C\-c
+Escape
+.TP
+C\-d
+Delete
+.TP
+C\-e
+End
+.TP
+C\-f
+Right
+.TP
+C\-h
+Backspace
+.TP
+C\-i
+Tab
+.TP
+C\-j
+Return
+.TP
+C\-k
+Delete line right
+.TP
+C\-m
+Return
+.TP
+C\-n
+Down
+.TP
+C\-p
+Up
+.TP
+C\-u
+Delete line left
+.TP
+C\-w
+Delete word left
+.TP
+C\-y
+Paste from primary X selection
+.TP
+C\-Y
+Paste from X clipboard
+.TP
+M\-g
+Home
+.TP
+M\-G
+End
+.TP
+M\-h
+Page up
+.TP
+M\-j
+Up
+.TP
+M\-k
+Down
+.TP
+M\-l
+Page down
 .SH SEE ALSO
 .IR dwm (1),
-.IR lsx (1)
+.IR stest (1)
