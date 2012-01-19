@@ -251,6 +251,7 @@ keypress(XKeyEvent *ev) {
 		case XK_d: ksym = XK_Delete;    break;
 		case XK_e: ksym = XK_End;       break;
 		case XK_f: ksym = XK_Right;     break;
+		case XK_g: ksym = XK_Escape;    break;
 		case XK_h: ksym = XK_BackSpace; break;
 		case XK_i: ksym = XK_Tab;       break;
 		case XK_j: ksym = XK_Return;    break;
