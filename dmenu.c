@@ -169,7 +169,7 @@ drawmenu(void) {
 	dc->h = bh;
 	drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
 
-	if(prompt) {
+	if(prompt && *prompt) {
 		dc->w = promptw;
 		drawtext(dc, prompt, selcol);
 		dc->x = dc->w;
@@ -579,7 +579,7 @@ setup(void) {
 		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh;
 		mw = DisplayWidth(dc->dpy, screen);
 	}
-	promptw = prompt ? textw(dc, prompt) : 0;
+	promptw = (prompt && *prompt) ? textw(dc, prompt) : 0;
 	inputw = MIN(inputw, mw/3);
 	match();
 
