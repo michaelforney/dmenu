@@ -22,6 +22,7 @@ typedef struct Item Item;
 struct Item {
 	char *text;
 	Item *left, *right;
+	Bool out;
 };
 
 static void appenditem(Item *item, Item **list, Item **last);
@@ -49,9 +50,12 @@ static const char *normbgcolor = "#222222";
 static const char *normfgcolor = "#bbbbbb";
 static const char *selbgcolor  = "#005577";
 static const char *selfgcolor  = "#eeeeee";
+static const char *outbgcolor  = "#00ffff";
+static const char *outfgcolor  = "#000000";
 static unsigned int lines = 0;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
+static unsigned long outcol[ColLast];
 static Atom clip, utf8;
 static Bool topbar = True;
 static DC *dc;
@@ -185,7 +189,8 @@ drawmenu(void) {
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
 			dc->y += dc->h;
-			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+			drawtext(dc, item->text, (item == sel) ? selcol :
+			                         (item->out)   ? outcol : normcol);
 		}
 	}
 	else if(matches) {
@@ -197,7 +202,8 @@ drawmenu(void) {
 		for(item = curr; item != next; item = item->right) {
 			dc->x += dc->w;
 			dc->w = MIN(textw(dc, item->text), mw - dc->x - textw(dc, ">"));
-			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+			drawtext(dc, item->text, (item == sel) ? selcol :
+			                         (item->out)   ? outcol : normcol);
 		}
 		dc->w = textw(dc, ">");
 		dc->x = mw - dc->w;
@@ -278,6 +284,9 @@ keypress(XKeyEvent *ev) {
 			XConvertSelection(dc->dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
 			                  utf8, utf8, win, CurrentTime);
 			return;
+		case XK_Return:
+		case XK_KP_Enter:
+			break;
 		default:
 			return;
 		}
@@ -362,7 +371,10 @@ keypress(XKeyEvent *ev) {
 	case XK_Return:
 	case XK_KP_Enter:
 		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
-		exit(EXIT_SUCCESS);
+		if(!(ev->state & ControlMask))
+			exit(EXIT_SUCCESS);
+		sel->out = True;
+		break;
 	case XK_Right:
 		if(text[cursor] != '\0') {
 			cursor = nextrune(+1);
@@ -480,6 +492,7 @@ readstdin(void) {
 			*p = '\0';
 		if(!(items[i].text = strdup(buf)))
 			eprintf("cannot strdup %u bytes:", strlen(buf)+1);
+		items[i].out = False;
 		if(strlen(items[i].text) > max)
 			max = strlen(maxstr = items[i].text);
 	}
@@ -531,6 +544,8 @@ setup(void) {
 	normcol[ColFG] = getcolor(dc, normfgcolor);
 	selcol[ColBG]  = getcolor(dc, selbgcolor);
 	selcol[ColFG]  = getcolor(dc, selfgcolor);
+	outcol[ColBG]  = getcolor(dc, outbgcolor);
+	outcol[ColFG]  = getcolor(dc, outfgcolor);
 
 	clip = XInternAtom(dc->dpy, "CLIPBOARD",   False);
 	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
