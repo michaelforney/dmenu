@@ -44,26 +44,18 @@ static char text[BUFSIZ] = "";
 static int bh, mw, mh;
 static int inputw, promptw;
 static size_t cursor = 0;
-static const char *font = NULL;
-static const char *prompt = NULL;
-static const char *normbgcolor = "#222222";
-static const char *normfgcolor = "#bbbbbb";
-static const char *selbgcolor  = "#005577";
-static const char *selfgcolor  = "#eeeeee";
-static const char *outbgcolor  = "#00ffff";
-static const char *outfgcolor  = "#000000";
-static unsigned int lines = 0;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
 static unsigned long outcol[ColLast];
 static Atom clip, utf8;
-static Bool topbar = True;
 static DC *dc;
 static Item *items = NULL;
 static Item *matches, *matchend;
 static Item *prev, *curr, *next, *sel;
 static Window win;
 static XIC xic;
+
+#include "config.h"
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
