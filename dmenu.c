@@ -279,6 +279,8 @@ keypress(XKeyEvent *ev) {
 		case XK_Return:
 		case XK_KP_Enter:
 			break;
+		case XK_bracketleft:
+			exit(EXIT_FAILURE);
 		default:
 			return;
 		}
