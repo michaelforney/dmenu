@@ -1,16 +1,16 @@
 /* See LICENSE file for copyright and license details. */
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/mman.h>
 #include <unistd.h>
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <X11/Xutil.h>
-#ifdef XINERAMA
-#include <X11/extensions/Xinerama.h>
-#endif
+#include <wayland-client.h>
+#include <wld/wayland.h>
+#include <wld/wld.h>
+#include <xkbcommon/xkbcommon.h>
 #include "draw.h"
 
 #define INTERSECT(x,y,w,h,r)  (MAX(0, MIN((x)+(w),(r).x_org+(r).width)  - MAX((x),(r).x_org)) \
@@ -22,22 +22,64 @@ typedef struct Item Item;
 struct Item {
 	char *text;
 	Item *left, *right;
-	Bool out;
+	bool out;
+};
+
+typedef struct XKB XKB;
+struct XKB {
+	struct xkb_context *context;
+	struct xkb_state *state;
+	struct xkb_keymap *keymap;
+	xkb_mod_index_t ctrl, alt, shift;
 };
 
 static void appenditem(Item *item, Item **list, Item **last);
 static void calcoffsets(void);
 static char *cistrstr(const char *s, const char *sub);
+static void datadevoffer(void *data, struct wl_data_device *datadev,
+			 struct wl_data_offer *offer);
+static void datadeventer(void *data, struct wl_data_device *datadev,
+			 uint32_t serial, struct wl_surface *surf, wl_fixed_t x,
+			 wl_fixed_t y, struct wl_data_offer *offer);
+static void datadevleave(void *data, struct wl_data_device *datadev);
+static void datadevmotion(void *data, struct wl_data_device *datadev,
+			  uint32_t time, wl_fixed_t x, wl_fixed_t y);
+static void datadevdrop(void *data, struct wl_data_device *datadev);
+static void datadevselection(void *data, struct wl_data_device *datadev,
+			     struct wl_data_offer *offer);
+static void dataofferoffer(void *data, struct wl_data_offer *offer,
+			   const char * mimetype);
 static void drawmenu(void);
-static void grabkeyboard(void);
 static void insert(const char *str, ssize_t n);
-static void keypress(XKeyEvent *ev);
+static void kbdenter(void *data, struct wl_keyboard *kbd, uint32_t serial,
+		     struct wl_surface *surf, struct wl_array * keys);
+static void kbdkey(void *data, struct wl_keyboard *kbd, uint32_t serial,
+		   uint32_t time, uint32_t key, uint32_t state);
+static void kbdleave(void *data, struct wl_keyboard *kbd, uint32_t serial,
+		     struct wl_surface *surf);
+static void kbdmodifiers(void *data, struct wl_keyboard *kbd, uint32_t serial,
+			 uint32_t dep, uint32_t lat, uint32_t lck, uint32_t grp);
+static void kbdkeymap(void *data, struct wl_keyboard *kbd, uint32_t format,
+		      int32_t fd, uint32_t size);
 static void match(void);
 static size_t nextrune(int inc);
+static void outputgeometry(void *data, struct wl_output *output,
+			   int32_t x, int32_t y, int32_t physw, int32_t physh,
+			   int32_t subpixel, const char *make, const char *model,
+			   int32_t transform);
+static void outputmode(void *data, struct wl_output *output, uint32_t flags,
+		       int32_t w, int32_t h, int32_t refresh);
+static void outputdone(void *data, struct wl_output *output);
+static void outputscale(void *data, struct wl_output *output, int32_t factor);
 static void paste(void);
 static void readstdin(void);
+static void regglobal(void *data, struct wl_registry *reg, uint32_t name,
+		      const char *interface, uint32_t version);
+static void regglobalremove(void * data, struct wl_registry *reg, uint32_t name);
 static void run(void);
 static void setup(void);
+static void surfenter(void *data, struct wl_surface *surf, struct wl_output *output);
+static void surfleave(void *data, struct wl_surface *surf, struct wl_output *output);
 static void usage(void);
 
 static char text[BUFSIZ] = "";
@@ -47,13 +89,34 @@ static size_t cursor = 0;
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
 static unsigned long outcol[ColLast];
-static Atom clip, utf8;
 static DC *dc;
 static Item *items = NULL;
 static Item *matches, *matchend;
 static Item *prev, *curr, *next, *sel;
-static Window win;
-static XIC xic;
+static struct wl_compositor *comp;
+static struct wl_keyboard *kbd;
+static struct wl_seat *seat;
+static struct wl_shell *shell;
+static struct wl_surface *surf;
+static struct wl_shell_surface *shellsurf;
+static struct wl_data_device_manager *datadevman;
+static struct wl_data_device *datadev;
+static struct wl_data_offer *seloffer;
+static XKB xkb;
+static const struct wl_registry_listener reglistener
+	= { regglobal, regglobalremove };
+static const struct wl_surface_listener surflistener
+	= { surfenter, surfleave };
+static const struct wl_keyboard_listener kbdlistener
+	= { kbdkeymap, kbdenter, kbdleave, kbdkey, kbdmodifiers };
+static const struct wl_data_device_listener datadevlistener = {
+	datadevoffer, datadeventer, datadevleave, datadevmotion, datadevdrop,
+	datadevselection
+};
+static const struct wl_data_offer_listener dataofferlistener
+	= { dataofferoffer };
+static const struct wl_output_listener outputlistener
+	= { outputgeometry, outputmode, outputdone, outputscale };
 
 #include "config.h"
 
@@ -62,7 +125,7 @@ static char *(*fstrstr)(const char *, const char *) = strstr;
 
 int
 main(int argc, char *argv[]) {
-	Bool fast = False;
+	bool __attribute__ ((unused)) fast = false;
 	int i;
 
 	for(i = 1; i < argc; i++)
@@ -72,9 +135,9 @@ main(int argc, char *argv[]) {
 			exit(EXIT_SUCCESS);
 		}
 		else if(!strcmp(argv[i], "-b"))   /* appears at the bottom of the screen */
-			topbar = False;
+			topbar = false;
 		else if(!strcmp(argv[i], "-f"))   /* grabs keyboard before reading stdin */
-			fast = True;
+			fast = true;
 		else if(!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
@@ -102,14 +165,7 @@ main(int argc, char *argv[]) {
 	dc = initdc();
 	initfont(dc, font);
 
-	if(fast) {
-		grabkeyboard();
-		readstdin();
-	}
-	else {
-		readstdin();
-		grabkeyboard();
-	}
+	readstdin();
 	setup();
 	run();
 
@@ -156,6 +212,44 @@ cistrstr(const char *s, const char *sub) {
 }
 
 void
+dataofferoffer(void *data, struct wl_data_offer *offer, const char *mimetype) {
+	if (strncmp(mimetype, "text/plain", 10) == 0)
+		wl_data_offer_set_user_data(offer, (void *)(uintptr_t) 1);
+}
+
+void
+datadevoffer(void *data, struct wl_data_device *datadev,
+	     struct wl_data_offer *offer) {
+	     wl_data_offer_add_listener(offer, &dataofferlistener, NULL);
+}
+
+void
+datadeventer(void *data, struct wl_data_device *datadev, uint32_t serial,
+	     struct wl_surface *surf, wl_fixed_t x, wl_fixed_t y,
+	     struct wl_data_offer *offer) {
+}
+
+void
+datadevleave(void *data, struct wl_data_device *datadev) {
+}
+
+void
+datadevmotion(void *data, struct wl_data_device *datadev, uint32_t time,
+	      wl_fixed_t x, wl_fixed_t y) {
+}
+
+void
+datadevdrop(void *data, struct wl_data_device *datadev) {
+}
+
+void
+datadevselection(void *data, struct wl_data_device *datadev,
+		 struct wl_data_offer *offer) {
+	if (offer && (uintptr_t) wl_data_offer_get_user_data(offer) == 1)
+		seloffer = offer;
+}
+
+void
 drawmenu(void) {
 	int curpos;
 	Item *item;
@@ -163,7 +257,7 @@ drawmenu(void) {
 	dc->x = 0;
 	dc->y = 0;
 	dc->h = bh;
-	drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
+	drawrect(dc, 0, 0, mw, mh, true, BG(dc, normcol));
 
 	if(prompt && *prompt) {
 		dc->w = promptw;
@@ -174,7 +268,7 @@ drawmenu(void) {
 	dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
 	drawtext(dc, text, normcol);
 	if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
-		drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
+		drawrect(dc, curpos, 2, 1, dc->h - 4, true, FG(dc, normcol));
 
 	if(lines > 0) {
 		/* draw vertical list */
@@ -202,21 +296,7 @@ drawmenu(void) {
 		if(next)
 			drawtext(dc, ">", normcol);
 	}
-	mapdc(dc, win, mw, mh);
-}
-
-void
-grabkeyboard(void) {
-	int i;
-
-	/* try to grab keyboard, we may have to wait for another process to ungrab */
-	for(i = 0; i < 1000; i++) {
-		if(XGrabKeyboard(dc->dpy, DefaultRootWindow(dc->dpy), True,
-		                 GrabModeAsync, GrabModeAsync, CurrentTime) == GrabSuccess)
-			return;
-		usleep(1000);
-	}
-	eprintf("cannot grab keyboard\n");
+	mapdc(dc, surf, mw, mh);
 }
 
 void
@@ -232,66 +312,77 @@ insert(const char *str, ssize_t n) {
 }
 
 void
-keypress(XKeyEvent *ev) {
+kbdenter(void *data, struct wl_keyboard *kbd, uint32_t serial,
+	 struct wl_surface *surf, struct wl_array * keys) {
+}
+
+void
+kbdleave(void *data, struct wl_keyboard *kbd, uint32_t serial,
+	 struct wl_surface *surf) {
+}
+
+void
+kbdkey(void *data, struct wl_keyboard *kbd, uint32_t serial, uint32_t time,
+       uint32_t key, uint32_t state) {
 	char buf[32];
 	int len;
-	KeySym ksym = NoSymbol;
-	Status status;
+	xkb_keysym_t ksym = XKB_KEY_NoSymbol;
 
-	len = XmbLookupString(xic, ev, buf, sizeof buf, &ksym, &status);
-	if(status == XBufferOverflow)
-		return;
-	if(ev->state & ControlMask)
+	if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
+		goto update_state;
+
+	ksym = xkb_state_key_get_one_sym(xkb.state, key + 8);
+	len = xkb_keysym_to_utf8(ksym, buf, sizeof buf) - 1;
+	if(xkb_state_mod_index_is_active(xkb.state, xkb.ctrl, XKB_STATE_MODS_EFFECTIVE))
 		switch(ksym) {
-		case XK_a: ksym = XK_Home;      break;
-		case XK_b: ksym = XK_Left;      break;
-		case XK_c: ksym = XK_Escape;    break;
-		case XK_d: ksym = XK_Delete;    break;
-		case XK_e: ksym = XK_End;       break;
-		case XK_f: ksym = XK_Right;     break;
-		case XK_g: ksym = XK_Escape;    break;
-		case XK_h: ksym = XK_BackSpace; break;
-		case XK_i: ksym = XK_Tab;       break;
-		case XK_j: /* fallthrough */
-		case XK_J: ksym = XK_Return;    break;
-		case XK_m: /* fallthrough */
-		case XK_M: ksym = XK_Return;    break;
-		case XK_n: ksym = XK_Down;      break;
-		case XK_p: ksym = XK_Up;        break;
+		case XKB_KEY_a: ksym = XKB_KEY_Home;      break;
+		case XKB_KEY_b: ksym = XKB_KEY_Left;      break;
+		case XKB_KEY_c: ksym = XKB_KEY_Escape;    break;
+		case XKB_KEY_d: ksym = XKB_KEY_Delete;    break;
+		case XKB_KEY_e: ksym = XKB_KEY_End;       break;
+		case XKB_KEY_f: ksym = XKB_KEY_Right;     break;
+		case XKB_KEY_g: ksym = XKB_KEY_Escape;    break;
+		case XKB_KEY_h: ksym = XKB_KEY_BackSpace; break;
+		case XKB_KEY_i: ksym = XKB_KEY_Tab;       break;
+		case XKB_KEY_j: /* fallthrough */
+		case XKB_KEY_J: ksym = XKB_KEY_Return;    break;
+		case XKB_KEY_m: /* fallthrough */
+		case XKB_KEY_M: ksym = XKB_KEY_Return;    break;
+		case XKB_KEY_n: ksym = XKB_KEY_Down;      break;
+		case XKB_KEY_p: ksym = XKB_KEY_Up;        break;
 
-		case XK_k: /* delete right */
+		case XKB_KEY_k: /* delete right */
 			text[cursor] = '\0';
 			match();
 			break;
-		case XK_u: /* delete left */
+		case XKB_KEY_u: /* delete left */
 			insert(NULL, 0 - cursor);
 			break;
-		case XK_w: /* delete word */
+		case XKB_KEY_w: /* delete word */
 			while(cursor > 0 && text[nextrune(-1)] == ' ')
 				insert(NULL, nextrune(-1) - cursor);
 			while(cursor > 0 && text[nextrune(-1)] != ' ')
 				insert(NULL, nextrune(-1) - cursor);
 			break;
-		case XK_y: /* paste selection */
-			XConvertSelection(dc->dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
-			                  utf8, utf8, win, CurrentTime);
+		case XKB_KEY_y: /* paste selection */
+			paste();
 			return;
-		case XK_Return:
-		case XK_KP_Enter:
+		case XKB_KEY_Return:
+		case XKB_KEY_KP_Enter:
 			break;
-		case XK_bracketleft:
+		case XKB_KEY_bracketleft:
 			exit(EXIT_FAILURE);
 		default:
 			return;
 		}
-	else if(ev->state & Mod1Mask)
+	else if(xkb_state_mod_index_is_active(xkb.state, xkb.alt, XKB_STATE_MODS_EFFECTIVE))
 		switch(ksym) {
-		case XK_g: ksym = XK_Home;  break;
-		case XK_G: ksym = XK_End;   break;
-		case XK_h: ksym = XK_Up;    break;
-		case XK_j: ksym = XK_Next;  break;
-		case XK_k: ksym = XK_Prior; break;
-		case XK_l: ksym = XK_Down;  break;
+		case XKB_KEY_g: ksym = XKB_KEY_Home;  break;
+		case XKB_KEY_G: ksym = XKB_KEY_End;   break;
+		case XKB_KEY_h: ksym = XKB_KEY_Up;    break;
+		case XKB_KEY_j: ksym = XKB_KEY_Next;  break;
+		case XKB_KEY_k: ksym = XKB_KEY_Prior; break;
+		case XKB_KEY_l: ksym = XKB_KEY_Down;  break;
 		default:
 			return;
 		}
@@ -300,17 +391,17 @@ keypress(XKeyEvent *ev) {
 		if(!iscntrl(*buf))
 			insert(buf, len);
 		break;
-	case XK_Delete:
+	case XKB_KEY_Delete:
 		if(text[cursor] == '\0')
 			return;
 		cursor = nextrune(+1);
 		/* fallthrough */
-	case XK_BackSpace:
+	case XKB_KEY_BackSpace:
 		if(cursor == 0)
 			return;
 		insert(NULL, nextrune(-1) - cursor);
 		break;
-	case XK_End:
+	case XKB_KEY_End:
 		if(text[cursor] != '\0') {
 			cursor = strlen(text);
 			break;
@@ -326,9 +417,9 @@ keypress(XKeyEvent *ev) {
 		}
 		sel = matchend;
 		break;
-	case XK_Escape:
+	case XKB_KEY_Escape:
 		exit(EXIT_FAILURE);
-	case XK_Home:
+	case XKB_KEY_Home:
 		if(sel == matches) {
 			cursor = 0;
 			break;
@@ -336,7 +427,7 @@ keypress(XKeyEvent *ev) {
 		sel = curr = matches;
 		calcoffsets();
 		break;
-	case XK_Left:
+	case XKB_KEY_Left:
 		if(cursor > 0 && (!sel || !sel->left || lines > 0)) {
 			cursor = nextrune(-1);
 			break;
@@ -344,32 +435,35 @@ keypress(XKeyEvent *ev) {
 		if(lines > 0)
 			return;
 		/* fallthrough */
-	case XK_Up:
+	case XKB_KEY_Up:
 		if(sel && sel->left && (sel = sel->left)->right == curr) {
 			curr = prev;
 			calcoffsets();
 		}
 		break;
-	case XK_Next:
+	case XKB_KEY_Next:
 		if(!next)
 			return;
 		sel = curr = next;
 		calcoffsets();
 		break;
-	case XK_Prior:
+	case XKB_KEY_Prior:
 		if(!prev)
 			return;
 		sel = curr = prev;
 		calcoffsets();
 		break;
-	case XK_Return:
-	case XK_KP_Enter:
-		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
-		if(!(ev->state & ControlMask))
+	case XKB_KEY_Return:
+	case XKB_KEY_KP_Enter:
+		if(sel && !xkb_state_mod_index_is_active(xkb.state, xkb.shift, XKB_STATE_MODS_EFFECTIVE))
+		    puts(sel->text);
+		else
+		    puts(text);
+		if(!xkb_state_mod_index_is_active(xkb.state, xkb.ctrl, XKB_STATE_MODS_EFFECTIVE))
 			exit(EXIT_SUCCESS);
-		sel->out = True;
+		sel->out = true;
 		break;
-	case XK_Right:
+	case XKB_KEY_Right:
 		if(text[cursor] != '\0') {
 			cursor = nextrune(+1);
 			break;
@@ -377,13 +471,13 @@ keypress(XKeyEvent *ev) {
 		if(lines > 0)
 			return;
 		/* fallthrough */
-	case XK_Down:
+	case XKB_KEY_Down:
 		if(sel && sel->right && (sel = sel->right) == next) {
 			curr = next;
 			calcoffsets();
 		}
 		break;
-	case XK_Tab:
+	case XKB_KEY_Tab:
 		if(!sel)
 			return;
 		strncpy(text, sel->text, sizeof text - 1);
@@ -393,6 +487,43 @@ keypress(XKeyEvent *ev) {
 		break;
 	}
 	drawmenu();
+
+update_state:
+	xkb_state_update_key(xkb.state, key + 8,
+			     state == WL_KEYBOARD_KEY_STATE_PRESSED ? XKB_KEY_DOWN : XKB_KEY_UP);
+}
+
+void
+kbdkeymap(void *data, struct wl_keyboard *kbd, uint32_t format, int32_t fd, uint32_t size) {
+	char *string;
+
+	if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
+		close(fd);
+		return;
+	}
+
+	string = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+
+	if (string == MAP_FAILED) {
+		close(fd);
+		return;
+	}
+
+	xkb.keymap = xkb_keymap_new_from_string(xkb.context, string,
+						XKB_KEYMAP_FORMAT_TEXT_V1, 0);
+	munmap(string, size);
+	close(fd);
+	xkb.state = xkb_state_new(xkb.keymap);
+
+	xkb.ctrl = xkb_keymap_mod_get_index(xkb.keymap, XKB_MOD_NAME_CTRL);
+	xkb.alt = xkb_keymap_mod_get_index(xkb.keymap, XKB_MOD_NAME_ALT);
+	xkb.shift = xkb_keymap_mod_get_index(xkb.keymap, XKB_MOD_NAME_SHIFT);
+}
+
+void
+kbdmodifiers(void *data, struct wl_keyboard *kbd, uint32_t serial,
+		      uint32_t dep, uint32_t lat, uint32_t lck, uint32_t grp) {
+	xkb_state_update_mask(xkb.state, dep, lat, lck, grp, 0, 0);
 }
 
 void
@@ -459,18 +590,43 @@ nextrune(int inc) {
 }
 
 void
-paste(void) {
-	char *p, *q;
-	int di;
-	unsigned long dl;
-	Atom da;
+outputgeometry(void *data, struct wl_output *output, int32_t x, int32_t y,
+	       int32_t physw, int32_t physh, int32_t subpixel,
+	       const char *make, const char *model, int32_t transform) {
+}
 
-	/* we have been given the current selection, now insert it into input */
-	XGetWindowProperty(dc->dpy, win, utf8, 0, (sizeof text / 4) + 1, False,
-	                   utf8, &da, &di, &dl, &dl, (unsigned char **)&p);
-	insert(p, (q = strchr(p, '\n')) ? q-p : (ssize_t)strlen(p));
-	XFree(p);
-	drawmenu();
+void
+outputmode(void *data, struct wl_output *output, uint32_t flags,
+	   int32_t w, int32_t h, int32_t refresh) {
+	if(flags & WL_OUTPUT_MODE_CURRENT) {
+		mw = mw ? MIN(mw, w) : w;
+		wl_output_set_user_data(output, (void *)(uintptr_t) w);
+	}
+}
+
+void
+outputdone(void *data, struct wl_output *output) {
+}
+
+void
+outputscale(void *data, struct wl_output *output, int32_t factor) {
+}
+
+void
+paste(void) {
+	int fds[2], len;
+	char buf[BUFSIZ], *nl;
+
+	if (seloffer) {
+		pipe(fds);
+		wl_data_offer_receive(seloffer, "text/plain", fds[1]);
+		wl_display_flush(dc->dpy);
+		close(fds[1]);
+		while((len = read(fds[0], buf, sizeof buf)) > 0)
+			insert(buf, (nl = strchr(buf, '\n')) ? nl-buf : len);
+		close(fds[0]);
+		drawmenu();
+	}
 }
 
 void
@@ -487,7 +643,7 @@ readstdin(void) {
 			*p = '\0';
 		if(!(items[i].text = strdup(buf)))
 			eprintf("cannot strdup %u bytes:", strlen(buf)+1);
-		items[i].out = False;
+		items[i].out = false;
 		if(strlen(items[i].text) > max)
 			max = strlen(maxstr = items[i].text);
 	}
@@ -498,42 +654,49 @@ readstdin(void) {
 }
 
 void
-run(void) {
-	XEvent ev;
-
-	while(!XNextEvent(dc->dpy, &ev)) {
-		if(XFilterEvent(&ev, win))
-			continue;
-		switch(ev.type) {
-		case Expose:
-			if(ev.xexpose.count == 0)
-				mapdc(dc, win, mw, mh);
-			break;
-		case KeyPress:
-			keypress(&ev.xkey);
-			break;
-		case SelectionNotify:
-			if(ev.xselection.property == utf8)
-				paste();
-			break;
-		case VisibilityNotify:
-			if(ev.xvisibility.state != VisibilityUnobscured)
-				XRaiseWindow(dc->dpy, win);
-			break;
-		}
+regglobal(void *data, struct wl_registry *reg, uint32_t name,
+       const char *interface, uint32_t version) {
+	if(strcmp(interface, "wl_compositor") == 0)
+		comp = wl_registry_bind(reg, name, &wl_compositor_interface, 1);
+	else if(strcmp(interface, "wl_shell") == 0)
+		shell = wl_registry_bind(reg, name, &wl_shell_interface, 1);
+	else if(strcmp(interface, "wl_seat") == 0)
+		seat = wl_registry_bind(reg, name, &wl_seat_interface, 1);
+	else if(strcmp(interface, "wl_data_device_manager") == 0)
+		datadevman = wl_registry_bind(reg, name, &wl_data_device_manager_interface, 1);
+	else if(strcmp(interface, "wl_output") == 0) {
+		struct wl_output *output;
+		output = wl_registry_bind(reg, name, &wl_output_interface, 1);
+		wl_output_add_listener(output, &outputlistener, NULL);
 	}
 }
 
 void
+regglobalremove(void * data, struct wl_registry *reg, uint32_t name) {
+}
+
+void
+run(void) {
+	while(wl_display_dispatch(dc->dpy) != -1);
+}
+
+void
 setup(void) {
-	int x, y, screen = DefaultScreen(dc->dpy);
-	Window root = RootWindow(dc->dpy, screen);
-	XSetWindowAttributes swa;
-	XIM xim;
-#ifdef XINERAMA
-	int n;
-	XineramaScreenInfo *info;
-#endif
+	struct wl_registry *reg;
+
+	reg = wl_display_get_registry(dc->dpy);
+	wl_registry_add_listener(reg, &reglistener, NULL);
+	wl_display_roundtrip(dc->dpy);
+
+	if (!seat)
+		exit(EXIT_FAILURE);
+
+	kbd = wl_seat_get_keyboard(seat);
+	wl_keyboard_add_listener(kbd, &kbdlistener, NULL);
+	datadev = wl_data_device_manager_get_data_device(datadevman, seat);
+	wl_data_device_add_listener(datadev, &datadevlistener, NULL);
+
+	xkb.context = xkb_context_new(0);
 
 	normcol[ColBG] = getcolor(dc, normbgcolor);
 	normcol[ColFG] = getcolor(dc, normfgcolor);
@@ -542,74 +705,42 @@ setup(void) {
 	outcol[ColBG]  = getcolor(dc, outbgcolor);
 	outcol[ColFG]  = getcolor(dc, outfgcolor);
 
-	clip = XInternAtom(dc->dpy, "CLIPBOARD",   False);
-	utf8 = XInternAtom(dc->dpy, "UTF8_STRING", False);
-
 	/* calculate menu geometry */
-	bh = dc->font.height + 2;
+	bh = dc->font->height + 2;
 	lines = MAX(lines, 0);
 	mh = (lines + 1) * bh;
-#ifdef XINERAMA
-	if((info = XineramaQueryScreens(dc->dpy, &n))) {
-		int a, j, di, i = 0, area = 0;
-		unsigned int du;
-		Window w, pw, dw, *dws;
-		XWindowAttributes wa;
 
-		XGetInputFocus(dc->dpy, &w, &di);
-		if(w != root && w != PointerRoot && w != None) {
-			/* find top-level window containing current input focus */
-			do {
-				if(XQueryTree(dc->dpy, (pw = w), &dw, &w, &dws, &du) && dws)
-					XFree(dws);
-			} while(w != root && w != pw);
-			/* find xinerama screen with which the window intersects most */
-			if(XGetWindowAttributes(dc->dpy, pw, &wa))
-				for(j = 0; j < n; j++)
-					if((a = INTERSECT(wa.x, wa.y, wa.width, wa.height, info[j])) > area) {
-						area = a;
-						i = j;
-					}
-		}
-		/* no focused window is on screen, so use pointer location instead */
-		if(!area && XQueryPointer(dc->dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
-			for(i = 0; i < n; i++)
-				if(INTERSECT(x, y, 1, 1, info[i]))
-					break;
+	/* wait for output modes */
+	wl_display_roundtrip(dc->dpy);
 
-		x = info[i].x_org;
-		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
-		mw = info[i].width;
-		XFree(info);
-	}
-	else
-#endif
-	{
-		x = 0;
-		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh;
-		mw = DisplayWidth(dc->dpy, screen);
-	}
 	promptw = (prompt && *prompt) ? textw(dc, prompt) : 0;
 	inputw = MIN(inputw, mw/3);
 	match();
 
-	/* create menu window */
-	swa.override_redirect = True;
-	swa.background_pixel = normcol[ColBG];
-	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
-	win = XCreateWindow(dc->dpy, root, x, y, mw, mh, 0,
-	                    DefaultDepth(dc->dpy, screen), CopyFromParent,
-	                    DefaultVisual(dc->dpy, screen),
-	                    CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
+	/* create menu surface */
+	surf = wl_compositor_create_surface(comp);
+	wl_surface_add_listener(surf, &surflistener, NULL);
 
-	/* open input methods */
-	xim = XOpenIM(dc->dpy, NULL, NULL, NULL);
-	xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-	                XNClientWindow, win, XNFocusWindow, win, NULL);
+	dc->drawable = wld_wayland_create_drawable(dc->ctx, surf, mw, mh,
+						   WLD_FORMAT_XRGB8888, 0);
 
-	XMapRaised(dc->dpy, win);
-	resizedc(dc, mw, mh);
+	shellsurf = wl_shell_get_shell_surface(shell, surf);
+	wl_shell_surface_set_toplevel(shellsurf);
 	drawmenu();
+}
+
+void
+surfenter(void *data, struct wl_surface *surf, struct wl_output *output) {
+	int outputw;
+	if ((outputw = (uintptr_t) wl_output_get_user_data(output))) {
+		mw = outputw;
+		resizedc(dc, surf, mw, mh);
+		drawmenu();
+	}
+}
+
+void
+surfleave(void *data, struct wl_surface *surf, struct wl_output *output) {
 }
 
 void
