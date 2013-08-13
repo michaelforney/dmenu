@@ -22,7 +22,7 @@ main(int argc, char *argv[]) {
 	DIR *dir;
 	int opt;
 
-	while((opt = getopt(argc, argv, "abcdefghln:o:pqrsuwx")) != -1)
+	while((opt = getopt(argc, argv, "abcdefghln:o:pqrsuvwx")) != -1)
 		switch(opt) {
 		case 'n': /* newer than file */
 		case 'o': /* older than file */
@@ -33,7 +33,7 @@ main(int argc, char *argv[]) {
 			FLAG(opt) = true;
 			break;
 		case '?': /* error: unknown flag */
-			fprintf(stderr, "usage: %s [-abcdefghlpqrsuwx] [-n file] [-o file] [file...]\n", argv[0]);
+			fprintf(stderr, "usage: %s [-abcdefghlpqrsuvwx] [-n file] [-o file] [file...]\n", argv[0]);
 			exit(2);
 		}
 	if(optind == argc)
@@ -60,7 +60,7 @@ void
 test(const char *path, const char *name) {
 	struct stat st, ln;
 
-	if(!stat(path, &st) && (FLAG('a') || name[0] != '.')          /* hidden files      */
+	if((!stat(path, &st) && (FLAG('a') || name[0] != '.')         /* hidden files      */
 	&& (!FLAG('b') || S_ISBLK(st.st_mode))                        /* block special     */
 	&& (!FLAG('c') || S_ISCHR(st.st_mode))                        /* character special */
 	&& (!FLAG('d') || S_ISDIR(st.st_mode))                        /* directory         */
@@ -75,7 +75,7 @@ test(const char *path, const char *name) {
 	&& (!FLAG('s') || st.st_size > 0)                             /* not empty         */
 	&& (!FLAG('u') || st.st_mode & S_ISUID)                       /* set-user-id flag  */
 	&& (!FLAG('w') || access(path, W_OK) == 0)                    /* writable          */
-	&& (!FLAG('x') || access(path, X_OK) == 0)) {                 /* executable        */
+	&& (!FLAG('x') || access(path, X_OK) == 0)) != FLAG('v')) {   /* executable        */
 		if(FLAG('q'))
 			exit(0);
 		match = true;
