@@ -370,7 +370,8 @@ keypress(XKeyEvent *ev) {
 		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
 		if(!(ev->state & ControlMask))
 			exit(EXIT_SUCCESS);
-		sel->out = True;
+		if(sel)
+			sel->out = True;
 		break;
 	case XK_Right:
 		if(text[cursor] != '\0') {
