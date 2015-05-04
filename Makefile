@@ -3,7 +3,7 @@
 
 include config.mk
 
-SRC = dmenu.c draw.c stest.c
+SRC = drw.c dmenu.c stest.c util.c
 OBJ = ${SRC:.c=.o}
 
 all: options dmenu stest
@@ -15,18 +15,18 @@ options:
 	@echo "CC       = ${CC}"
 
 .c.o:
-	@echo CC -c $<
-	@${CC} -c $< ${CFLAGS}
+	@echo CC $<
+	@${CC} -c ${CFLAGS} $<
 
 config.h:
 	@echo creating $@ from config.def.h
 	@cp config.def.h $@
 
-${OBJ}: config.h config.mk draw.h
+${OBJ}: config.h config.mk drw.h
 
-dmenu: dmenu.o draw.o
+dmenu: dmenu.o drw.o util.o
 	@echo CC -o $@
-	@${CC} -o $@ dmenu.o draw.o ${LDFLAGS}
+	@${CC} -o $@ dmenu.o drw.o util.o ${LDFLAGS}
 
 stest: stest.o
 	@echo CC -o $@
@@ -39,7 +39,8 @@ clean:
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p dmenu-${VERSION}
-	@cp LICENSE Makefile README config.mk dmenu.1 draw.h dmenu_path dmenu_run stest.1 ${SRC} dmenu-${VERSION}
+	@cp LICENSE Makefile README config.mk dmenu.1 drw.h util.h dmenu_path \
+		dmenu_run stest.1 ${SRC} dmenu-${VERSION}
 	@tar -cf dmenu-${VERSION}.tar dmenu-${VERSION}
 	@gzip dmenu-${VERSION}.tar
 	@rm -rf dmenu-${VERSION}
