@@ -207,7 +207,7 @@ drawmenu(void) {
 
 	if(prompt && *prompt) {
 		drw_setscheme(drw, &scheme[SchemeSel]);
-		drw_text(drw, x, 0, promptw, bh, prompt, 1);
+		drw_text(drw, x, 0, promptw, bh, prompt, 0);
 		x += promptw;
 	}
 	/* draw input field */
