@@ -7,6 +7,7 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
@@ -622,7 +623,7 @@ main(int argc, char *argv[])
 		if (!strcmp(argv[i], "-v")) {      /* prints version information */
 			puts("dmenu-"VERSION);
 			exit(0);
-		} else if (!strcmp(argv[i], "-b"))   /* appears at the bottom of the screen */
+		} else if (!strcmp(argv[i], "-b")) /* appears at the bottom of the screen */
 			topbar = false;
 		else if (!strcmp(argv[i], "-f"))   /* grabs keyboard before reading stdin */
 			fast = true;
