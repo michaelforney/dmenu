@@ -1,9 +1,7 @@
 /* See LICENSE file for copyright and license details. */
-/* vim: expandtab
- */
-/* Default settings; can be overrided by command line. */
+/* Default settings; can be overriden by command line. */
 
-static Bool topbar = True;                  /* -b  option; if False, dmenu appears at bottom */
+static bool topbar = true;                  /* -b  option; if False, dmenu appears at bottom */
 /* -fn option overrides fonts[0]; default X11 font or font set */
 static const char *fonts[] = {
 	"monospace:size=10"

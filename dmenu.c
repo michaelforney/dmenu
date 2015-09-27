@@ -1,6 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 #include <ctype.h>
 #include <locale.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +32,7 @@ typedef struct Item Item;
 struct Item {
 	char *text;
 	Item *left, *right;
-	Bool out;
+	bool out;
 };
 
 static void appenditem(Item *item, Item **list, Item **last);
@@ -76,7 +77,7 @@ static char *(*fstrstr)(const char *, const char *) = strstr;
 
 int
 main(int argc, char *argv[]) {
-	Bool fast = False;
+	bool fast = false;
 	int i;
 
 	for(i = 1; i < argc; i++)
@@ -86,9 +87,9 @@ main(int argc, char *argv[]) {
 			exit(0);
 		}
 		else if(!strcmp(argv[i], "-b"))   /* appears at the bottom of the screen */
-			topbar = False;
+			topbar = false;
 		else if(!strcmp(argv[i], "-f"))   /* grabs keyboard before reading stdin */
-			fast = True;
+			fast = true;
 		else if(!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
@@ -203,7 +204,7 @@ drawmenu(void) {
 	int x = 0, y = 0, h = bh, w;
 
 	drw_setscheme(drw, &scheme[SchemeNorm]);
-	drw_rect(drw, 0, 0, mw, mh, True, 1, 1);
+	drw_rect(drw, 0, 0, mw, mh, 1, 1, 1);
 
 	if(prompt && *prompt) {
 		drw_setscheme(drw, &scheme[SchemeSel]);
@@ -432,7 +433,7 @@ keypress(XKeyEvent *ev) {
 			exit(0);
 		}
 		if(sel)
-			sel->out = True;
+			sel->out = true;
 		break;
 	case XK_Right:
 		if(text[cursor] != '\0') {
@@ -552,7 +553,7 @@ readstdin(void) {
 			*p = '\0';
 		if(!(items[i].text = strdup(buf)))
 			die("cannot strdup %u bytes:", strlen(buf)+1);
-		items[i].out = False;
+		items[i].out = false;
 		if(strlen(items[i].text) > max)
 			max = strlen(maxstr = items[i].text);
 	}
