@@ -203,7 +203,7 @@ drawmenu(void)
 static void
 grabkeyboard(void)
 {
-	struct timespec ts = { .tv_sec = 1, .tv_nsec = 0  };
+	struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000000  };
 	int i;
 
 	/* try to grab keyboard, we may have to wait for another process to ungrab */
