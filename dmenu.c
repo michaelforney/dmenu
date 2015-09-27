@@ -28,14 +28,13 @@
 /* enums */
 enum { SchemeNorm, SchemeSel, SchemeOut, SchemeLast }; /* color schemes */
 
-typedef struct Item Item;
-struct Item {
+struct item {
 	char *text;
-	Item *left, *right;
+	struct item *left, *right;
 	bool out;
 };
 
-static void appenditem(Item *, Item **, Item **);
+static void appenditem(struct item *, struct item **, struct item **);
 static void calcoffsets(void);
 static char *cistrstr(const char *, const char *);
 static void cleanup(void);
@@ -56,9 +55,9 @@ static int bh, mw, mh;
 static int sw, sh; /* X display screen geometry width, height */
 static int inputw, promptw;
 static size_t cursor;
-static Item *items = NULL;
-static Item *matches, *matchend;
-static Item *prev, *curr, *next, *sel;
+static struct item *items = NULL;
+static struct item *matches, *matchend;
+static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
 
 static Atom clip, utf8;
@@ -75,7 +74,7 @@ static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 
 static void
-appenditem(Item *item, Item **list, Item **last)
+appenditem(struct item *item, struct item **list, struct item **last)
 {
 	if (*last)
 		(*last)->right = item;
@@ -135,7 +134,7 @@ static void
 drawmenu(void)
 {
 	int curpos;
-	Item *item;
+	struct item *item;
 	int x = 0, y = 0, h = bh, w;
 
 	drw_setscheme(drw, &scheme[SchemeNorm]);
@@ -408,7 +407,7 @@ match(void)
 	char buf[sizeof text], *s;
 	int i, tokc = 0;
 	size_t len;
-	Item *item, *lprefix, *lsubstr, *prefixend, *substrend;
+	struct item *item, *lprefix, *lsubstr, *prefixend, *substrend;
 
 	strcpy(buf, text);
 	/* separate input text into tokens to be matched individually */
