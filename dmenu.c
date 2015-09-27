@@ -34,22 +34,6 @@ struct item {
 	bool out;
 };
 
-static void appenditem(struct item *, struct item **, struct item **);
-static void calcoffsets(void);
-static char *cistrstr(const char *, const char *);
-static void cleanup(void);
-static void drawmenu(void);
-static void grabkeyboard(void);
-static void insert(const char *, ssize_t);
-static void keypress(XKeyEvent *);
-static void match(void);
-static size_t nextrune(int);
-static void paste(void);
-static void readstdin(void);
-static void run(void);
-static void setup(void);
-static void usage(void);
-
 static char text[BUFSIZ] = "";
 static int bh, mw, mh;
 static int sw, sh; /* X display screen geometry width, height */
@@ -216,6 +200,59 @@ grabkeyboard(void)
 }
 
 static void
+match(void)
+{
+	static char **tokv = NULL;
+	static int tokn = 0;
+
+	char buf[sizeof text], *s;
+	int i, tokc = 0;
+	size_t len;
+	struct item *item, *lprefix, *lsubstr, *prefixend, *substrend;
+
+	strcpy(buf, text);
+	/* separate input text into tokens to be matched individually */
+	for (s = strtok(buf, " "); s; tokv[tokc - 1] = s, s = strtok(NULL, " "))
+		if (++tokc > tokn && !(tokv = realloc(tokv, ++tokn * sizeof *tokv)))
+			die("cannot realloc %u bytes\n", tokn * sizeof *tokv);
+	len = tokc ? strlen(tokv[0]) : 0;
+
+	matches = lprefix = lsubstr = matchend = prefixend = substrend = NULL;
+	for (item = items; item && item->text; item++) {
+		for (i = 0; i < tokc; i++)
+			if (!fstrstr(item->text, tokv[i]))
+				break;
+		if (i != tokc) /* not all tokens match */
+			continue;
+		/* exact matches go first, then prefixes, then substrings */
+		if (!tokc || !fstrncmp(tokv[0], item->text, len + 1))
+			appenditem(item, &matches, &matchend);
+		else if (!fstrncmp(tokv[0], item->text, len))
+			appenditem(item, &lprefix, &prefixend);
+		else
+			appenditem(item, &lsubstr, &substrend);
+	}
+	if (lprefix) {
+		if (matches) {
+			matchend->right = lprefix;
+			lprefix->left = matchend;
+		} else
+			matches = lprefix;
+		matchend = prefixend;
+	}
+	if (lsubstr) {
+		if (matches) {
+			matchend->right = lsubstr;
+			lsubstr->left = matchend;
+		} else
+			matches = lsubstr;
+		matchend = substrend;
+	}
+	curr = sel = matches;
+	calcoffsets();
+}
+
+static void
 insert(const char *str, ssize_t n)
 {
 	if (strlen(text) + n > sizeof text - 1)
@@ -226,6 +263,17 @@ insert(const char *str, ssize_t n)
 		memcpy(&text[cursor], str, n);
 	cursor += n;
 	match();
+}
+
+static size_t
+nextrune(int inc)
+{
+	ssize_t n;
+
+	/* return location of next utf8 rune in the given direction (+1 or -1) */
+	for (n = cursor + inc; n + inc >= 0 && (text[n] & 0xc0) == 0x80; n += inc)
+		;
+	return n;
 }
 
 static void
@@ -396,70 +444,6 @@ keypress(XKeyEvent *ev)
 		break;
 	}
 	drawmenu();
-}
-
-static void
-match(void)
-{
-	static char **tokv = NULL;
-	static int tokn = 0;
-
-	char buf[sizeof text], *s;
-	int i, tokc = 0;
-	size_t len;
-	struct item *item, *lprefix, *lsubstr, *prefixend, *substrend;
-
-	strcpy(buf, text);
-	/* separate input text into tokens to be matched individually */
-	for (s = strtok(buf, " "); s; tokv[tokc - 1] = s, s = strtok(NULL, " "))
-		if (++tokc > tokn && !(tokv = realloc(tokv, ++tokn * sizeof *tokv)))
-			die("cannot realloc %u bytes\n", tokn * sizeof *tokv);
-	len = tokc ? strlen(tokv[0]) : 0;
-
-	matches = lprefix = lsubstr = matchend = prefixend = substrend = NULL;
-	for (item = items; item && item->text; item++) {
-		for (i = 0; i < tokc; i++)
-			if (!fstrstr(item->text, tokv[i]))
-				break;
-		if (i != tokc) /* not all tokens match */
-			continue;
-		/* exact matches go first, then prefixes, then substrings */
-		if (!tokc || !fstrncmp(tokv[0], item->text, len + 1))
-			appenditem(item, &matches, &matchend);
-		else if (!fstrncmp(tokv[0], item->text, len))
-			appenditem(item, &lprefix, &prefixend);
-		else
-			appenditem(item, &lsubstr, &substrend);
-	}
-	if (lprefix) {
-		if (matches) {
-			matchend->right = lprefix;
-			lprefix->left = matchend;
-		} else
-			matches = lprefix;
-		matchend = prefixend;
-	}
-	if (lsubstr) {
-		if (matches) {
-			matchend->right = lsubstr;
-			lsubstr->left = matchend;
-		} else
-			matches = lsubstr;
-		matchend = substrend;
-	}
-	curr = sel = matches;
-	calcoffsets();
-}
-
-static size_t
-nextrune(int inc)
-{
-	ssize_t n;
-
-	/* return location of next utf8 rune in the given direction (+1 or -1) */
-	for (n = cursor + inc; n + inc >= 0 && (text[n] & 0xc0) == 0x80; n += inc)
-		;
-	return n;
 }
 
 static void
