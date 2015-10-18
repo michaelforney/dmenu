@@ -92,13 +92,13 @@ calcoffsets(void)
 static void
 cleanup(void)
 {
+	size_t i;
+
 	XUngrabKey(dpy, AnyKey, AnyModifier, root);
-	drw_clr_free(scheme[SchemeNorm].bg);
-	drw_clr_free(scheme[SchemeNorm].fg);
-	drw_clr_free(scheme[SchemeSel].fg);
-	drw_clr_free(scheme[SchemeSel].bg);
-	drw_clr_free(scheme[SchemeOut].fg);
-	drw_clr_free(scheme[SchemeOut].bg);
+	for (i = 0; i < SchemeLast; i++) {
+		drw_clr_free(scheme[i].bg);
+		drw_clr_free(scheme[i].fg);
+	}
 	drw_free(drw);
 	XSync(dpy, False);
 	XCloseDisplay(dpy);
