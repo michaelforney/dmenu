@@ -82,8 +82,6 @@ drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h
 void
 drw_resize(Drw *drw, unsigned int w, unsigned int h)
 {
-	if (!drw)
-		return;
 	drw->w = w;
 	drw->h = h;
 	if (drw->drawable)
@@ -188,8 +186,6 @@ Clr *
 drw_clr_create(Drw *drw, const char *clrname)
 {
 	Clr *clr;
-	if (!drw)
-		return NULL;
 
 	clr = ecalloc(1, sizeof(Clr));
 	if (!XftColorAllocName(drw->dpy, DefaultVisual(drw->dpy, drw->screen),
@@ -210,15 +206,13 @@ drw_clr_free(Clr *clr)
 void
 drw_setscheme(Drw *drw, ClrScheme *scheme)
 {
-	if (!drw)
-		return;
 	drw->scheme = scheme;
 }
 
 void
 drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int empty, int invert)
 {
-	if (!drw || !drw->scheme)
+	if (!drw->scheme)
 		return;
 	XSetForeground(drw->dpy, drw->gc, invert ? drw->scheme->bg->pix : drw->scheme->fg->pix);
 	if (filled)
@@ -369,8 +363,6 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, const char *tex
 void
 drw_map(Drw *drw, Window win, int x, int y, unsigned int w, unsigned int h)
 {
-	if (!drw)
-		return;
 	XCopyArea(drw->dpy, drw->drawable, win, drw->gc, x, y, w, h, x, y);
 	XSync(drw->dpy, False);
 }
@@ -380,8 +372,6 @@ drw_font_getexts(Fnt *font, const char *text, unsigned int len, Extnts *tex)
 {
 	XGlyphInfo ext;
 
-	if (!font || !text)
-		return;
 	XftTextExtentsUtf8(font->dpy, font->xfont, (XftChar8 *)text, len, &ext);
 	tex->h = font->h;
 	tex->w = ext.xOff;
@@ -392,9 +382,8 @@ drw_font_getexts_width(Fnt *font, const char *text, unsigned int len)
 {
 	Extnts tex;
 
-	if (!font)
-		return -1;
 	drw_font_getexts(font, text, len, &tex);
+
 	return tex.w;
 }
 
@@ -403,8 +392,6 @@ drw_cur_create(Drw *drw, int shape)
 {
 	Cur *cur;
 
-	if (!drw)
-		return NULL;
 	cur = ecalloc(1, sizeof(Cur));
 	cur->cursor = XCreateFontCursor(drw->dpy, shape);
 
@@ -414,7 +401,7 @@ drw_cur_create(Drw *drw, int shape)
 void
 drw_cur_free(Drw *drw, Cur *cursor)
 {
-	if (!drw || !cursor)
+	if (!cursor)
 		return;
 	XFreeCursor(drw->dpy, cursor->cursor);
 	free(cursor);
