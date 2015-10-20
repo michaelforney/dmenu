@@ -108,12 +108,8 @@ static Fnt *
 drw_font_xcreate(Drw *drw, const char *fontname, FcPattern *fontpattern)
 {
 	Fnt *font;
-
-	if (!(fontname || fontpattern))
-		die("No font specified.\n");
-
-	if (!(font = calloc(1, sizeof(Fnt))))
-		return NULL;
+	XftFont *xfont = NULL;
+	FcPattern *pattern = NULL;
 
 	if (fontname) {
 		/* Using the pattern found at font->xfont->pattern does not yield same
@@ -122,28 +118,29 @@ drw_font_xcreate(Drw *drw, const char *fontname, FcPattern *fontpattern)
 		 * behaviour whereas the former just results in
 		 * missing-character-rectangles being drawn, at least with some fonts.
 		 */
-		if (!(font->xfont = XftFontOpenName(drw->dpy, drw->screen, fontname)) ||
-		    !(font->pattern = FcNameParse((FcChar8 *) fontname))) {
-			if (font->xfont) {
-				XftFontClose(drw->dpy, font->xfont);
-				font->xfont = NULL;
-			}
+		if (!(xfont = XftFontOpenName(drw->dpy, drw->screen, fontname))) {
 			fprintf(stderr, "error, cannot load font: '%s'\n", fontname);
+			return NULL;
+		}
+		if (!(pattern = FcNameParse((FcChar8 *) fontname))) {
+			fprintf(stderr, "error, cannot load font: '%s'\n", fontname);
+			XftFontClose(drw->dpy, xfont);
+			return NULL;
 		}
 	} else if (fontpattern) {
-		if (!(font->xfont = XftFontOpenPattern(drw->dpy, fontpattern)))
+		if (!(xfont = XftFontOpenPattern(drw->dpy, fontpattern))) {
 			fprintf(stderr, "error, cannot load font pattern.\n");
-		else
-			font->pattern = NULL;
+			return NULL;
+		}
+	} else {
+		die("no font specified.\n");
 	}
 
-	if (!font->xfont) {
-		free(font);
-		return NULL;
-	}
-
-	font->ascent = font->xfont->ascent;
-	font->descent = font->xfont->descent;
+	font = ecalloc(1, sizeof(Fnt));
+	font->xfont = xfont;
+	font->pattern = pattern;
+	font->ascent = xfont->ascent;
+	font->descent = xfont->descent;
 	font->h = font->ascent + font->descent;
 	font->dpy = drw->dpy;
 
