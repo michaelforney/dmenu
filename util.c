@@ -6,6 +6,16 @@
 
 #include "util.h"
 
+void *
+ecalloc(size_t nmemb, size_t size)
+{
+	void *p;
+
+	if (!(p = calloc(nmemb, size)))
+		perror(NULL);
+	return p;
+}
+
 void
 die(const char *fmt, ...) {
 	va_list ap;

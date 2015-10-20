@@ -65,8 +65,7 @@ drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h
 {
 	Drw *drw;
 
-	if (!(drw = calloc(1, sizeof(Drw))))
-		return NULL;
+	drw = ecalloc(1, sizeof(Drw));
 	drw->dpy = dpy;
 	drw->screen = screen;
 	drw->root = root;
@@ -189,16 +188,13 @@ Clr *
 drw_clr_create(Drw *drw, const char *clrname)
 {
 	Clr *clr;
-	Colormap cmap;
-	Visual *vis;
-
 	if (!drw)
 		return NULL;
-	if (!(clr = calloc(1, sizeof(Clr))))
-		return NULL;
-	cmap = DefaultColormap(drw->dpy, drw->screen);
-	vis = DefaultVisual(drw->dpy, drw->screen);
-	if (!XftColorAllocName(drw->dpy, vis, cmap, clrname, &clr->rgb))
+
+	clr = ecalloc(1, sizeof(Clr));
+	if (!XftColorAllocName(drw->dpy, DefaultVisual(drw->dpy, drw->screen),
+	                       DefaultColormap(drw->dpy, drw->screen),
+	                       clrname, &clr->rgb))
 		die("error, cannot allocate color '%s'\n", clrname);
 	clr->pix = clr->rgb.pixel;
 
@@ -409,8 +405,7 @@ drw_cur_create(Drw *drw, int shape)
 
 	if (!drw)
 		return NULL;
-	if (!(cur = calloc(1, sizeof(Cur))))
-		return NULL;
+	cur = ecalloc(1, sizeof(Cur));
 	cur->cursor = XCreateFontCursor(drw->dpy, shape);
 
 	return cur;
