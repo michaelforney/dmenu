@@ -224,9 +224,7 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, const char *tex
 	char buf[1024];
 	int tx, ty, th;
 	Extnts tex;
-	Colormap cmap;
-	Visual *vis;
-	XftDraw *d;
+	XftDraw *d = NULL;
 	Fnt *curfont, *nextfont;
 	size_t i, len;
 	int utf8strlen, utf8charlen, render;
@@ -238,22 +236,18 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, const char *tex
 	XftResult result;
 	int charexists = 0;
 
-	if (!(render = x || y || w || h))
+	if (!drw->scheme || !drw->fontcount)
+		return 0;
+
+	if (!(render = x || y || w || h)) {
 		w = ~w;
-
-	if (!drw || !drw->scheme) {
-		return 0;
-	} else if (render) {
-		XSetForeground(drw->dpy, drw->gc, invert ? drw->scheme->fg->pix : drw->scheme->bg->pix);
+	} else {
+		XSetForeground(drw->dpy, drw->gc, invert ?
+		               drw->scheme->fg->pix : drw->scheme->bg->pix);
 		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w, h);
-	}
-
-	if (!text || !drw->fontcount) {
-		return 0;
-	} else if (render) {
-		cmap = DefaultColormap(drw->dpy, drw->screen);
-		vis = DefaultVisual(drw->dpy, drw->screen);
-		d = XftDrawCreate(drw->dpy, drw->drawable, vis, cmap);
+		d = XftDrawCreate(drw->dpy, drw->drawable,
+		                  DefaultVisual(drw->dpy, drw->screen),
+		                  DefaultColormap(drw->dpy, drw->screen));
 	}
 
 	curfont = drw->fonts[0];
@@ -325,7 +319,7 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, const char *tex
 			if (!drw->fonts[0]->pattern) {
 				/* Refer to the comment in drw_font_xcreate for more
 				 * information. */
-				die("The first font in the cache must be loaded from a font string.\n");
+				die("the first font in the cache must be loaded from a font string.\n");
 			}
 
 			fcpattern = FcPatternDuplicate(drw->fonts[0]->pattern);
@@ -344,14 +338,13 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, const char *tex
 				if (curfont && XftCharExists(drw->dpy, curfont->xfont, utf8codepoint)) {
 					drw->fonts[drw->fontcount++] = curfont;
 				} else {
-					if (curfont)
-						drw_font_free(curfont);
+					drw_font_free(curfont);
 					curfont = drw->fonts[0];
 				}
 			}
 		}
 	}
-	if (render)
+	if (d)
 		XftDrawDestroy(d);
 
 	return x;
