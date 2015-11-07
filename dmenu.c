@@ -552,7 +552,7 @@ setup(void)
 		XGetInputFocus(dpy, &w, &di);
 		if (mon != -1 && mon < n)
 			i = mon;
-		if (!i && w != root && w != PointerRoot && w != None) {
+		else if (w != root && w != PointerRoot && w != None) {
 			/* find top-level window containing current input focus */
 			do {
 				if (XQueryTree(dpy, (pw = w), &dw, &w, &dws, &du) && dws)
