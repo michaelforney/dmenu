@@ -480,7 +480,7 @@ readstdin(void)
 	}
 	if (items)
 		items[i].text = NULL;
-	inputw = TEXTW(items[imax].text);
+	inputw = items ? TEXTW(items[imax].text) : 0;
 	lines = MIN(lines, i);
 }
 
