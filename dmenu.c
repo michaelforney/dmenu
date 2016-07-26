@@ -541,7 +541,7 @@ setup(void)
 #ifdef XINERAMA
 	if ((info = XineramaQueryScreens(dpy, &n))) {
 		XGetInputFocus(dpy, &w, &di);
-		if (mon != -1 && mon < n)
+		if (mon >= 0 && mon < n)
 			i = mon;
 		else if (w != root && w != PointerRoot && w != None) {
 			/* find top-level window containing current input focus */
@@ -558,7 +558,7 @@ setup(void)
 					}
 		}
 		/* no focused window is on screen, so use pointer location instead */
-		if (mon == -1 && !area && XQueryPointer(dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
+		if (mon < 0 && !area && XQueryPointer(dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
 			for (i = 0; i < n; i++)
 				if (INTERSECT(x, y, 1, 1, info[i]))
 					break;
