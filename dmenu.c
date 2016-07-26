@@ -130,7 +130,7 @@ drawmenu(void)
 {
 	unsigned int curpos;
 	struct item *item;
-	int x = 0, y = 0, w, inputscheme;
+	int x = 0, y = 0, w;
 
 	drw_setscheme(drw, scheme[SchemeNorm]);
 	drw_rect(drw, 0, 0, mw, mh, 1, 1);
@@ -138,26 +138,17 @@ drawmenu(void)
 	if (prompt && *prompt) {
 		drw_setscheme(drw, scheme[SchemeSel]);
 		x = drw_text(drw, x, 0, promptw, bh, lrpad / 2, prompt, 0);
-		x += 2;
 	}
 	/* draw input field */
 	w = (lines > 0 || !matches) ? mw - x : inputw;
-	if (matches && !strcmp(text, curr->text))
-		inputscheme = SchemeSel;
-	else
-		inputscheme = SchemeNorm;
-	drw_setscheme(drw, scheme[inputscheme]);
-
+	drw_setscheme(drw, scheme[SchemeNorm]);
 	drw_text(drw, x, 0, w, bh, lrpad / 2, text, 0);
 
 	drw_font_getexts(drw->fonts, text, cursor, &curpos, NULL);
 	if ((curpos += lrpad / 2 - 1) < w) {
-		drw_setscheme(drw, scheme[inputscheme]);
+		drw_setscheme(drw, scheme[SchemeNorm]);
 		drw_rect(drw, x + curpos, 2, 2, bh - 4, 1, 0);
 	}
-
-	if (inputscheme == SchemeSel)
-		goto drawmap;
 
 	if (lines > 0) {
 		/* draw vertical list */
@@ -180,7 +171,6 @@ drawmenu(void)
 			drw_text(drw, mw - w, 0, w, bh, lrpad / 2, ">", 0);
 		}
 	}
-drawmap:
 	drw_map(drw, win, 0, 0, mw, mh);
 }
 
