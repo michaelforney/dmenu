@@ -1,34 +1,30 @@
 /* See LICENSE file for copyright and license details. */
 
-typedef struct {
-	Cursor cursor;
-} Cur;
+typedef void Cur;
 
 typedef struct Fnt {
-	Display *dpy;
-	unsigned int h;
-	XftFont *xfont;
+	struct wld_font *wld;
 	FcPattern *pattern;
 	struct Fnt *next;
 } Fnt;
 
 enum { ColFg, ColBg }; /* Clr scheme index */
-typedef XftColor Clr;
+typedef uint32_t Clr;
 
 typedef struct {
 	unsigned int w, h;
-	Display *dpy;
-	int screen;
-	Window root;
-	Drawable drawable;
-	GC gc;
+	struct wl_display *dpy;
+	struct wld_context *ctx;
+	struct wld_renderer *renderer;
+	struct wld_surface *surface;
+	struct wld_font_context *fontctx;
 	Clr *scheme;
 	Fnt *fonts;
 } Drw;
 
 /* Drawable abstraction */
-Drw *drw_create(Display *dpy, int screen, Window win, unsigned int w, unsigned int h);
-void drw_resize(Drw *drw, unsigned int w, unsigned int h);
+Drw *drw_create(struct wl_display *dpy);
+void drw_resize(Drw *drw, struct wl_surface *surface, unsigned int w, unsigned int h);
 void drw_free(Drw *drw);
 
 /* Fnt abstraction */
@@ -54,4 +50,4 @@ void drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled
 int drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert);
 
 /* Map functions */
-void drw_map(Drw *drw, Window win, int x, int y, unsigned int w, unsigned int h);
+void drw_map(Drw *drw, struct wl_surface *surface, int x, int y, unsigned int w, unsigned int h);
