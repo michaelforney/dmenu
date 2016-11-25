@@ -539,15 +539,16 @@ run(void)
 static void
 setup(void)
 {
-	int x, y;
+	int x, y, i = 0;
+	unsigned int du;
 	XSetWindowAttributes swa;
 	XIM xim;
+	Window w, dw, *dws;
+	XWindowAttributes wa;
 #ifdef XINERAMA
 	XineramaScreenInfo *info;
-	Window w, pw, dw, *dws;
-	XWindowAttributes wa;
-	int a, j, di, n, i = 0, area = 0;
-	unsigned int du;
+	Window pw;
+	int a, j, di, n, area = 0;
 #endif
 
 	/* init appearance */
